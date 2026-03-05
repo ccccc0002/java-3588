@@ -181,6 +181,7 @@ class InferenceApiControllerTest {
     void route_shouldReturnResolvedBackendForCamera() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.overrideBackendForCamera(100L)).thenReturn("rk3588_rknn");
 
         Map<String, Object> body = new HashMap<>();
         body.put("camera_id", 100L);
@@ -191,6 +192,8 @@ class InferenceApiControllerTest {
         assertEquals(100L, ((Number) data.get("camera_id")).longValue());
         assertEquals("legacy", data.get("global_backend_type"));
         assertEquals("rk3588_rknn", data.get("backend_type"));
+        assertEquals(true, data.get("override_hit"));
+        assertEquals("rk3588_rknn", data.get("override_backend_type"));
         assertTrue(data.get("trace_id") != null && !"".equals(String.valueOf(data.get("trace_id"))));
     }
 
@@ -199,6 +202,7 @@ class InferenceApiControllerTest {
     void route_shouldAcceptCameraIdFromQueryParam_whenBodyMissing() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(222L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(222L)).thenReturn(null);
 
         JsonResult result = inferenceApiController.route(null, 222L);
 
@@ -207,6 +211,7 @@ class InferenceApiControllerTest {
         assertEquals(222L, ((Number) data.get("camera_id")).longValue());
         assertEquals("legacy", data.get("global_backend_type"));
         assertEquals("legacy", data.get("backend_type"));
+        assertEquals(false, data.get("override_hit"));
     }
 
     @Test

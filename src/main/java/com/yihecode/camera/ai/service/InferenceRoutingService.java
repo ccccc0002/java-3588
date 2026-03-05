@@ -35,12 +35,20 @@ public class InferenceRoutingService {
     }
 
     public String backendTypeForCamera(Long cameraId) {
-        String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
-        String overrideBackend = resolveOverrideBackend(overrideConfig, cameraId);
+        String overrideBackend = overrideBackendForCamera(cameraId);
         if (StrUtil.isNotBlank(overrideBackend)) {
             return overrideBackend;
         }
         return currentBackendType();
+    }
+
+    public String overrideBackendForCamera(Long cameraId) {
+        String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
+        return resolveOverrideBackend(overrideConfig, cameraId);
+    }
+
+    public boolean isCameraOverrideHit(Long cameraId) {
+        return StrUtil.isNotBlank(overrideBackendForCamera(cameraId));
     }
 
     public Map<String, Object> health(String traceId) {

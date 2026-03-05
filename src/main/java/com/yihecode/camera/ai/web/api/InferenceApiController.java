@@ -162,6 +162,7 @@ public class InferenceApiController {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             Long finalCameraId = firstLong(toLong(payload.get("camera_id")), cameraId, 1L);
             String globalBackend = inferenceRoutingService.currentBackendType();
+            String overrideBackend = inferenceRoutingService.overrideBackendForCamera(finalCameraId);
             String routedBackend = inferenceRoutingService.backendTypeForCamera(finalCameraId);
 
             Map<String, Object> data = new HashMap<>();
@@ -169,6 +170,10 @@ public class InferenceApiController {
             data.put("camera_id", finalCameraId);
             data.put("global_backend_type", globalBackend);
             data.put("backend_type", routedBackend);
+            data.put("override_hit", StrUtil.isNotBlank(overrideBackend));
+            if (StrUtil.isNotBlank(overrideBackend)) {
+                data.put("override_backend_type", overrideBackend);
+            }
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference route api failed, trace_id={}", traceId, e);

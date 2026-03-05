@@ -280,4 +280,24 @@ class InferenceRoutingServiceTest {
         assertEquals("rk3588_rknn", backend504);
         assertEquals("legacy", backend502);
     }
+
+    @Test
+    void overrideBackendForCamera_shouldReturnBackend_whenOverrideMatched() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"100\":\"rk3588_rknn\"}");
+
+        String overrideBackend = inferenceRoutingService.overrideBackendForCamera(100L);
+
+        assertEquals("rk3588_rknn", overrideBackend);
+    }
+
+    @Test
+    void isCameraOverrideHit_shouldReturnFalse_whenOverrideNotMatched() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"101\":\"rk3588_rknn\"}");
+
+        boolean hit = inferenceRoutingService.isCameraOverrideHit(100L);
+
+        assertEquals(false, hit);
+    }
 }
