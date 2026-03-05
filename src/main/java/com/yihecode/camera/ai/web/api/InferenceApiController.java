@@ -212,7 +212,7 @@ public class InferenceApiController {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
-            CameraIdResolveResult resolveResult = resolveCameraIds(payload.get("camera_ids"), cameraIdsText);
+            CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText);
             List<Long> cameraIds = resolveResult.cameraIds;
             if (cameraIds.isEmpty()) {
                 cameraIds.add(1L);
@@ -326,9 +326,23 @@ public class InferenceApiController {
         return list;
     }
 
-    private CameraIdResolveResult resolveCameraIds(Object bodyCameraIds, String queryCameraIds) {
+    private CameraIdResolveResult resolveCameraIds(Map<String, Object> payload, String queryCameraIds) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
+        Object bodyCameraIds = payload == null ? null : payload.get("camera_ids");
+        Object bodyCameras = payload == null ? null : payload.get("cameras");
+        Object bodyCameraRange = payload == null ? null : payload.get("camera_range");
+        Object bodyRange = payload == null ? null : payload.get("range");
+
         boolean truncated = addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
+        if (!truncated) {
+            truncated = addCameraIds(ordered, bodyCameras, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        if (!truncated) {
+            truncated = addCameraIds(ordered, bodyCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        if (!truncated) {
+            truncated = addCameraIds(ordered, bodyRange, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
         if (!truncated) {
             truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
         }

@@ -426,4 +426,60 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
         assertEquals(3, routes.size());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldAcceptCamerasAliasFromBodyList() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        Map<String, Object> body = new HashMap<>();
+        List<Object> cameras = new ArrayList<>();
+        cameras.add(100L);
+        cameras.add("101-102");
+        body.put("cameras", cameras);
+
+        JsonResult result = inferenceApiController.routeBatch(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(3, routes.size());
+        assertEquals(100L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(101L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(102L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(false, data.get("truncated"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldMergeBodyAliasesAndQueryInStableOrder() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_ids", "10");
+        body.put("cameras", "11-12,10");
+        body.put("camera_range", "20-19");
+        body.put("range", "30");
+
+        JsonResult result = inferenceApiController.routeBatch(body, "31,12");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(7, routes.size());
+        assertEquals(10L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(11L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(12L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(20L, ((Number) routes.get(3).get("camera_id")).longValue());
+        assertEquals(19L, ((Number) routes.get(4).get("camera_id")).longValue());
+        assertEquals(30L, ((Number) routes.get(5).get("camera_id")).longValue());
+        assertEquals(31L, ((Number) routes.get(6).get("camera_id")).longValue());
+        assertEquals(false, data.get("truncated"));
+    }
 }
