@@ -175,4 +175,22 @@ class InferenceApiControllerTest {
         verify(inferenceIdempotencyService, never()).checkAndMark(anyString(), anyLong(), anyLong());
         verify(inferenceReportBridgeService, never()).persistAndBroadcast(anyLong(), anyLong(), any(), anyString());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void route_shouldReturnResolvedBackendForCamera() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_id", 100L);
+        JsonResult result = inferenceApiController.route(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(100L, ((Number) data.get("camera_id")).longValue());
+        assertEquals("legacy", data.get("global_backend_type"));
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        assertTrue(data.get("trace_id") != null && !"".equals(String.valueOf(data.get("trace_id"))));
+    }
 }

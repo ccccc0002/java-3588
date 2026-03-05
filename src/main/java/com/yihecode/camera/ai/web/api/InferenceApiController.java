@@ -153,6 +153,31 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/route"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult route(@RequestBody(required = false) Map<String, Object> body,
+                            @RequestParam(value = "camera_id", required = false) Long cameraId) {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> payload = body == null ? new HashMap<>() : body;
+            Long finalCameraId = firstLong(toLong(payload.get("camera_id")), cameraId, 1L);
+            String globalBackend = inferenceRoutingService.currentBackendType();
+            String routedBackend = inferenceRoutingService.backendTypeForCamera(finalCameraId);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("camera_id", finalCameraId);
+            data.put("global_backend_type", globalBackend);
+            data.put("backend_type", routedBackend);
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference route api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference route api failed: " + e.getMessage(), data);
+        }
+    }
+
     private InferenceRequest buildTestRequest(String traceId, Map<String, Object> body, Long cameraId, Long modelId, String source) {
         Map<String, Object> payload = body == null ? new HashMap<>() : body;
 
