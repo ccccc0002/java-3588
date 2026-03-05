@@ -213,4 +213,30 @@ class InferenceRoutingServiceTest {
         assertEquals("rk3588_rknn", backend102);
         assertEquals("legacy", backend206);
     }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromArrayItemCameraRange() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"camera_range\":\"300-320\",\"backend_type\":\"rk3588_rknn\"}]");
+
+        String backend310 = inferenceRoutingService.backendTypeForCamera(310L);
+        String backend330 = inferenceRoutingService.backendTypeForCamera(330L);
+
+        assertEquals("rk3588_rknn", backend310);
+        assertEquals("legacy", backend330);
+    }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromArrayItemRangeAlias() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"range\":\"420-400\",\"backend\":\"rk3588_rknn\"}]");
+
+        String backend410 = inferenceRoutingService.backendTypeForCamera(410L);
+        String backend430 = inferenceRoutingService.backendTypeForCamera(430L);
+
+        assertEquals("rk3588_rknn", backend410);
+        assertEquals("legacy", backend430);
+    }
 }

@@ -166,7 +166,11 @@ public class InferenceRoutingService {
                     toLong(obj.get("cameraId")),
                     toLong(obj.get("id"))
             );
-            if (itemCameraId == null || !cameraId.equals(itemCameraId)) {
+            boolean matchedByCameraId = itemCameraId != null && cameraId.equals(itemCameraId);
+            boolean matchedByRange = containsCameraId(obj.get("camera_range"), cameraId)
+                    || containsCameraId(obj.get("range"), cameraId)
+                    || containsCameraId(obj.get("camera_ids"), cameraId);
+            if (!matchedByCameraId && !matchedByRange) {
                 continue;
             }
 
