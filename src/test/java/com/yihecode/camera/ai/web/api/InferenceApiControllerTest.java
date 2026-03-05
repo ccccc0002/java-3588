@@ -293,4 +293,21 @@ class InferenceApiControllerTest {
         assertEquals(201L, ((Number) routes.get(0).get("camera_id")).longValue());
         assertEquals(202L, ((Number) routes.get(1).get("camera_id")).longValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldDeduplicateAndFallbackDefaultCamera() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(1L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(1L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(1L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, ",,");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(1, routes.size());
+        assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+    }
 }
