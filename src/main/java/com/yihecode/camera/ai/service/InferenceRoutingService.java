@@ -196,11 +196,10 @@ public class InferenceRoutingService {
             return cameraId.equals(((Number) value).longValue());
         }
         if (value instanceof String) {
-            if (isCameraIdInRangeText((String) value, cameraId)) {
+            if (matchesCameraExpression((String) value, cameraId)) {
                 return true;
             }
-            Long id = toLong(value);
-            return id != null && cameraId.equals(id);
+            return false;
         }
         if (value instanceof JSONArray) {
             JSONArray arr = (JSONArray) value;
@@ -223,14 +222,32 @@ public class InferenceRoutingService {
         return false;
     }
 
-    private boolean isCameraIdInRangeText(String value, Long cameraId) {
+    private boolean matchesCameraExpression(String value, Long cameraId) {
         if (cameraId == null || StrUtil.isBlank(value)) {
             return false;
         }
         String text = StrUtil.trim(value);
-        if (StrUtil.isBlank(text) || !text.contains("-")) {
+        if (StrUtil.isBlank(text)) {
             return false;
         }
+        if (text.contains(",")) {
+            String[] parts = text.split(",");
+            for (String part : parts) {
+                if (matchesCameraExpression(part, cameraId)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        Long exact = toLong(text);
+        if (exact != null) {
+            return cameraId.equals(exact);
+        }
+        if (!text.contains("-")) {
+            return false;
+        }
+
         String[] parts = text.split("-", 2);
         if (parts.length != 2) {
             return false;

@@ -252,4 +252,32 @@ class InferenceRoutingServiceTest {
         assertEquals("rk3588_rknn", backend702);
         assertEquals("legacy", backend703);
     }
+
+    @Test
+    void backendTypeForCamera_shouldResolveWhenBackendGroupUsesCommaExpression() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"rk3588_rknn\":[\"100,105-110,200\"],\"legacy\":[300]}");
+
+        String backend106 = inferenceRoutingService.backendTypeForCamera(106L);
+        String backend200 = inferenceRoutingService.backendTypeForCamera(200L);
+        String backend120 = inferenceRoutingService.backendTypeForCamera(120L);
+
+        assertEquals("rk3588_rknn", backend106);
+        assertEquals("rk3588_rknn", backend200);
+        assertEquals("legacy", backend120);
+    }
+
+    @Test
+    void backendTypeForCamera_shouldResolveWhenArrayItemCamerasUsesCommaExpression() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"cameras\":\"501,503-505\",\"backend_type\":\"rk3588_rknn\"}]");
+
+        String backend504 = inferenceRoutingService.backendTypeForCamera(504L);
+        String backend502 = inferenceRoutingService.backendTypeForCamera(502L);
+
+        assertEquals("rk3588_rknn", backend504);
+        assertEquals("legacy", backend502);
+    }
 }
