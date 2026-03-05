@@ -67,10 +67,12 @@ public class InferenceApiController {
             InferenceRequest request = buildTestRequest(requestTraceId, body, cameraId, modelId, source);
             String traceId = request.getTraceId();
             InferenceResult result = inferenceRoutingService.infer(request);
+            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
 
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            data.put("backend_type", backendType);
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
             return JsonResultUtils.success(data);
@@ -96,6 +98,7 @@ public class InferenceApiController {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
             String traceId = request.getTraceId();
+            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
             Long finalAlgorithmId = firstLong(toLong(payload.get("algorithm_id")), algorithmId, request.getModelId());
             boolean persistReport = toBooleanFlag(payload.get("persist_report"), persistReportFlag == null || persistReportFlag != 0);
             Long frameTimestampMs = extractFrameTimestampMs(request.getFrameMeta());
@@ -110,11 +113,12 @@ public class InferenceApiController {
                 result.setCameraId(request.getCameraId());
                 result.setLatencyMs(0L);
                 result.setDetections(new ArrayList<>());
-                result.setBackendType(inferenceRoutingService.currentBackendType());
+                result.setBackendType(routedBackend);
                 result.setAttempt(0);
             } else {
                 result = inferenceRoutingService.infer(request);
             }
+            String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
 
             Map<String, Object> reportData = new HashMap<>();
             reportData.put("trace_id", traceId);
@@ -133,7 +137,7 @@ public class InferenceApiController {
 
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            data.put("backend_type", backendType);
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
             data.put("algorithm_id", finalAlgorithmId);

@@ -14,6 +14,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,7 @@ class InferenceRoutingServiceTest {
     @Test
     void infer_shouldReturnFallbackResult_whenClientReturnsNull() {
         when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides")).thenReturn("");
         InferenceRequest request = new InferenceRequest();
         request.setTraceId("trace-2");
         request.setCameraId(101L);
@@ -78,5 +80,75 @@ class InferenceRoutingServiceTest {
         assertTrue(result.getDetections().isEmpty());
         verify(legacyInferenceClient).infer(request);
         verifyNoInteractions(rk3588InferenceClient);
+    }
+
+    @Test
+    void infer_shouldUseCameraOverrideBackend_whenOverrideConfiguredAsMap() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"100\":\"rk3588_rknn\"}");
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-override-map");
+        request.setCameraId(100L);
+
+        InferenceResult rkResult = new InferenceResult();
+        rkResult.setTraceId("trace-override-map");
+        rkResult.setCameraId(100L);
+        rkResult.setLatencyMs(8L);
+        rkResult.setBackendType("rk3588_rknn");
+        when(rk3588InferenceClient.infer(request)).thenReturn(rkResult);
+
+        InferenceResult result = inferenceRoutingService.infer(request);
+
+        assertEquals("rk3588_rknn", result.getBackendType());
+        verify(rk3588InferenceClient).infer(request);
+        verify(legacyInferenceClient, never()).infer(request);
+    }
+
+    @Test
+    void infer_shouldUseCameraOverrideBackend_whenOverrideConfiguredAsArray() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"camera_id\":101,\"backend_type\":\"rk3588_rknn\"}]");
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-override-array");
+        request.setCameraId(101L);
+
+        InferenceResult rkResult = new InferenceResult();
+        rkResult.setTraceId("trace-override-array");
+        rkResult.setCameraId(101L);
+        rkResult.setLatencyMs(12L);
+        rkResult.setBackendType("rk3588_rknn");
+        when(rk3588InferenceClient.infer(request)).thenReturn(rkResult);
+
+        InferenceResult result = inferenceRoutingService.infer(request);
+
+        assertEquals("rk3588_rknn", result.getBackendType());
+        verify(rk3588InferenceClient).infer(request);
+        verify(legacyInferenceClient, never()).infer(request);
+    }
+
+    @Test
+    void infer_shouldFallbackToGlobalBackend_whenOverrideBackendInvalid() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"100\":\"unknown_backend\"}");
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-invalid-override");
+        request.setCameraId(100L);
+
+        InferenceResult legacyResult = new InferenceResult();
+        legacyResult.setTraceId("trace-invalid-override");
+        legacyResult.setCameraId(100L);
+        legacyResult.setLatencyMs(6L);
+        legacyResult.setBackendType("legacy");
+        when(legacyInferenceClient.infer(request)).thenReturn(legacyResult);
+
+        InferenceResult result = inferenceRoutingService.infer(request);
+
+        assertEquals("legacy", result.getBackendType());
+        verify(legacyInferenceClient).infer(request);
+        verify(rk3588InferenceClient, never()).infer(request);
     }
 }

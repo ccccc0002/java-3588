@@ -36,6 +36,9 @@
 3. `infer_timeout_ms`：默认 `3000`
 4. `infer_retry_count`：默认 `1`
 5. `infer_idempotent_window_ms`：幂等判重窗口（毫秒），默认 `600000`
+6. `infer_backend_camera_overrides`：按摄像头灰度覆盖（可选）
+  - 允许格式A（map）：`{"100":"rk3588_rknn","101":"legacy"}`
+  - 允许格式B（array）：`[{"camera_id":100,"backend_type":"rk3588_rknn"}]`
 
 ## 5. 平台 API 契约
 
@@ -123,7 +126,7 @@
 5. `roi`：`array`，默认空数组
 - 返回：`code/msg` + `data`
 1. `trace_id`：`string`
-2. `backend_type`：`legacy|rk3588_rknn`
+2. `backend_type`：`legacy|rk3588_rknn`（实际路由后端，受全局+灰度配置共同影响）
 3. `request`：`object`（平台送检请求体）
 4. `result`：`object`（推理结果，包含 `trace_id/camera_id/latency_ms/detections`）
 
@@ -139,7 +142,7 @@
 6. `persist_report`：`0|1`（默认 `1`，`0` 仅做推理不入库）
 - 返回：`code/msg` + `data`
 1. `trace_id`：`string`
-2. `backend_type`：`legacy|rk3588_rknn`
+2. `backend_type`：`legacy|rk3588_rknn`（实际路由后端，受全局+灰度配置共同影响）
 3. `request`：`object`
 4. `result`：`object`
 5. `algorithm_id`：`number`
@@ -218,6 +221,7 @@
 1. 所有接口输出必须包含可追踪 `trace_id`（新增链路要求）。
 2. 超时约束：平台->推理服务超时不超过 `infer_timeout_ms`。
 3. 幂等约束：同一 `trace_id + camera_id + timestamp_ms` 只允许入库一次（在 `dispatch + persist_report=1` 生效）。
+4. 灰度约束：当 `infer_backend_camera_overrides` 命中摄像头时，优先使用灰度后端；未命中才回退 `infer_backend_type`。
 
 ## 9. 验收检查单
 1. 契约测试覆盖所有关键字段。

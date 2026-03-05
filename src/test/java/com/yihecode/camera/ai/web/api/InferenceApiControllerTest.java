@@ -115,7 +115,8 @@ class InferenceApiControllerTest {
         reportData.put("persisted", true);
         reportData.put("broadcasted", true);
 
-        when(inferenceRoutingService.currentBackendType()).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(101L)).thenReturn("rk3588_rknn");
         when(inferenceIdempotencyService.checkAndMark("trace-2", 101L, 456L)).thenReturn(idempotentData);
         when(inferenceRoutingService.infer(any())).thenReturn(infer);
         when(inferenceReportBridgeService.persistAndBroadcast(eq(101L), eq(301L), eq(infer), eq("trace-2")))

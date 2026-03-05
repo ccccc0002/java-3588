@@ -1,5 +1,8 @@
 package com.yihecode.camera.ai.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import cn.hutool.core.util.StrUtil;
 import com.yihecode.camera.ai.vo.InferenceRequest;
 import com.yihecode.camera.ai.vo.InferenceResult;
@@ -8,10 +11,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class InferenceRoutingService {
+
+    private static final String BACKEND_LEGACY = "legacy";
+    private static final String BACKEND_RK3588 = "rk3588_rknn";
 
     @Autowired
     private ConfigService configService;
@@ -24,10 +31,16 @@ public class InferenceRoutingService {
 
     public String currentBackendType() {
         String backend = StrUtil.trim(configService.getByValTag("infer_backend_type"));
-        if ("rk3588_rknn".equalsIgnoreCase(backend)) {
-            return "rk3588_rknn";
+        return normalizeBackendOrDefault(backend);
+    }
+
+    public String backendTypeForCamera(Long cameraId) {
+        String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
+        String overrideBackend = resolveOverrideBackend(overrideConfig, cameraId);
+        if (StrUtil.isNotBlank(overrideBackend)) {
+            return overrideBackend;
         }
-        return "legacy";
+        return currentBackendType();
     }
 
     public Map<String, Object> health(String traceId) {
@@ -48,7 +61,8 @@ public class InferenceRoutingService {
     }
 
     public InferenceResult infer(InferenceRequest request) {
-        String backend = currentBackendType();
+        Long cameraId = request == null ? null : request.getCameraId();
+        String backend = backendTypeForCamera(cameraId);
         InferenceClient client = resolveClient(backend);
 
         InferenceResult result = client.infer(request);
@@ -69,9 +83,185 @@ public class InferenceRoutingService {
     }
 
     private InferenceClient resolveClient(String backend) {
-        if ("rk3588_rknn".equalsIgnoreCase(backend)) {
+        if (BACKEND_RK3588.equalsIgnoreCase(backend)) {
             return rk3588InferenceClient;
         }
         return legacyInferenceClient;
+    }
+
+    private String resolveOverrideBackend(String configText, Long cameraId) {
+        if (cameraId == null || StrUtil.isBlank(configText)) {
+            return null;
+        }
+        try {
+            Object parsed = JSON.parse(configText);
+            if (parsed instanceof JSONObject) {
+                return resolveFromObject((JSONObject) parsed, cameraId);
+            }
+            if (parsed instanceof JSONArray) {
+                return resolveFromArray((JSONArray) parsed, cameraId);
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private String resolveFromObject(JSONObject root, Long cameraId) {
+        if (root == null || cameraId == null) {
+            return null;
+        }
+
+        String cameraKey = String.valueOf(cameraId);
+        String direct = normalizeBackendStrict(root.getString(cameraKey));
+        if (StrUtil.isNotBlank(direct)) {
+            return direct;
+        }
+
+        Object cameraOverridesObj = root.get("camera_overrides");
+        if (cameraOverridesObj instanceof JSONObject) {
+            String nested = normalizeBackendStrict(((JSONObject) cameraOverridesObj).getString(cameraKey));
+            if (StrUtil.isNotBlank(nested)) {
+                return nested;
+            }
+        } else if (cameraOverridesObj instanceof JSONArray) {
+            String nested = resolveFromArray((JSONArray) cameraOverridesObj, cameraId);
+            if (StrUtil.isNotBlank(nested)) {
+                return nested;
+            }
+        }
+
+        Object overridesObj = root.get("overrides");
+        if (overridesObj instanceof JSONArray) {
+            String nested = resolveFromArray((JSONArray) overridesObj, cameraId);
+            if (StrUtil.isNotBlank(nested)) {
+                return nested;
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : root.entrySet()) {
+            String backend = normalizeBackendStrict(entry.getKey());
+            if (StrUtil.isBlank(backend)) {
+                continue;
+            }
+            if (containsCameraId(entry.getValue(), cameraId)) {
+                return backend;
+            }
+        }
+        return null;
+    }
+
+    private String resolveFromArray(JSONArray items, Long cameraId) {
+        if (items == null || cameraId == null) {
+            return null;
+        }
+        for (int i = 0; i < items.size(); i++) {
+            Object item = items.get(i);
+            if (!(item instanceof JSONObject)) {
+                continue;
+            }
+            JSONObject obj = (JSONObject) item;
+            Long itemCameraId = firstLong(
+                    toLong(obj.get("camera_id")),
+                    toLong(obj.get("cameraId")),
+                    toLong(obj.get("id"))
+            );
+            if (itemCameraId == null || !cameraId.equals(itemCameraId)) {
+                continue;
+            }
+
+            String backend = firstNonBlank(
+                    obj.getString("backend_type"),
+                    obj.getString("backend"),
+                    obj.getString("type")
+            );
+            String normalized = normalizeBackendStrict(backend);
+            if (StrUtil.isNotBlank(normalized)) {
+                return normalized;
+            }
+        }
+        return null;
+    }
+
+    private boolean containsCameraId(Object value, Long cameraId) {
+        if (value == null || cameraId == null) {
+            return false;
+        }
+        if (value instanceof Number) {
+            return cameraId.equals(((Number) value).longValue());
+        }
+        if (value instanceof String) {
+            Long id = toLong(value);
+            return id != null && cameraId.equals(id);
+        }
+        if (value instanceof JSONArray) {
+            JSONArray arr = (JSONArray) value;
+            for (int i = 0; i < arr.size(); i++) {
+                if (containsCameraId(arr.get(i), cameraId)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (value instanceof List) {
+            List<?> arr = (List<?>) value;
+            for (Object item : arr) {
+                if (containsCameraId(item, cameraId)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
+    private Long toLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Long firstLong(Long first, Long second, Long third) {
+        if (first != null) {
+            return first;
+        }
+        if (second != null) {
+            return second;
+        }
+        return third;
+    }
+
+    private String firstNonBlank(String first, String second, String third) {
+        if (StrUtil.isNotBlank(first)) {
+            return first;
+        }
+        if (StrUtil.isNotBlank(second)) {
+            return second;
+        }
+        return third;
+    }
+
+    private String normalizeBackendOrDefault(String backend) {
+        String normalized = normalizeBackendStrict(backend);
+        return StrUtil.isBlank(normalized) ? BACKEND_LEGACY : normalized;
+    }
+
+    private String normalizeBackendStrict(String backend) {
+        String value = StrUtil.trim(backend);
+        if (StrUtil.isBlank(value)) {
+            return null;
+        }
+        if (BACKEND_RK3588.equalsIgnoreCase(value)) {
+            return BACKEND_RK3588;
+        }
+        if (BACKEND_LEGACY.equalsIgnoreCase(value)) {
+            return BACKEND_LEGACY;
+        }
+        return null;
     }
 }
