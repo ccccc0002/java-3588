@@ -239,4 +239,17 @@ class InferenceRoutingServiceTest {
         assertEquals("rk3588_rknn", backend410);
         assertEquals("legacy", backend430);
     }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromArrayItemCamerasAlias() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"cameras\":[701,702],\"backend\":\"rk3588_rknn\"}]");
+
+        String backend702 = inferenceRoutingService.backendTypeForCamera(702L);
+        String backend703 = inferenceRoutingService.backendTypeForCamera(703L);
+
+        assertEquals("rk3588_rknn", backend702);
+        assertEquals("legacy", backend703);
+    }
 }
