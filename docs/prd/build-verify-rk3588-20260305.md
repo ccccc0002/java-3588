@@ -44,4 +44,11 @@
    - nested `camera_overrides` mapping + global fallback
 3. Refactored `Rk3588InferenceClient` to use `InferenceHttpGateway` abstraction for deterministic unit tests.
 4. Enhanced `scripts/testing/Validate-Inference-Contracts.ps1` with optional `-ExpectedBackendType` assertion.
-5. Local environment in this session has no Maven binary (`mvn` unavailable), so this incremental change still requires remote Maven gate execution for final verification.
+5. Remote RK3588 verification rerun completed:
+   - Command: `/home/zql/tools/apache-maven-3.9.9/bin/mvn -DskipTests=false test`
+   - Result: SUCCESS (20 tests, 0 failures, 0 errors, 0 skipped)
+   - Log: `/home/zql/ks/java-rk3588/build-test-incremental.log`
+6. Added range-expression gray routing support in `infer_backend_camera_overrides` (example: `"200-260"`), and reran remote verification:
+   - Command: `/home/zql/tools/apache-maven-3.9.9/bin/mvn -DskipTests=false test`
+   - Result: SUCCESS (21 tests, 0 failures, 0 errors, 0 skipped)
+   - Log: `/home/zql/ks/java-rk3588/build-test-incremental.log`

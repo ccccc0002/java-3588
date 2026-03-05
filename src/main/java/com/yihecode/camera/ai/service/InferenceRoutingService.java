@@ -191,6 +191,9 @@ public class InferenceRoutingService {
             return cameraId.equals(((Number) value).longValue());
         }
         if (value instanceof String) {
+            if (isCameraIdInRangeText((String) value, cameraId)) {
+                return true;
+            }
             Long id = toLong(value);
             return id != null && cameraId.equals(id);
         }
@@ -213,6 +216,28 @@ public class InferenceRoutingService {
             return false;
         }
         return false;
+    }
+
+    private boolean isCameraIdInRangeText(String value, Long cameraId) {
+        if (cameraId == null || StrUtil.isBlank(value)) {
+            return false;
+        }
+        String text = StrUtil.trim(value);
+        if (StrUtil.isBlank(text) || !text.contains("-")) {
+            return false;
+        }
+        String[] parts = text.split("-", 2);
+        if (parts.length != 2) {
+            return false;
+        }
+        Long start = toLong(parts[0]);
+        Long end = toLong(parts[1]);
+        if (start == null || end == null) {
+            return false;
+        }
+        long min = Math.min(start, end);
+        long max = Math.max(start, end);
+        return cameraId >= min && cameraId <= max;
     }
 
     private Long toLong(Object value) {

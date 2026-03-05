@@ -176,4 +176,41 @@ class InferenceRoutingServiceTest {
         assertEquals("rk3588_rknn", backend100);
         assertEquals("legacy", backend101);
     }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromOverridesArrayNode() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"overrides\":[{\"id\":888,\"backend\":\"rk3588_rknn\"}]}");
+
+        String backend888 = inferenceRoutingService.backendTypeForCamera(888L);
+        String backend889 = inferenceRoutingService.backendTypeForCamera(889L);
+
+        assertEquals("rk3588_rknn", backend888);
+        assertEquals("legacy", backend889);
+    }
+
+    @Test
+    void backendTypeForCamera_shouldFallbackGlobal_whenOverrideJsonMalformed() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{not-json");
+
+        String backend = inferenceRoutingService.backendTypeForCamera(1000L);
+
+        assertEquals("legacy", backend);
+    }
+
+    @Test
+    void backendTypeForCamera_shouldResolveWhenBackendGroupContainsRangeText() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"rk3588_rknn\":[\"100-105\"],\"legacy\":[\"200-205\"]}");
+
+        String backend102 = inferenceRoutingService.backendTypeForCamera(102L);
+        String backend206 = inferenceRoutingService.backendTypeForCamera(206L);
+
+        assertEquals("rk3588_rknn", backend102);
+        assertEquals("legacy", backend206);
+    }
 }

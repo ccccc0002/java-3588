@@ -33,11 +33,12 @@
 26. 已完成：补齐 `pom.xml`（Spring Boot 2.7.18，JDK 11，Maven 构建链路落地）。
 27. 已完成：修复历史乱码造成的编译阻塞（`StreamController`、`ModelServiceImpl`、`CameraServiceImpl` 等）。
 28. 已完成：在 RK3588 远程环境 `192.168.1.104` 执行 `mvn -DskipTests compile/package` 双通过。
-29. 已完成：新增推理域 TDD 单元测试（`InferenceRoutingService`、`InferenceIdempotencyService`、`InferenceApiController`），共 12 条用例全通过。
+29. 已完成：新增推理域 TDD 单元测试（`InferenceRoutingService`、`InferenceIdempotencyService`、`InferenceApiController`），并持续扩展 `Rk3588InferenceClient` 与灰度解析场景，当前共 21 条用例全通过。
 30. 已完成：新增 `scripts/testing/Run-Tdd-Gate.ps1` 与 GitHub Actions `tdd-gate` 测试门禁。
 31. 已完成：新增 `infer_backend_camera_overrides` 灰度路由能力（按 camera_id 覆盖 `infer_backend_type`）。
 32. 已完成：`Rk3588InferenceClient` 新增 4 条单测（重试、异常映射、非法响应、配置缺失）并引入 `InferenceHttpGateway` 抽象以实现可测试化；待远端 Maven 环境执行门禁验证。
 33. 已完成：`InferenceRoutingService` 追加灰度解析单测（backend 分组数组、nested `camera_overrides`）以覆盖配置变体解析路径；待远端 Maven 环境执行门禁验证。
+34. 已完成：`infer_backend_camera_overrides` 增强支持区间表达（如 `\"200-260\"`），用于按摄像头分组灰度；已补充单测覆盖。
 
 ## 2. 小队与职责
 1. 媒体小队：流媒体接入、播放链路、流状态管理

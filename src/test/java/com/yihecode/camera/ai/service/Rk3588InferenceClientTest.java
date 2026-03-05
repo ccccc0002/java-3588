@@ -95,6 +95,7 @@ class Rk3588InferenceClientTest {
     @Test
     void infer_shouldThrow_whenResponseBodyInvalidAfterRetry() {
         when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("3000");
         when(configService.getByValTag("infer_retry_count")).thenReturn("2");
         when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(3000), anyString()))
                 .thenReturn(InferenceHttpResponse.of(200, "invalid-json"))

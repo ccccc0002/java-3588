@@ -39,6 +39,7 @@
 6. `infer_backend_camera_overrides`：按摄像头灰度覆盖（可选）
   - 允许格式A（map）：`{"100":"rk3588_rknn","101":"legacy"}`
   - 允许格式B（array）：`[{"camera_id":100,"backend_type":"rk3588_rknn"}]`
+  - 允许格式C（backend->camera组）：`{"rk3588_rknn":[100,101,"200-260"],"legacy":[300]}`
 
 ## 5. 平台 API 契约
 
