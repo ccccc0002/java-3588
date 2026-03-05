@@ -29,6 +29,8 @@ import java.util.UUID;
 @RequestMapping({"/api/inference"})
 public class InferenceApiController {
 
+    private static final int ROUTE_BATCH_MAX_CAMERA_IDS = 500;
+
     @Autowired
     private InferenceRoutingService inferenceRoutingService;
 
@@ -323,21 +325,24 @@ public class InferenceApiController {
 
     private List<Long> resolveCameraIds(Object bodyCameraIds, String queryCameraIds) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
-        addCameraIds(ordered, bodyCameraIds);
-        addCameraIds(ordered, queryCameraIds);
+        addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
+        addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
         return new ArrayList<>(ordered);
     }
 
-    private void addCameraIds(LinkedHashSet<Long> ordered, Object value) {
+    private void addCameraIds(LinkedHashSet<Long> ordered, Object value, int maxSize) {
         if (ordered == null || value == null) {
+            return;
+        }
+        if (ordered.size() >= maxSize) {
             return;
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
             for (Object item : list) {
-                Long cameraId = toLong(item);
-                if (cameraId != null) {
-                    ordered.add(cameraId);
+                addCameraIds(ordered, item, maxSize);
+                if (ordered.size() >= maxSize) {
+                    break;
                 }
             }
             return;
@@ -349,9 +354,9 @@ public class InferenceApiController {
             }
             String[] parts = text.split(",");
             for (String part : parts) {
-                Long cameraId = toLong(part);
-                if (cameraId != null) {
-                    ordered.add(cameraId);
+                addCameraIdToken(ordered, part, maxSize);
+                if (ordered.size() >= maxSize) {
+                    break;
                 }
             }
             return;
@@ -360,6 +365,46 @@ public class InferenceApiController {
         if (cameraId != null) {
             ordered.add(cameraId);
         }
+    }
+
+    private void addCameraIdToken(LinkedHashSet<Long> ordered, String rawToken, int maxSize) {
+        if (ordered == null || rawToken == null || ordered.size() >= maxSize) {
+            return;
+        }
+        String token = rawToken.trim();
+        if (token.isEmpty()) {
+            return;
+        }
+        if (tryAddCameraRange(ordered, token, maxSize)) {
+            return;
+        }
+        Long cameraId = toLong(token);
+        if (cameraId != null && ordered.size() < maxSize) {
+            ordered.add(cameraId);
+        }
+    }
+
+    private boolean tryAddCameraRange(LinkedHashSet<Long> ordered, String token, int maxSize) {
+        String[] rangeParts = token.split("-", -1);
+        if (rangeParts.length != 2) {
+            return false;
+        }
+        Long start = toLong(rangeParts[0].trim());
+        Long end = toLong(rangeParts[1].trim());
+        if (start == null || end == null) {
+            return false;
+        }
+
+        long step = start <= end ? 1L : -1L;
+        long current = start;
+        while (ordered.size() < maxSize) {
+            ordered.add(current);
+            if (current == end) {
+                break;
+            }
+            current += step;
+        }
+        return true;
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {
