@@ -1,9 +1,13 @@
 package com.yihecode.camera.ai.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.yihecode.camera.ai.vo.InferenceRequest;
 import com.yihecode.camera.ai.vo.InferenceResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -33,6 +38,11 @@ class Rk3588InferenceClientTest {
 
     @InjectMocks
     private Rk3588InferenceClient rk3588InferenceClient;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+    }
 
     @Test
     void health_shouldReturnMisconfigured_whenServiceUrlBlank() {
@@ -109,5 +119,37 @@ class Rk3588InferenceClientTest {
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
         assertTrue(ex.getMessage().contains("rk3588 inference failed"));
+    }
+
+    @Test
+    void infer_shouldIncludeDecodeHints_whenDecodeConfigProvided() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_decode_backend")).thenReturn("mpp");
+        when(configService.getByValTag("infer_decode_hwaccel")).thenReturn("rga");
+        when(configService.getByValTag("infer_decode_max_width")).thenReturn("1920");
+        when(configService.getByValTag("infer_decode_max_height")).thenReturn("1080");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-decode\",\"camera_id\":501,\"latency_ms\":5,\"detections\":[]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-decode");
+        request.setCameraId(501L);
+        request.setModelId(900L);
+        request.setFrameMeta(new HashMap<>());
+
+        InferenceResult result = rk3588InferenceClient.infer(request);
+
+        assertEquals("trace-decode", result.getTraceId());
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), payloadCaptor.capture());
+        JSONObject payload = JSON.parseObject(payloadCaptor.getValue());
+        JSONObject decode = payload.getJSONObject("decode");
+        assertNotNull(decode);
+        assertEquals("mpp", decode.getString("backend"));
+        assertEquals("rga", decode.getString("hwaccel"));
+        assertEquals(1920, decode.getIntValue("max_width"));
+        assertEquals(1080, decode.getIntValue("max_height"));
     }
 }

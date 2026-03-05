@@ -98,7 +98,7 @@ public class Rk3588InferenceClient implements InferenceClient {
         String url = baseUrl + "/v1/infer";
         int timeoutMs = getTimeoutMs();
         int retryCount = getRetryCount();
-        String payload = JSON.toJSONString(request.toPayload());
+        String payload = buildPayload(request);
         String lastError = "";
 
         for (int attempt = 1; attempt <= retryCount; attempt++) {
@@ -203,6 +203,37 @@ public class Rk3588InferenceClient implements InferenceClient {
             return "";
         }
         return StrUtil.removeSuffix(StrUtil.trim(base), "/");
+    }
+
+    private String buildPayload(InferenceRequest request) {
+        Map<String, Object> payload = new HashMap<>(request.toPayload());
+        Map<String, Object> decodeHints = buildDecodeHints();
+        if (!decodeHints.isEmpty()) {
+            payload.put("decode", decodeHints);
+        }
+        return JSON.toJSONString(payload);
+    }
+
+    private Map<String, Object> buildDecodeHints() {
+        Map<String, Object> decodeHints = new HashMap<>();
+        putIfNotBlank(decodeHints, "backend", configService.getByValTag("infer_decode_backend"));
+        putIfNotBlank(decodeHints, "hwaccel", configService.getByValTag("infer_decode_hwaccel"));
+        putIfPositiveInt(decodeHints, "max_width", configService.getByValTag("infer_decode_max_width"));
+        putIfPositiveInt(decodeHints, "max_height", configService.getByValTag("infer_decode_max_height"));
+        return decodeHints;
+    }
+
+    private void putIfNotBlank(Map<String, Object> data, String key, String value) {
+        if (StrUtil.isNotBlank(value)) {
+            data.put(key, value.trim());
+        }
+    }
+
+    private void putIfPositiveInt(Map<String, Object> data, String key, String value) {
+        int num = toPositiveInt(value, -1);
+        if (num > 0) {
+            data.put(key, num);
+        }
     }
 
     private int getTimeoutMs() {
