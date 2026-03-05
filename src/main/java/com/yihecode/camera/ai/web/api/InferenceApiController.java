@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,6 +203,49 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult routeBatch(@RequestBody(required = false) Map<String, Object> body,
+                                 @RequestParam(value = "camera_ids", required = false) String cameraIdsText) {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> payload = body == null ? new HashMap<>() : body;
+            List<Long> cameraIds = resolveCameraIds(payload.get("camera_ids"), cameraIdsText);
+            if (cameraIds.isEmpty()) {
+                cameraIds.add(1L);
+            }
+
+            String globalBackend = inferenceRoutingService.currentBackendType();
+            List<Map<String, Object>> routeList = new ArrayList<>();
+            for (Long itemCameraId : cameraIds) {
+                String overrideBackend = inferenceRoutingService.overrideBackendForCamera(itemCameraId);
+                String overrideSource = inferenceRoutingService.overrideSourceForCamera(itemCameraId);
+                String routedBackend = inferenceRoutingService.backendTypeForCamera(itemCameraId);
+
+                Map<String, Object> route = new HashMap<>();
+                route.put("camera_id", itemCameraId);
+                route.put("backend_type", routedBackend);
+                route.put("override_hit", StrUtil.isNotBlank(overrideBackend));
+                if (StrUtil.isNotBlank(overrideBackend)) {
+                    route.put("override_backend_type", overrideBackend);
+                    route.put("override_source", overrideSource);
+                }
+                routeList.add(route);
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("global_backend_type", globalBackend);
+            data.put("route_list", routeList);
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference route batch api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference route batch api failed: " + e.getMessage(), data);
+        }
+    }
+
     private InferenceRequest buildTestRequest(String traceId, Map<String, Object> body, Long cameraId, Long modelId, String source) {
         Map<String, Object> payload = body == null ? new HashMap<>() : body;
 
@@ -275,6 +319,47 @@ public class InferenceApiController {
             }
         }
         return list;
+    }
+
+    private List<Long> resolveCameraIds(Object bodyCameraIds, String queryCameraIds) {
+        LinkedHashSet<Long> ordered = new LinkedHashSet<>();
+        addCameraIds(ordered, bodyCameraIds);
+        addCameraIds(ordered, queryCameraIds);
+        return new ArrayList<>(ordered);
+    }
+
+    private void addCameraIds(LinkedHashSet<Long> ordered, Object value) {
+        if (ordered == null || value == null) {
+            return;
+        }
+        if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            for (Object item : list) {
+                Long cameraId = toLong(item);
+                if (cameraId != null) {
+                    ordered.add(cameraId);
+                }
+            }
+            return;
+        }
+        if (value instanceof String) {
+            String text = String.valueOf(value).trim();
+            if (text.isEmpty()) {
+                return;
+            }
+            String[] parts = text.split(",");
+            for (String part : parts) {
+                Long cameraId = toLong(part);
+                if (cameraId != null) {
+                    ordered.add(cameraId);
+                }
+            }
+            return;
+        }
+        Long cameraId = toLong(value);
+        if (cameraId != null) {
+            ordered.add(cameraId);
+        }
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {

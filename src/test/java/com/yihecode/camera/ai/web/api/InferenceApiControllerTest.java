@@ -237,4 +237,60 @@ class InferenceApiControllerTest {
         assertEquals(600000L, ((Number) idempotent.get("window_ms")).longValue());
         assertEquals(2000, ((Number) idempotent.get("cleanup_trigger_size")).intValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldReturnResolvedBackendsForMultipleCameras() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.backendTypeForCamera(101L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(100L)).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.overrideBackendForCamera(101L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(100L)).thenReturn("direct_map");
+        when(inferenceRoutingService.overrideSourceForCamera(101L)).thenReturn(null);
+
+        Map<String, Object> body = new HashMap<>();
+        List<Object> cameraIds = new ArrayList<>();
+        cameraIds.add(100L);
+        cameraIds.add(101L);
+        body.put("camera_ids", cameraIds);
+
+        JsonResult result = inferenceApiController.routeBatch(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertTrue(data.get("trace_id") != null && !"".equals(String.valueOf(data.get("trace_id"))));
+        assertEquals("legacy", data.get("global_backend_type"));
+
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(2, routes.size());
+        assertEquals(100L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals("rk3588_rknn", routes.get(0).get("backend_type"));
+        assertEquals(true, routes.get(0).get("override_hit"));
+        assertEquals("direct_map", routes.get(0).get("override_source"));
+        assertEquals(101L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals("legacy", routes.get(1).get("backend_type"));
+        assertEquals(false, routes.get(1).get("override_hit"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldAcceptCommaQueryCameraIds_whenBodyMissing() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(201L)).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(202L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(201L)).thenReturn(null);
+        when(inferenceRoutingService.overrideBackendForCamera(202L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(201L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(202L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, "201,202");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(2, routes.size());
+        assertEquals(201L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(202L, ((Number) routes.get(1).get("camera_id")).longValue());
+    }
 }
