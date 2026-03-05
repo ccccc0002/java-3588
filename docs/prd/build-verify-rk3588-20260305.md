@@ -32,3 +32,16 @@
 3. `/home/zql/ks/java-rk3588/build-package.log`
 4. `/home/zql/ks/java-rk3588/build-package.exit`
 5. `/home/zql/ks/java-rk3588/target/surefire-reports/`
+
+## 6. Incremental TDD Update (2026-03-05 PM)
+1. Added `Rk3588InferenceClientTest` with 4 cases:
+   - health misconfiguration guard
+   - retry success on second attempt
+   - infer retry + fallback mapping
+   - invalid response failure path
+2. Added 2 extra parser-path tests in `InferenceRoutingServiceTest`:
+   - backend grouped array mapping
+   - nested `camera_overrides` mapping + global fallback
+3. Refactored `Rk3588InferenceClient` to use `InferenceHttpGateway` abstraction for deterministic unit tests.
+4. Enhanced `scripts/testing/Validate-Inference-Contracts.ps1` with optional `-ExpectedBackendType` assertion.
+5. Local environment in this session has no Maven binary (`mvn` unavailable), so this incremental change still requires remote Maven gate execution for final verification.

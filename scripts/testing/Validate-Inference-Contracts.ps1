@@ -4,6 +4,7 @@ param(
     [long]$ModelId = 1,
     [long]$AlgorithmId = 1,
     [string]$Source = "test://frame",
+    [string]$ExpectedBackendType = "",
     [string]$Cookie = "",
     [int]$TimeoutSec = 10
 )
@@ -80,6 +81,19 @@ function New-CheckResult {
     }
 }
 
+function Is-ExpectedBackend {
+    param(
+        [string]$ActualBackend
+    )
+    if ([string]::IsNullOrWhiteSpace($ExpectedBackendType)) {
+        return $true
+    }
+    if ([string]::IsNullOrWhiteSpace($ActualBackend)) {
+        return $false
+    }
+    return $ActualBackend.Trim().ToLowerInvariant() -eq $ExpectedBackendType.Trim().ToLowerInvariant()
+}
+
 $checks = @()
 
 $healthResp = Invoke-ApiGet -Path "/api/inference/health"
@@ -105,7 +119,7 @@ $testTraceId = Get-PropValue -Obj $testData -Name "trace_id"
 $testBackend = Get-PropValue -Obj $testData -Name "backend_type"
 $testResult = Get-PropValue -Obj $testData -Name "result"
 $testResultTraceId = Get-PropValue -Obj $testResult -Name "trace_id"
-$checks += New-CheckResult -Api "/api/inference/test" -Passed (($testResp.code -eq 0) -and ($testTraceId -ne $null) -and ($testTraceId -ne "") -and ($testBackend -ne $null) -and ($testBackend -ne "") -and ($testResult -ne $null) -and ($testResultTraceId -ne $null) -and ($testResultTraceId -ne "")) -Detail ("code={0}; trace_id={1}; backend_type={2}; result_trace_id={3}" -f $testResp.code, $testTraceId, $testBackend, $testResultTraceId)
+$checks += New-CheckResult -Api "/api/inference/test" -Passed (($testResp.code -eq 0) -and ($testTraceId -ne $null) -and ($testTraceId -ne "") -and ($testBackend -ne $null) -and ($testBackend -ne "") -and ($testResult -ne $null) -and ($testResultTraceId -ne $null) -and ($testResultTraceId -ne "") -and (Is-ExpectedBackend -ActualBackend $testBackend)) -Detail ("code={0}; trace_id={1}; backend_type={2}; expected_backend={3}; result_trace_id={4}" -f $testResp.code, $testTraceId, $testBackend, $ExpectedBackendType, $testResultTraceId)
 
 $dispatchReq = @{
     trace_id = ("contract-" + [Guid]::NewGuid().ToString("N"))
@@ -129,7 +143,7 @@ $dispatchReport = Get-PropValue -Obj $dispatchData -Name "report"
 $dispatchReportStatus = Get-PropValue -Obj $dispatchReport -Name "status"
 $dispatchIdempotent = Get-PropValue -Obj $dispatchData -Name "idempotent"
 $dispatchIdempotentStatus = Get-PropValue -Obj $dispatchIdempotent -Name "status"
-$checks += New-CheckResult -Api "/api/inference/dispatch" -Passed (($dispatchResp.code -eq 0) -and ($dispatchTraceId -ne $null) -and ($dispatchTraceId -ne "") -and ($dispatchBackend -ne $null) -and ($dispatchBackend -ne "") -and ($dispatchResult -ne $null) -and ($dispatchReport -ne $null) -and ($dispatchReportStatus -ne $null) -and ($dispatchReportStatus -ne "") -and ($dispatchIdempotent -ne $null) -and ($dispatchIdempotentStatus -ne $null) -and ($dispatchIdempotentStatus -ne "")) -Detail ("code={0}; trace_id={1}; backend_type={2}; report_status={3}; idem_status={4}" -f $dispatchResp.code, $dispatchTraceId, $dispatchBackend, $dispatchReportStatus, $dispatchIdempotentStatus)
+$checks += New-CheckResult -Api "/api/inference/dispatch" -Passed (($dispatchResp.code -eq 0) -and ($dispatchTraceId -ne $null) -and ($dispatchTraceId -ne "") -and ($dispatchBackend -ne $null) -and ($dispatchBackend -ne "") -and ($dispatchResult -ne $null) -and ($dispatchReport -ne $null) -and ($dispatchReportStatus -ne $null) -and ($dispatchReportStatus -ne "") -and ($dispatchIdempotent -ne $null) -and ($dispatchIdempotentStatus -ne $null) -and ($dispatchIdempotentStatus -ne "") -and (Is-ExpectedBackend -ActualBackend $dispatchBackend)) -Detail ("code={0}; trace_id={1}; backend_type={2}; expected_backend={3}; report_status={4}; idem_status={5}" -f $dispatchResp.code, $dispatchTraceId, $dispatchBackend, $ExpectedBackendType, $dispatchReportStatus, $dispatchIdempotentStatus)
 
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 

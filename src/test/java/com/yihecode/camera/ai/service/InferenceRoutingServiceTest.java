@@ -151,4 +151,29 @@ class InferenceRoutingServiceTest {
         verify(legacyInferenceClient).infer(request);
         verify(rk3588InferenceClient, never()).infer(request);
     }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromBackendGroupedArray() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"rk3588_rknn\":[200,201],\"legacy\":[300]}");
+
+        String backend201 = inferenceRoutingService.backendTypeForCamera(201L);
+        String backend300 = inferenceRoutingService.backendTypeForCamera(300L);
+
+        assertEquals("rk3588_rknn", backend201);
+        assertEquals("legacy", backend300);
+    }
+
+    @Test
+    void backendTypeForCamera_shouldResolveFromNestedCameraOverrides_thenFallbackGlobal() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"camera_overrides\":{\"100\":\"rk3588_rknn\"}}");
+
+        String backend100 = inferenceRoutingService.backendTypeForCamera(100L);
+        String backend101 = inferenceRoutingService.backendTypeForCamera(101L);
+
+        assertEquals("rk3588_rknn", backend100);
+        assertEquals("legacy", backend101);
+    }
 }

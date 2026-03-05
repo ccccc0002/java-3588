@@ -239,4 +239,5 @@
    - `-IncludeInference`：叠加推理契约校验（`/api/inference/health` + `/api/inference/test` + `/api/inference/dispatch`）
 7. 推理校验建议参数：
    - `Validate-Inference-Contracts.ps1 -AlgorithmId 1`
+   - `Validate-Inference-Contracts.ps1 -AlgorithmId 1 -ExpectedBackendType rk3588_rknn`
    - `Run-Stream-Validation.ps1 -IncludeInference -AlgorithmId 1`

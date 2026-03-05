@@ -36,6 +36,8 @@
 29. 已完成：新增推理域 TDD 单元测试（`InferenceRoutingService`、`InferenceIdempotencyService`、`InferenceApiController`），共 12 条用例全通过。
 30. 已完成：新增 `scripts/testing/Run-Tdd-Gate.ps1` 与 GitHub Actions `tdd-gate` 测试门禁。
 31. 已完成：新增 `infer_backend_camera_overrides` 灰度路由能力（按 camera_id 覆盖 `infer_backend_type`）。
+32. 已完成：`Rk3588InferenceClient` 新增 4 条单测（重试、异常映射、非法响应、配置缺失）并引入 `InferenceHttpGateway` 抽象以实现可测试化；待远端 Maven 环境执行门禁验证。
+33. 已完成：`InferenceRoutingService` 追加灰度解析单测（backend 分组数组、nested `camera_overrides`）以覆盖配置变体解析路径；待远端 Maven 环境执行门禁验证。
 
 ## 2. 小队与职责
 1. 媒体小队：流媒体接入、播放链路、流状态管理

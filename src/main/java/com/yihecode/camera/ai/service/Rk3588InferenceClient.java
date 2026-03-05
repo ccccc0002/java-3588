@@ -1,8 +1,6 @@
 package com.yihecode.camera.ai.service;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -26,6 +24,9 @@ public class Rk3588InferenceClient implements InferenceClient {
 
     @Autowired
     private ConfigService configService;
+
+    @Autowired
+    private InferenceHttpGateway inferenceHttpGateway;
 
     @Override
     public String getBackendType() {
@@ -53,11 +54,9 @@ public class Rk3588InferenceClient implements InferenceClient {
 
         for (int attempt = 1; attempt <= retryCount; attempt++) {
             try {
-                HttpResponse response = HttpRequest.get(url)
-                        .timeout(timeoutMs)
-                        .execute();
+                InferenceHttpResponse response = inferenceHttpGateway.get(url, timeoutMs);
                 int status = response.getStatus();
-                String body = response.body();
+                String body = response.getBody();
 
                 if (status == 200) {
                     JSONObject obj = safeParseObject(body);
@@ -104,13 +103,9 @@ public class Rk3588InferenceClient implements InferenceClient {
 
         for (int attempt = 1; attempt <= retryCount; attempt++) {
             try {
-                HttpResponse response = HttpRequest.post(url)
-                        .header("Content-Type", "application/json")
-                        .timeout(timeoutMs)
-                        .body(payload)
-                        .execute();
+                InferenceHttpResponse response = inferenceHttpGateway.postJson(url, timeoutMs, payload);
                 int status = response.getStatus();
-                String body = response.body();
+                String body = response.getBody();
 
                 if (status == 200) {
                     return parseInferResponse(body, request, attempt);
