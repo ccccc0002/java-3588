@@ -168,6 +168,12 @@ public class Rk3588InferenceClient implements InferenceClient {
                     list.add(new HashMap<>(itemObj));
                 }
             }
+            return list;
+        }
+
+        JSONObject single = toJsonObject(detectionsObj);
+        if (single != null) {
+            list.add(new HashMap<>(single));
         }
         return list;
     }

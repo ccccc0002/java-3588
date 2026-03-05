@@ -175,4 +175,25 @@ class Rk3588InferenceClientTest {
         JSONObject payload = JSON.parseObject(payloadCaptor.getValue());
         assertTrue(payload.getJSONObject("decode") == null);
     }
+
+    @Test
+    void infer_shouldConvertSingleDetectionObjectToList() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-one\",\"camera_id\":503,\"latency_ms\":11,\"detections\":{\"label\":\"forklift\",\"score\":0.88}}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-one");
+        request.setCameraId(503L);
+        request.setModelId(902L);
+        request.setFrameMeta(new HashMap<>());
+
+        InferenceResult result = rk3588InferenceClient.infer(request);
+
+        assertNotNull(result.getDetections());
+        assertEquals(1, result.getDetections().size());
+        assertEquals("forklift", result.getDetections().get(0).get("label"));
+    }
 }
