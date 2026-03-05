@@ -1,0 +1,669 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>瑙嗛娴佺鐞?/title>
+    <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
+    <style>
+        .stream-panel { background-color: #28333E; background-color: #79C48C; background-color: #49bcf7; background: rgb(217, 236, 255); display: flex; justify-content: center; align-items: center; font-size: 16px; color: #49bcf7; }
+        .stream-header { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; }
+        .stream-nav { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; }
+        .stream-nav-title { padding-right: 15px; font-weight: bold; font-size: 16px; margin-top: -3px; }
+        .stream-nav-list { flex: 1; }
+
+        .mb5 { margin-bottom: 5px; }
+        .video-wrapper { display: flex; flex-direction: row; }
+        .video-list-wrapper { flex: 1; }
+        .video-alarm-wrapper { width: 280px; padding: 10px; margin-left: 10px; border: 1px solid #49bcf7; }
+        .video-alarm-tit { border-bottom: 1px solid #49bcf7; padding-bottom: 5px; }
+        .video-alarm-counter { font-weight: bold; font-size: 16px; padding: 10px 0px; text-align: center; }
+        .video-alarm-counter span { padding: 0px 10px; }
+
+        #alarm-ul-list li p span { color: #333; font-size: 16px; }
+        .alltitle { font-size: 18px; color: #49bcf7; position: relative; padding-left: 12px; margin-bottom: 10px; }
+        .alltitle:before { width: 5px; height: 20px; top: 2px; position: absolute; content: ""; background: #49bcf7; border-radius: 20px; left: 0; }
+        .rel { position: relative; }
+        .cv { position: absolute; top: 5px; left: 5px; border: 0px solid red; }
+        .stop-btn { position: absolute; right: 10px; bottom: 10px; color: #F56C6C; }
+        .stop-btn a { color: #F56C6C; }
+        .stop-btn a i { font-size: 20px; }
+        .frame { position: absolute; left: 0; top: 0; width: 0; height: 0; border: 1px solid red; }
+        .statics-info { margin: 0; padding: 0;}
+        .statics-header { padding: 10px 0px 10px 15px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; }
+        .statics-title { font-size: 16px; font-weight: bold; }
+        .statics-items { padding: 0px 15px 20px 15px; display: flex; flex-direction: row; justify-content: space-between;}
+
+        .alarm-box { margin: 0; padding: 10px; }
+        .alarm-img { width: 100%; height: 100%; margin-bottom: 10px; position: relative; }
+        .alarm-tit { font-size: 15px; color: #999; margin: 0; padding: 0; }
+        .alarm-mask { position: absolute; border: 1px solid red; }
+        .alarm_counter { text-decoration: underline; font-size: 20px; color: #f43838; }
+
+        .main-card { display: flex; flex-direction: row; }
+        .video-card { flex: 1; }
+        .alarm-card { width: 300px; padding: 10px; }
+    </style>
+</head>
+<body class="pear-container">
+<div class="layui-row layui-col-space10">
+    <div class="layui-card">
+        <div class="main-card">
+            <div class="video-card">
+                <div class="statics-info">
+                    <div class="statics-header">
+                        <div class="statics-title">閫夊彇瑙嗛缁熻</div>
+                        <div>
+                            <a href="javascript:void(0)" class="layui-btn layui-btn-normal" onclick="handleStatics();">缁熻閰嶇疆</a>
+                        </div>
+                    </div>
+                    <div class="statics-items" id="statics-items">
+                    </div>
+                </div>
+
+                <div class="stream-header">
+                    <div class="stream-nav">
+                        <div class="stream-nav-title">瑙嗛璺暟</div>
+                        <div class="layui-btn-group mb5 stream-nav-list" id="btns">
+                            <button type="button" class="layui-btn layui-btn-primary" onclick="show(1);">涓€灞?/button>
+                            <button type="button" class="layui-btn layui-btn-primary" onclick="show(4);">鍥涘睆</button>
+                            <button type="button" class="layui-btn layui-btn-primary" onclick="show(6);">鍏睆</button>
+                            <button type="button" class="layui-btn layui-btn-primary" onclick="show(9);">涔濆睆</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-list-wrapper" id="video-list-wrapper" style="height: calc(100vh - 162px);">
+                    <div class="layui-row layui-col-space10" id="video-list">
+                    </div>
+                </div>
+            </div>
+            <div class="alarm-card">
+                <div class="video-alarm-tit alltitle">瀹炴椂鏁版嵁</div>
+                <div class="video-alarm-counter">浠婃棩鍛婅鏁伴噺: <a href="javascript:void(0);" onclick="handleAlarmList();" class="alarm_counter"><span id="alarm-counter">${(counter)!'0'}</span></a></div>
+                <div class="video-alarm-scroll-list" style="height: calc(100vh - 120px); overflow: auto;">
+                    <div class="wrap" style="height: 0px;" id="alarm-list">
+                        <ul id="alarm-ul-list">
+                            <#if reportList??>
+                                <#list reportList as item>
+                                    <li>
+                                        <div class="alarm-box">
+                                            <div class="alarm-img" id="alarm_${(item.id)!''}">
+                                                <img src="/report/stream?id=${(item.id)!''}" style="width: 100%; height: 100%;" params="${(item.params)!''}" onload="handleImgLoad(this, '${(item.id)!''}');" />
+                                            </div>
+                                            <div class="alarm-tit">鍛婅绫诲瀷锛?{(item.algorithmName)!''}</div>
+                                            <div class="alarm-tit">鎵€灞炴憚鍍忔満锛?{(item.cameraName)!''}</div>
+                                            <div class="alarm-tit">鍖哄煙鍚嶇О锛?{(item.wareName)!''}</div>
+                                            <div class="alarm-tit">鍛婅鏃堕棿锛?{(item.alarmTime)!''}</div>
+                                        </div>
+                                    </li>
+                                </#list>
+                            </#if>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/html" id="statics-item-tpl">
+{{each datas }}
+<div>{{ $value.name }}: <span id="statics_{{ $value.id }}">{{ $value.staticsFlagVal }}</span></div>
+{{/each}}
+</script>
+<script type="text/html" id="alarm-item-tpl">
+    <li>
+        <div class="alarm-box">
+            <div class="alarm-img" id="alarm_{{ id }}">
+                <img src="/report/stream?id={{ id }}" style="width: 100%; height: 100%;" params="{{ params }}" onload="handleImgLoad(this, '{{ id }}');" />
+            </div>
+            <div class="alarm-tit">鍛婅绫诲瀷锛歿{ algorithmName }}</div>
+            <div class="alarm-tit">鎵€灞炴憚鍍忔満锛歿{ cameraName }}</div>
+            <div class="alarm-tit">鍖哄煙鍚嶇О锛歿{ wareName }}</div>
+            <div class="alarm-tit">鍛婅鏃堕棿锛歿{ alarmTime }}</div>
+        </div>
+    </li>
+</script>
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script src="/static/js/flv.min.js"></script>
+<script src="/static/js/jquery.3.6.1.min.js"></script>
+<script src="/static/js/template-web.js"></script>
+<script>
+    layui.use(['jquery', 'util', 'loading', 'popup'], function() {
+        let $ = layui.jquery;
+        let loading = layui.loading;
+        let popup = layui.popup;
+
+        var cols = ${showNum!'1'};
+        var seeWidth = 0;
+        var seeHeight = 0;
+        var wsTimer = null;
+        var playerMap = new Map(); // key=containerId value=player
+        var cameraMap = new Map(); // key=cameraId value=containerId
+        var containerMap = new Map(); // key=containerId value=cameraId
+        var frameMap = new Map(); // key=containerId value=framedecoded
+
+        // socket
+        window.initSocket = function() {
+            ws = new WebSocket('${wsUrl!''}/report/${uid!''}');
+            ws.onopen = function () {
+                wsTimer = setInterval(function() {
+                    ws.send({'r': new Date().getTime()});
+                }, 10000);
+            };
+
+            //
+            ws.onmessage = function(event) {
+                var res = JSON.parse(event.data);
+                if(res['type'] == 'REPORT') {
+                    window.paintCanvas(res);
+                } else if(res['type'] == 'REPORT_SHOW') {
+                    window.addAlarm(res);
+                }
+            };
+
+            //
+            ws.onclose = function() {
+                ws = null;
+                clearInterval(wsTimer);
+                wsTimer = null;
+                setTimeout(function() {
+                    window.initSocket();
+                }, 5000);
+            }
+        }
+
+        //
+        window.paintCanvas = function(json) {
+            //
+            var $cameraId = json['cameraId'];
+            if(!cameraMap.has($cameraId)) {
+                return;
+            }
+            //
+            var $containerId = cameraMap.get($cameraId);
+            if($containerId == null || $containerId == 'undefined') {
+                return ;
+            }
+            //
+            var boxw = $('#wrapper_' + $containerId).width();
+            var boxh = $('#wrapper_' + $containerId).height();
+            var videow = $('#' + $containerId).width();
+            var videoh = $('#' + $containerId).height();
+            var vw = document.getElementById($containerId).videoWidth;
+            //var vh = document.getElementById($containerId).videoHeight;
+            if(vw == 0) {
+                return ;
+            }
+
+            var extY = 0;
+            var extX = 0;
+            var xratio = 0;
+            if((boxw - videow) > 5) { // 瑙嗛瀹藉害涓嶅锛?宸﹀彸鐣欑櫧
+                extX = parseInt((boxw - videow) / 2) + 1;
+            } else { // 楂樺害涓嶅锛屼笂涓嬬暀鐧?                extY = parseInt((boxh - videoh) / 2) + 1;
+            }
+            extX = extX + ((cols < 6) ? 5 : 2);
+            extY = extY + ((cols < 6) ? 5 : 2);
+
+            // 鏄剧ず姣斾緥
+            xratio = (videow / (vw * 2)).toFixed(2);
+
+            var wrapper = $('#wrapper_' + $containerId);
+            wrapper.find('.frame').remove();
+            var ratio = wrapper.attr('ratio');
+            var json = JSON.parse(json['params']);
+            var len = json.length;
+            for(var i = 0; i < len; i++) {
+                var position = json[i]['position'];
+                var tlx = parseInt(position[0] * xratio + extX);
+                var tly = parseInt(position[1] * xratio + extY);
+                var tlw = parseInt((position[2] - position[0]) * xratio);
+                var tlh = parseInt((position[3] - position[1]) * xratio);
+                var s = '<div class="frame" style="display: block; left: ' + tlx + 'px; top: ' + tly + 'px; width: ' + tlw + 'px; height: ' + tlh + 'px;">' + json[i]['type'] + '</div>';
+                wrapper.append(s);
+            }
+            setTimeout(function() {
+                var wrapper = $('#wrapper_' + $containerId);
+                wrapper.find('.frame').remove();
+            }, 300)
+        }
+
+        // 澧炲姞鍛婅鍒楄〃
+        window.addAlarm = function(json) {
+            // 澧炲姞缁熻鏁伴噺
+            var $algorithmId = json['algorithmId'];
+            if($('#statics_' + $algorithmId).length > 0) {
+                var oldVal = parseInt($('#statics_' + $algorithmId).text());
+                $('#statics_' + $algorithmId).text(oldVal + 1);
+            }
+
+            // 澧炲姞鎬绘暟閲?            var $alarmCounter = $('#alarm-counter').text();
+            var cameraCounterOldVal = parseInt($alarmCounter);
+            $('#alarm-counter').text(cameraCounterOldVal + 1);
+
+            //
+            var $id = json['id'];
+            var $cameraName = json['cameraName'];
+            var $algorithmName = json['algorithmName'];
+            var $alarmTime = json['alarmTime'];
+            var $params = json['params'];
+            var $wareName = json['wareName'];
+            var $liLen = $('#alarm-ul-list li').length;
+            if($liLen >= 3) { // 鏄剧ず4涓?                $('#alarm-ul-list li:last-child').remove();
+            }
+            var $html = template('alarm-item-tpl', { 'cameraName': $cameraName, 'algorithmName': $algorithmName, 'wareName': $wareName, 'alarmTime': $alarmTime, 'params': $params, 'id': $id });
+            $('#alarm-ul-list').prepend($html);
+        }
+
+        // 绐楀彛灞曠ず
+        window.show = function(_cols) {
+            // 鍏抽棴鎵€鏈夎棰?            playerMap.forEach((player, containerId) => {
+                window.closeVideo(containerId);
+            });
+            // 灞曠ず鍒楁暟
+            cols = _cols;
+            $('#video-list').html('');
+            if(cols == 1) { // 鍗曚釜瑙嗛锛屽浐瀹氬綋鍓嶉〉闈㈢殑楂樺害
+                var box_height = $('#video-list-wrapper').height();
+                var box_width = $(document).width() - 340;
+                var rand = window.randomStr();
+                $('#video-list').append('<div id="wrapper_' + rand + '" style="width: ' + box_width + 'px; height: ' + box_height + 'px;" class="rel"><a href="javascript:void(0);" onclick="openForm(\'' + rand + '\');"><div class="stream-panel lo' + rand + '"><span id="cl_' + rand + '">鐐瑰嚮閫夋嫨鎽勫儚澶?/span><video id="' + rand + '" style="max-width: ' + box_width +'px; max-height: ' + box_height + 'px; display: none; object-fit: contain;" muted></video></div></a><canvas id="cv_' + rand + '" class="cv" height="0" width="0" ratio="0"></canvas><div class="stop-btn"><a href="javascript:void(0);" onclick="handleCloseByHand(\'' + rand + '\');"><i class="layui-icon layui-icon-radio"></i></div></div>');
+                $('.stream-panel').css('width', box_width + 'px').css('height', box_height + 'px');
+            } else {
+                var num = cols / 2;
+                var wid = parseInt(seeWidth / num); // 姣忎釜閮芥槸姝ｆ柟褰?                //
+                var clazz = 'layui-col-xs12 layui-col-sm12 layui-col-md6 rel'
+                if(cols == 6) {
+                    clazz = 'layui-col-xs12 layui-col-sm12 layui-col-md4 rel';
+                } else if(cols == 9) {
+                    clazz = 'layui-col-xs12 layui-col-sm12 layui-col-md4 rel';
+                    num = 6 / 2;
+                    wid = parseInt(seeWidth / num);
+                }
+
+                //
+                var box_height = $('#video-list-wrapper').height();
+                var box_width = $(document).width() - 340;
+                var box_sub_width = 0;
+                var box_sub_height = 0;
+                if(cols == 4) {
+                    box_sub_width = parseInt((box_width - 10) / 2);
+                    box_sub_height = parseInt((box_height - 14) / 2);
+                } else if(cols == 6) {
+                    box_sub_width = parseInt((box_width - 20) / 3);
+                    box_sub_height = parseInt((box_height - 14) / 2);
+                } else {
+                    box_sub_width = parseInt((box_width - 20) / 3);
+                    box_sub_height = parseInt((box_height - 22) / 3);
+                }
+
+                //
+                var colNum = (cols == 4) ? 2 : 3;
+                var rowNum = (cols == 4 || cols == 6) ? 2 : 3;
+                for(var i = 0; i < cols; i++) {
+                    var rand = window.randomStr();
+                    $('#video-list').append('<div id="wrapper_' + rand + '" class="' + clazz + '" style=""><a href="javascript:void(0);" onclick="openForm(\'' + rand + '\');"><div class="stream-panel lo' + rand + '"><span id="cl_' + rand + '">鐐瑰嚮閫夋嫨鎽勫儚澶?/span><video id="' + rand + '" style="max-width: ' + box_sub_width +'px; max-height: ' + box_sub_height + 'px; display: none; object-fit: contain;" muted></video></div></a><canvas id="cv_' + rand + '" class="cv" height="0" width="0" ratio="0"></canvas><div class="stop-btn"><a href="javascript:void(0);" onclick="handleCloseByHand(\'' + rand + '\');"><i class="layui-icon layui-icon-radio"></i></div><div id="frame_' + rand + '"></div></div>');
+                    $('.stream-panel').css('width', box_sub_width + 'px').css('height', box_sub_height + 'px');
+                }
+            }
+
+            //
+            var vdh = $('#video-list').height();
+            $('#alarm-list').css('height', (vdh - 80) + 'px')
+        }
+
+        // 閫夋嫨鎽勫儚澶?        window.openForm = function(id) {
+            layer.open({
+                type: 2,
+                title: '閫夋嫨鎽勫儚澶?,
+                shade: 0.1,
+                area: ['50%', '50%'],
+                content: '/stream/form?id=' + id
+            });
+        }
+
+        // 閫夋嫨瑙嗛鍦板潃
+        // Play URL resolver for mixed legacy/zlm response payloads.
+        window.resolvePlayUrl = function(data, cameraId) {
+            if(typeof data === 'object' && data) {
+                if(data.playUrl) {
+                    return data.playUrl;
+                }
+                if(data.videoPort) {
+                    return '${streamUrl!''}:' + data.videoPort + '/live/' + cameraId + '.flv';
+                }
+                return '';
+            }
+            if(typeof data === 'string' && data) {
+                if(data.indexOf('rtsp://') === 0) {
+                    return '${streamUrl!''}/live?url=' + data;
+                }
+                return data;
+            }
+            return '';
+        }
+        window.selectRtsp = function(containerId, cameraId) {
+            loading.block({
+                type: 2,
+                elem: '.lo' + containerId,
+                msg: ''
+            });
+
+            //
+            if(cameraMap.has(cameraId)) {
+                popup.warning('鎽勫儚澶翠笉鍏佽閲嶅鎾斁');
+                loading.blockRemove('.lo' + containerId, 1000);
+                return ;
+            }
+
+            // 寮傛鍙栧湴鍧€
+            $.post('/camera/selectPlay', {'cameraId': cameraId}, function(res) {
+            // $.post('/camera/play', {'cameraId': cameraId, 'videoPlay': 1}, function(res) {
+                if(res.code == 0) {
+                    var playUrl = window.resolvePlayUrl(res.data, cameraId);
+                    if(!playUrl) {
+                        loading.blockRemove('.lo' + containerId, 1000);
+                        popup.failure('鏈幏鍙栧埌鍙敤鎾斁鍦板潃');
+                        return;
+                    }
+                    try {
+                        //
+                        window.handleClose(containerId);
+                        //
+                        var videoElement = document.getElementById(containerId);
+                        var flvPlayer = flvjs.createPlayer({
+                            url: playUrl,
+                            type: 'flv',
+                            enableWorker: true,
+                            isLive: true,
+                            hasAudio: false,
+                            hasVideo: true,
+                            enableStashBuffer: false,
+                            stashInitialSize: 128
+                        });
+                        flvPlayer.attachMediaElement(videoElement);
+                        flvPlayer.load();
+                        flvPlayer.pause();
+
+                        //
+                        playerMap.set(containerId, flvPlayer);
+                        cameraMap.set(cameraId, containerId);
+                        containerMap.set(containerId, cameraId);
+                        //
+                        videoElement.addEventListener('canplay', function (e) {
+                            var originalW = e.target.videoWidth;
+                            var originalH = e.target.videoHeight;
+                            // if(originalW < originalH) { // 绔栧睆
+                            //     $('#' + containerId).css('width', 'auto');
+                            // } else { // 妯睆
+                            //     $('#' + containerId).css('height', 'auto');
+                            // }
+                            // $('#' + containerId).css('height', 'auto');
+                            // $('#' + containerId).css('width', 'auto');
+                            var boxw = $('#wrapper_' + containerId).width();
+                            var ratio = (boxw > originalW) ? (originalW / boxw).toFixed(2) : (boxw / originalW).toFixed(2);
+                            $('#wrapper_' + containerId).attr('ratio', ratio);
+                        });
+
+                        flvPlayer.on(flvjs.Events.ERROR, (err, errdet) => {
+                            loading.blockRemove(".lo" + containerId, 1000);
+                            // 鍙傛暟 err 鏄竴绾у紓甯革紝errdet 鏄簩绾у紓甯?                            if (err == flvjs.ErrorTypes.MEDIA_ERROR) {
+                                popup.failure('涓嶆敮鎸佺殑瑙嗛娴佺被鍨?');
+                            }
+                            if (err == flvjs.ErrorTypes.NETWORK_ERROR) {
+                                popup.failure('缃戠粶寮傚父锛岃绋嶅悗閲嶈瘯.');
+                                //window.closeVideo(containerId);
+                            }
+                            if(err == flvjs.ErrorTypes.OTHER_ERROR) {
+                                popup.failure('鎽勫儚澶村紓甯革紝璇风◢鍚庨噸璇?');
+                                //window.closeVideo(containerId);
+                            }
+                            //
+                            //$.post('/camera/play', {'cameraId': cameraId, 'videoPlay': 0}, function(res) {});
+                            //
+                            window.handleClose(containerId);
+                        });
+
+                        flvPlayer.on(flvjs.Events.METADATA_ARRIVED, () => {
+                            //alert('arrived')
+                            $('#' + containerId).css('display', 'block');
+                            loading.blockRemove('.lo' + containerId, 1000);
+                            $('#cl_' + containerId).css('display', 'none');
+                            flvPlayer.play();
+                        });
+
+                        // 鍗′綇閲嶈繛
+                        flvPlayer.on("statistics_info", function (res) {
+                            var currDecodedFrame = res.decodedFrames;
+                            //
+                            var cacheDecodedFrame = frameMap.get(containerId);
+                            if(cacheDecodedFrame == null || cacheDecodedFrame == '' || cacheDecodedFrame == 'undefined') {
+                                frameMap.set(containerId, (currDecodedFrame + '_1'));
+                                return ;
+                            }
+                            //
+                            var lastDecodedFrameStr = cacheDecodedFrame.split('_')[0];
+                            var lastDecodedFrameNum = cacheDecodedFrame.split('_')[1];
+                            if(parseInt(lastDecodedFrameStr) == currDecodedFrame) {
+                                if(parseInt(lastDecodedFrameNum) >= 20) { // 瓒呰繃20娆★紝閲嶅惎瑙嗛
+                                    //
+                                    window.handleClose(containerId);
+                                    //
+                                    window.selectRtsp(containerId, cameraId);
+                                } else {
+                                    frameMap.set(containerId, currDecodedFrame + '_' + (parseInt(lastDecodedFrameNum) + 1));
+                                }
+                            } else {
+                                frameMap.set(containerId, currDecodedFrame + '_1');
+                            }
+                        });
+                    } catch (e) {
+                        loading.blockRemove('.lo' + containerId, 1000);
+                        popup.failure('鎽勫儚澶村紓甯革紝璇风◢鍚庨噸璇?');
+                    }
+                } else {
+                    loading.blockRemove('.lo' + containerId, 1000);
+                    popup.failure(res.msg);
+                }
+            });
+        }
+
+        // 寮傚父鍏抽棴瑙嗛
+        window.closeVideo = function(containerId) {
+            console.log('鍏抽棴鎾斁鍣?, containerId)
+            var $player = playerMap.get(containerId);
+            if($player == null) {
+                //console.log('player del is null')
+            } else {
+                //
+                try {
+                    $player.pause();
+                } catch (e) {
+                   //
+                }
+                //
+                try {
+                    $player.detachMediaElement();
+                } catch (e) {
+                    //
+                }
+                //
+                try {
+                    $player.unload();
+                } catch (e) {
+                    //
+                }
+                //
+                try {
+                    $player.destroy();
+                } catch (e) {
+                    //
+                }
+                //
+                $player = null;
+            }
+            playerMap.delete(containerId);
+            frameMap.delete(containerId);
+            var $cameraId = containerMap.get(containerId)
+            if($cameraId) {
+                cameraMap.delete($cameraId);
+            }
+            containerMap.delete(containerId);
+            //$('#cl_' + containerId).css('display', 'block');
+        }
+
+        // 鐐瑰嚮鍏抽棴鎸夐挳
+        window.handleClose = function(containerId) {
+            var cv = document.getElementById('cv_' + containerId);
+            cv.setAttribute('width', '0px');
+            cv.setAttribute('height', '0px');
+            $('#' + containerId).css('display', 'none');
+            $('#cl_' + containerId).css('display', 'block');
+            window.closeVideo(containerId);
+        }
+
+        // 鐐瑰嚮鍏抽棴
+        window.handleCloseByHand = function(containerId) {
+            // var cameraId = containerMap.get(containerId);
+            // if(cameraId) {
+            //     $.post('/camera/play', {'cameraId': cameraId, 'videoPlay': 0}, function(res) {});
+            // }
+            //
+            var cv = document.getElementById('cv_' + containerId);
+            cv.setAttribute('width', '0px');
+            cv.setAttribute('height', '0px');
+            $('#' + containerId).css('display', 'none');
+            $('#cl_' + containerId).css('display', 'block');
+            window.closeVideo(containerId);
+        }
+
+        // 闅忔満瀛楃涓?        window.randomStr = function(len) {
+            var charStr = 'abacdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
+            var len = charStr.length;
+            var str = '';
+            for (var i = 0; i < len; i++) {
+                str += charStr.charAt(Math.floor(Math.random() * len));
+            }
+            return str;
+        }
+
+        // 缁熻閰嶇疆绠＄悊
+        window.handleStatics = function() {
+            layer.open({
+                type: 2,
+                title: '缁熻閰嶇疆',
+                shade: 0.1,
+                area: ['70%', '70%'],
+                content: '/stream/formConfig'
+            });
+        }
+
+        //
+        window.handleStaticsTpl = function() {
+            $.post('/stream/statics/algorithms', {}, function(res) {
+                //console.log(res)
+                if(res.code == 0) {
+                    var html = template('statics-item-tpl', { 'datas': res.data });
+                    //console.log(html)
+                    $('#statics-items').html(html);
+                }
+            });
+        }
+
+        //
+        window.handleStaticsData = function() {
+            $.post('/stream/statics/counter', {}, function(res) {
+                if(res.code == 0) {
+                    $.each(res.data, function(item) {
+                        //alert(item);
+                    });
+                }
+            });
+        }
+
+        //
+        window.handleImgLoad = function(obj, alarmBoxId) {
+            var sWidth = $(obj).width();
+            var nWidth = obj.naturalWidth;
+            var ratio = (sWidth / nWidth).toFixed(2);
+            var json = JSON.parse($(obj).attr('params'));
+            var len = json.length;
+            for(var i = 0; i < len; i++) {
+                var type = json[i]['type'];
+                var confidence = json[i]['confidence'];
+                var position = json[i]['position'];
+                var startX = position[0];
+                var startY = position[1];
+                var width = position[2] - position[0];
+                var height = position[3] - position[1];
+                $('#alarm_' + alarmBoxId).append('<div class="alarm-mask" style="left: ' + (startX * ratio) + 'px; top: ' + (startY * ratio) + 'px; width: ' + (width * ratio) + 'px; height: ' + (height * ratio) + 'px;">' + type + '/' + confidence + '</div>');
+            }
+        }
+
+        // 璺宠浆鍛婅鍒楄〃
+        window.handleAlarmList = function() {
+            parent.layui.admin.addTab('alarm_list', '鍛婅鍒楄〃', '/report/list_card');
+        }
+
+        // 杩藉抚澶勭悊
+        window.frameDelta = function() {
+            for (var player of playerMap.values()) {
+                if(player && player.buffered && player.buffered.length > 0) {
+                    let end = player.buffered.end(0); //鑾峰彇褰撳墠buffered鍊?缂撳啿鍖烘湯灏?
+                    let delta = end - player.currentTime; //鑾峰彇buffered涓庡綋鍓嶆挱鏀句綅缃殑宸€?                    //console.log('delta', delta, 'player', player)
+                    if (delta >= 1) { // 寤惰繜杩囧ぇ锛岄€氳繃璺冲抚鐨勬柟寮忔洿鏂拌棰?                        player.currentTime = player.buffered.end(0) - 0.3;
+                    }
+                }
+            }
+        }
+
+        //
+        window.handleCameraActives = function() {
+            $.post('/camera/actives', {}, function(res) {
+                if(res.code == 0) {
+                    var actives = res.data;
+                    var size = actives.length;
+                    //
+                    if(size > 4) {
+                        size = 4;
+                    }
+                    //
+                    var wrappers = [];
+                    $('#video-list > div').each(function() {
+                        wrappers.push($(this).attr('id').replace('wrapper_', ''));
+                    });
+                    //
+                    for(var i = 0; i < size; i++) {
+                        var active = actives[i];
+                        window.selectRtsp(wrappers[i], active['id']);
+                    }
+                }
+            })
+        }
+
+        // 鍒濆鍖?        $(document).ready(function() {
+            seeWidth = $('#video-list-wrapper').width();
+            seeHeight = $(document).height() - 70;
+            //
+            window.show(cols);
+            //
+            window.handleStaticsTpl();
+            //
+            window.initSocket();
+            //
+            setTimeout(function() {
+                //
+                window.handleCameraActives();
+            }, 1500);
+            //
+            setInterval(function() {
+                window.frameDelta();
+            }, 2000);
+        });
+    })
+</script>
+</html>
+

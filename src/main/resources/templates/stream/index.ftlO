@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>瑙嗛娴佺鐞?/title>
+    <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
+    <style>
+        .stream-panel { background-color: #79C48C; background-color: rgb(217, 236, 255); display: flex; justify-content: center; align-items: center; font-size: 16px; color: #409EFF; }
+        .stream-header { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; }
+        .tip-info { color: #999999; margin-left: 5px; }
+    </style>
+</head>
+<body class="pear-container">
+<div class="layui-row layui-col-space10">
+    <div class="layui-card">
+        <div class="stream-header">
+            <div>
+                <div class="layui-btn-group" id="btns">
+                    <button type="button" class="layui-btn layui-btn-primary" onclick="show(1);">涓€灞?/button>
+                    <button type="button" class="layui-btn layui-btn-primary" onclick="show(2);">浜屽睆</button>
+                    <button type="button" class="layui-btn layui-btn-primary" onclick="show(4);">鍥涘睆</button>
+                    <button type="button" class="layui-btn layui-btn-primary" onclick="show(8);">鍏睆</button>
+                </div>
+            </div>
+<#--            <div style="margin-left: 20px;">-->
+<#--                <input type="checkbox" name="audioOpen" id="settingAudio" onchange="window.switchAudio();"> 鎵撳紑闊抽(娴嬭瘯)-->
+<#--            </div>-->
+<#--            <div style="margin-left: 20px;">-->
+<#--                <input type="checkbox" name="audioOpen" id="settingLive" onchange="window.switchLive();"> 鎵撳紑Live(娴嬭瘯)-->
+<#--            </div>-->
+        </div>
+
+        <div class="layui-row layui-col-space10" style="margin-top: 15px;" id="video-list">
+<#--            <div class="layui-col-xs6 layui-col-sm6 layui-col-md4">-->
+<#--                <a href="javascript:void(0);">-->
+<#--                    <div class="stream-panel">-->
+<#--                        1-->
+<#--                    </div>-->
+<#--                </a>-->
+<#--            </div>-->
+        </div>
+    </div>
+</div>
+</body>
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script src="/static/js/flv.min.js"></script>
+<script>
+    layui.use(['jquery', 'util', 'loading', 'popup'], function() {
+        let $ = layui.jquery;
+        let loading = layui.loading;
+        let popup = layui.popup;
+
+        var settingAudio = false;
+        var settingLive = false;
+        var type = 1;
+        var docWidth = 0;
+        var docHeight = 0;
+        var btsHeight = 0;
+        var vHeight = 0;
+
+        $(window).on('resize', function() {
+            docWidth = $(document).width();
+            docHeight = $(document).height();
+            btsHeight = $('#btns').height();
+            window.show(type);
+        });
+
+        window.show = function(_type) {
+            type = _type;
+            if(docWidth < 768) { // just show 12 cols
+                $('#video-list > div').each(function(i, o) {
+                    if(i >= type) {
+                        $(this).remove();
+                    }
+                });
+
+                //
+                var len = $('#video-list > div').length;
+
+                //
+                for(var i = 0; i < (type - len); i++) {
+                    var rand = window.randomStr(30);
+                    $('#video-list').append('<div><a href="javascript:void(0);" onclick="openForm(\'' + rand + '\');"><div class="stream-panel lo' + rand + '"><span id="cl_' + rand + '">Click Here</span><video id="' + rand + '" style="width: 100%; height: 100; display: none;"></video></div></a></div>');
+                }
+
+                //
+                var h1 = (docWidth < vHeight) ? docWidth : vHeight;
+
+                //
+                $('#video-list > div').each(function(i, o) {
+                    $(this).removeClass().addClass('layui-col-xs12 layui-col-sm12 layui-col-md12');
+                    $(this).find('.stream-panel').css('min-height', h1 + 'px');
+                    $('video').css('height', h1 + 'px');
+                });
+            } else {
+                //
+                $('#video-list > div').each(function(i, o) {
+                    if(i >= type) {
+                        $(this).remove();
+                    }
+                });
+
+                //
+                var len = $('#video-list > div').length;
+
+                //
+                for(var i = 0; i < (type - len); i++) {
+                    var rand = window.randomStr(30);
+                    $('#video-list').append('<div class="lo' + rand + '"><a href="javascript:void(0);" style="display: block;" onclick="openForm(\'' + rand + '\');"><div class="stream-panel lo' + rand + '"><span id="cl_' + rand + '">Click Here</span><video id="' + rand + '" style="width: 100%; height: 100; display: none;"></video></div></a></div>');
+                }
+
+                //
+                var h1 = (docHeight - 52 - btsHeight * 2);
+
+                //
+                var classes = '';
+                if(type == 1) {
+                    classes = 'layui-col-xs12 layui-col-sm12 layui-col-md12';
+                    $('#video-list > div').each(function(i, o) {
+                        $(this).removeClass().addClass(classes);
+                        $(this).find('.stream-panel').css('min-height', vHeight + 'px');
+                        $('video').css('height', vHeight + 'px');
+                    });
+                } else if(type == 2) {
+                    classes = 'layui-col-xs12 layui-col-sm6 layui-col-md6';
+                    $('#video-list > div').each(function(i, o) {
+                        $(this).removeClass().addClass(classes);
+                        $(this).find('.stream-panel').css('min-height', vHeight + 'px');
+                        $('video').css('height', vHeight + 'px');
+                    });
+                } else if(type == 4) {
+                    classes = 'layui-col-xs12 layui-col-sm6 layui-col-md6';
+                    $('#video-list > div').each(function(i, o) {
+                        $(this).removeClass().addClass(classes);
+                        $(this).find('.stream-panel').css('min-height', (vHeight / 2) + 'px');
+                        $('video').css('height', (vHeight / 2 - 10) + 'px');
+                    });
+                } else if(type == 8) {
+                    classes = 'layui-col-xs12 layui-col-sm6 layui-col-md3';
+                    $('#video-list > div').each(function(i, o) {
+                        $(this).removeClass().addClass(classes);
+                        $(this).find('.stream-panel').css('min-height', (vHeight / 2) + 'px');
+                        $('video').css('height', (vHeight / 2 - 10) + 'px');
+                    });
+                }
+            }
+        }
+
+        window.switchAudio = function() {
+            var chk = $('#settingAudio').prop('checked');
+            settingAudio = chk;
+        }
+
+        window.switchLive = function() {
+            var chk = $('#settingLive').prop('checked');
+            settingLive = chk;
+        }
+
+        window.openForm = function(id) {
+            layer.open({
+                type: 2,
+                title: '閫夋嫨鎽勫儚澶?,
+                shade: 0.1,
+                area: ['40%', '40%'],
+                content: '/stream/form?id=' + id
+            });
+        }
+
+        // Play URL resolver for mixed legacy/zlm response payloads.
+        window.resolvePlayUrl = function(data, cameraId) {
+            if(typeof data === 'object' && data) {
+                if(data.playUrl) {
+                    return data.playUrl;
+                }
+                if(data.videoPort) {
+                    return '${streamUrl!''}:' + data.videoPort + '/live/' + cameraId + '.flv';
+                }
+                return '';
+            }
+            if(typeof data === 'string' && data) {
+                if(data.indexOf('rtsp://') === 0) {
+                    return '${streamUrl!''}/live?url=' + data;
+                }
+                return data;
+            }
+            return '';
+        }
+        window.selectRtsp = function(containerId, cameraId) {
+            loading.block({
+                type: 2,
+                elem: '.lo' + containerId,
+                msg: ''
+            });
+
+            // 寮傛鍙栧湴鍧€
+            $.post('/camera/selectPlay', {'cameraId': cameraId}, function(res) {
+                if(res.code == 0) {
+                    var playUrl = window.resolvePlayUrl(res.data, cameraId);
+                    if(!playUrl) {
+                        loading.blockRemove('.lo' + containerId, 1000);
+                        popup.failure('鏈幏鍙栧埌鍙敤鎾斁鍦板潃');
+                        return;
+                    }
+                    try {
+                        var videoElement = document.getElementById(containerId);
+                        var flvPlayer = flvjs.createPlayer({
+                            url: playUrl,
+                            type: 'flv',
+                            enableWorker: true,
+                            isLive: true,
+                            hasAudio: settingAudio,
+                            hasVideo: true,
+                            enableStashBuffer: false
+                        });
+                        flvPlayer.attachMediaElement(videoElement);
+                        flvPlayer.load();
+                        flvPlayer.play();
+
+                        flvPlayer.on(flvjs.Events.ERROR, (err, errdet) => {
+                            loading.blockRemove(".lo" + containerId, 1000);
+
+                            // 鍙傛暟 err 鏄竴绾у紓甯革紝errdet 鏄簩绾у紓甯?                            if (err == flvjs.ErrorTypes.MEDIA_ERROR) {
+                                popup.failure('涓嶆敮鎸佺殑瑙嗛娴佺被鍨?');
+                                flvPlayer.unload()
+                                flvPlayer.detachMediaElement()
+                            }
+                            if (err == flvjs.ErrorTypes.NETWORK_ERROR) {
+                                popup.failure('缃戠粶寮傚父锛岃绋嶅悗閲嶈瘯.');
+                                flvPlayer.unload()
+                                flvPlayer.detachMediaElement()
+                            }
+                            if(err == flvjs.ErrorTypes.OTHER_ERROR) {
+                                popup.failure('鎽勫儚澶村紓甯革紝璇风◢鍚庨噸璇?');
+                                flvPlayer.unload()
+                                flvPlayer.detachMediaElement()
+                            }
+                        });
+
+                        flvPlayer.on(flvjs.Events.METADATA_ARRIVED, () => {
+                            loading.blockRemove('.lo' + containerId, 1000);
+                            $('#cl_' + containerId).css('display', 'none');
+                            $('#' + containerId).css('display', 'block');
+                        });
+                    } catch (e) {
+                        popup.failure('鎽勫儚澶村紓甯革紝璇风◢鍚庨噸璇?');
+                    }
+                } else {
+                    loading.blockRemove('.lo' + containerId, 1000);
+                    popup.failure(res.msg);
+                }
+            });
+        }
+
+        window.randomStr = function(len) {
+            var charStr = 'abacdefghjklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
+            var len = charStr.length;
+            var str = '';
+            for (var i = 0; i < len; i++) {
+                str += charStr.charAt(Math.floor(Math.random() * len));
+            }
+            return str;
+        }
+
+        $(document).ready(function() {
+            docWidth = $(document).width();
+            docHeight = $(document).height();
+            btsHeight = $('#btns').height();
+            vHeight = docHeight - btsHeight - 60;
+
+            window.show(type);
+        });
+
+    })
+</script>
+</html>
+

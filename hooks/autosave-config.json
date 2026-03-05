@@ -1,0 +1,6 @@
+﻿{
+    "task_id":  "global",
+    "stage":  "collab",
+    "interval_minutes":  15,
+    "compact_every":  4
+}

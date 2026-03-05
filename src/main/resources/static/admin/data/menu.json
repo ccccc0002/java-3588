@@ -1,0 +1,91 @@
+[
+  {
+    "id": 1,
+    "title": "应用监控",
+    "icon": "layui-icon layui-icon-console",
+    "type": 0,
+    "href": "",
+    "children": [
+      {
+        "id": 10,
+        "title": "算法管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/algorithm"
+      },
+      {
+        "id": 1011,
+        "title": "模型测试",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/model/test"
+      },
+      {
+        "id": 11,
+        "title": "摄像头管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/camera"
+      },
+      {
+        "id": 14,
+        "title": "视频流管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/stream"
+      },
+      {
+        "id": 12,
+        "title": "告警管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/report"
+      },
+      {
+        "id": 15,
+        "title": "增量训练",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/report/audit"
+      },
+      {
+        "id": 13,
+        "title": "统计管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/statistic"
+      },
+      {
+        "id": 118,
+        "title": "短信管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/smsphone"
+      },
+      {
+        "id": 18,
+        "title": "系统管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/config"
+      },
+      {
+        "id": 22,
+        "title": "账号管理",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/account"
+      }
+    ]
+  }
+]

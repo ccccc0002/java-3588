@@ -1,0 +1,16 @@
+﻿{
+    "timestamp":  "2026-03-05T13:04:05+08:00",
+    "task_id":  "DEV-VERIFY-SSH-001",
+    "stage":  "verification",
+    "event":  "task_started",
+    "summary":  "start remote ssh compile verification on 192.168.1.104",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  false,
+    "git_branch":  "",
+    "git_status":  [
+
+                   ]
+}

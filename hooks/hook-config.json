@@ -1,0 +1,43 @@
+{
+  "default_actions": [
+    "log"
+  ],
+  "event_actions": {
+    "task_started": [
+      "checkpoint",
+      "log",
+      "sync"
+    ],
+    "milestone_reached": [
+      "checkpoint",
+      "compact",
+      "log",
+      "sync"
+    ],
+    "task_paused": [
+      "checkpoint",
+      "log",
+      "sync"
+    ],
+    "task_resumed": [
+      "checkpoint",
+      "log"
+    ],
+    "conflict_detected": [
+      "checkpoint",
+      "compact",
+      "log"
+    ],
+    "conflict_resolved": [
+      "checkpoint",
+      "log",
+      "sync"
+    ],
+    "before_handoff": [
+      "checkpoint",
+      "compact",
+      "log",
+      "sync"
+    ]
+  }
+}

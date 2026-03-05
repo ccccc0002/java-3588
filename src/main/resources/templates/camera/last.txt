@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>摄像头管理</title>
+    <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
+    <style>
+        .tip-info { color: #999999; margin-top: 5px; }
+        .layui-form-label { width: 80px; }
+        .layui-input-block { margin-left: 110px; }
+        .safe-area-wrapper { margin: 0; padding: 12px 18px 0px 10px; }
+        .safe-area-bg { margin: 10px 0px; width: 100%; height: 300px; border: 2px solid #1e9fff; position: relative; }
+        .canvas-action { position: absolute; width: 0; height: 0; left: 0; top: 0; z-index: 50; }
+        .safe-area-btns { display: flex; flex-direction: row; justify-content: space-between; }
+        .safe-area-help { font-size: 14px; color: #999999; margin-right: 20px; }
+        .dtree-select-show .layui-card-body { padding: 10px 5px; }
+        #demoTree2 > li { padding-left: 5px; }
+        .unmark { color: #666; }
+        .marking { color: #f6ad55; }
+        .marked { color: #409EFF; }
+    </style>
+    <script type="text/html" id="checkTpl">
+        {{# if(d.checked) { }}
+        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true" checked/>
+        {{# } else { }}
+        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true"/>
+        {{# } }}
+    </script>
+
+    <script type="text/html" id="confidenceTpl">
+        <input type="number" id="confidence_{{ d.id }}" value="{{ d.confidence }}" min="0.00" step="0.01" style="width: 60px; height: 30px; border: 1px solid #666666;" class="layui-input" />
+    </script>
+
+    <script type="text/html" id="markTpl">
+        <#-- unmark marking marked color: #409EFF; -->
+        {{# if(d.markPoints == null || d.markPoints == '') { }}
+        <a href="javascript:void(0);" onclick="handleMarkPoints(this, '{{ d.id }}');" id="algorithm_mark_{{ d.id }}" class="unmark">标记</a>
+        {{# } else { }}
+        <a href="javascript:void(0);" onclick="handleMarkPoints(this, '{{ d.id }}');" id="algorithm_mark_{{ d.id }}" class="marked">已标记</a>
+        {{# } }}
+    </script>
+</head>
+<body>
+<form class="layui-form">
+    <input type="hidden" id="id" name="id" value="${(camera.id)!''}">
+    <input type="hidden" id="locationId" name="locationId" value="${(camera.locationId)!''}">
+    <div class="mainBox">
+        <div class="layui-row">
+            <div class="layui-col-md6 layui-col-sm6">
+                <div class="main-container">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">摄像头名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="name" name="name" lay-verify="required" autocomplete="off" placeholder="请输入摄像头名称" class="layui-input" value="${(camera.name)!''}">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">RTSP流地址</label>
+                        <div class="layui-input-block">
+                            <textarea class="layui-textarea" id="rtspUrl" name="rtspUrl" lay-verify="required" rows="1">${(camera.rtspUrl)!''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">告警间隔(秒)</label>
+                        <div class="layui-input-block">
+                            <input type="number" id="intervalTime" name="intervalTime" lay-verify="required" autocomplete="off" placeholder="请输入告警间隔(秒)" class="layui-input" value="${(camera.intervalTime)!''}">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">算法关联</label>
+                        <div class="layui-input-block">
+                            <table id="table" lay-filter="table"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-col-md6 layui-col-sm6">
+                <div class="safe-area-wrapper">
+                    <p id="safeAreaText">区域标记</p>
+                    <div id="canvas-wrapper" class="safe-area-bg">
+                        <canvas id="canvasBg"></canvas>
+                        <div id="canvas-action" class="canvas-action">
+                            <canvas id="canvasFront"></canvas>
+                        </div>
+                    </div>
+                    <div class="safe-area-btns">
+                        <div>
+                            <button type="button" class="pear-btn pear-btn-primary" onclick="window.takePhoto();">拍照取图</button>
+<#--                            <button type="button" class="pear-btn" onclick="window.updateRtsp();">更新地址</button>-->
+                            <button type="button" class="pear-btn pear-btn-warming" onclick="window.handleNewPoint();">新标记</button>
+                        </div>
+                        <div>
+                            <span class="safe-area-help">点击鼠标开始标记</span>
+                            <button type="button" class="pear-btn pear-btn-danger" onclick="window.resetSelection();">重置选区</button>
+                        </div>
+                    </div>
+                    <div class="safe-area-btns" style="margin-top: 10px;">
+                        <div>
+                            <button type="button" class="pear-btn pear-btn-success" onclick="window.handleSavePoints();">保存当前标记</button>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="params" id="params" value="${(camera.params)!''}">
+                <input type="hidden" name="fileName" id="fileName" value="${(camera.fileName)!''}">
+                <input type="hidden" name="fileWidth" id="fileWidth" value="${(camera.fileWidth)!''}">
+                <input type="hidden" name="fileHeight" id="fileHeight" value="${(camera.fileHeight)!''}">
+                <input type="hidden" name="canvasWidth" id="canvasWidth" value="${(camera.canvasWidth)!''}">
+                <input type="hidden" name="canvasHeight" id="canvasHeight" value="${(camera.canvasHeight)!''}">
+                <input type="hidden" name="scaleRatio" id="scaleRatio" value="${(camera.scaleRatio)!''}">
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit="" lay-filter="save">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button class="pear-btn pear-btn-sm" id="close-layer">
+                <i class="layui-icon layui-icon-close"></i>
+                关闭
+            </button>
+        </div>
+    </div>
+</form>
+</body>
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script>
+    layui.use(['form', 'jquery', 'popup', 'table', 'loading'], function() {
+        let form = layui.form;
+        let $ = layui.jquery;
+        let popup = layui.popup;
+        let table = layui.table;
+        let loading = layui.loading;
+
+        //
+        var multiPoints = [];
+        const canvasEle = document.getElementById('canvasFront');
+        const context = canvasEle.getContext('2d');
+        let startPosition = { x: 0, y: 0 };
+        var points = [];
+        var updatePoint = false;
+        var fileName = '${(camera.fileName)!''}';
+        var apiParams = '${(camera.apiParams)!''}';
+        if(apiParams != '') {
+            multiPoints = JSON.parse(apiParams);
+        }
+        var markMap = new Map(); // 算法标记记录
+        var tempMarkPoints = []; // 当前完成的标记点
+        var tempMarkPoint = []; // 正在标记的点
+
+        //
+        let cols = [{
+            title: '算法名称',
+            field: 'name'
+        }, {
+            title: '置信度',
+            field: 'confidence',
+            templet: '#confidenceTpl',
+            width: 100,
+        }, {
+            title: '选择',
+            field: 'name',
+            templet: '#checkTpl',
+            width: 56,
+            align: 'center'
+        }, {
+            title: '标记',
+            field: 'mark',
+            align: 'center',
+            width: 76,
+            templet: '#markTpl'
+        }];
+
+        //
+        table.render({
+            elem: '#table',
+            url: '/camera/algorithm/listData?cameraId=${(camera.id)!''}',
+            method: 'post',
+            page: false,
+            cols: [cols],
+            skin: 'line',
+            toolbar: false,
+            defaultToolbar: [],
+            done: function (res) {
+                if(res.code == 0 && res.data) {
+                    var datas = res.data;
+                    var len = datas.length;
+                    for(var i = 0; i < len; i++) {
+                        markMap.set(datas[i]['id'], datas[i]['markPoints']);
+                    }
+                }
+            }
+        });
+
+        //
+        form.on('submit(save)', function(data) {
+            var algorithms = [];
+            $('input[name="algorithm"]:checked').each(function() {
+                algorithms.push($(this).val());
+            });
+
+            if(algorithms.length == 0) {
+                popup.failure("请至少选择一个算法");
+                return false;
+            }
+
+            // if(points.length > 0 && points.length < 3) {
+            //     popup.failure("区域标记错误，请至少选择3个节点");
+            //     return false;
+            // }
+
+            // if(points.length > 0 && ($('#fileName').val() == '')) {
+            //     popup.failure("请在区域标记前拍照取图");
+            //     return false;
+            // }
+
+            // algorithms -> confidence
+            var confidences = [];
+            var aLen = algorithms.length;
+            for(var i = 0; i < aLen; i++) {
+                var algoId = algorithms[i];
+                var cv = $('#confidence_' + algoId).val();
+                if($.trim(cv) != '') {
+                    confidences.push(cv)
+;               }
+            }
+
+            if(confidences.length != algorithms.length) {
+                popup.failure("勾选的算法请输入置信度");
+                return false;
+            }
+
+            //
+            // if(points.length > 0) {
+            //     if(multiPoints == null) {
+            //         multiPoints = [];
+            //     }
+            //     multiPoints.push(points);
+            //     updatePoint = true;
+            // }
+
+            //
+            var mark_points = [];
+            for(var i = 0; i < aLen; i++) {
+                var algoId = algorithms[i];
+                var mark_point = markMap.get(algoId);
+                if(mark_point == null || mark_point == '') {
+                    mark_point = '[]';
+                }
+                mark_points.push(mark_point);
+            }
+
+            //
+            var dataJSON = {
+                'id': $('#id').val(),
+                'name': $('#name').val(),
+                'rtspUrl': $('#rtspUrl').val(),
+                'intervalTime': $('#intervalTime').val(),
+                'locationId': $('#locationId').val(),
+                'algorithmvos': algorithms.join(','),
+                'params': ((multiPoints != null && multiPoints.length > 0) ? JSON.stringify(multiPoints) : ''),
+                'fileName': $('#fileName').val(),
+                'fileWidth': $('#fileWidth').val(),
+                'fileHeight': $('#fileHeight').val(),
+                'canvasWidth': $('#canvasWidth').val(),
+                'canvasHeight': $('#canvasHeight').val(),
+                'scaleRatio': $('#scaleRatio').val(),
+                'confidencevos': confidences.join(','),
+                'markpointsvos': mark_points.join('#'),
+                'updatePoint': (updatePoint ? 1 : 0)
+
+            }
+
+            var loading = layer.load(2, { shade: [0.15,'#000'] });
+            $.post('/camera/save', dataJSON, function(res) {
+                layer.close(loading);
+                if(res.code == 0) {
+                    layer.msg('操作成功', {icon:1, time:1000}, function() {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name));
+                        parent.layui.table.reload('table');
+                    });
+                } else {
+                    popup.failure(res.msg);
+                }
+            });
+            return false;
+        });
+
+        //
+        window.addPoint = function() {
+            if(points == null || points.length == 0) {
+                return false;
+            }
+
+            if(points.length > 0 && points.length < 3) {
+                popup.failure("当前标记点少于3个");
+                return false;
+            }
+
+            if(points.length > 0 && ($('#fileName').val() == '')) {
+                popup.failure("标记前请拍照取图");
+                return false;
+            }
+
+            multiPoints.push(points);
+            points = [];
+            updatePoint = true;
+            popup.success("可以开始新的标记");
+        }
+
+        // 拍照取图
+        window.takePhoto = function() {
+            loading.block({
+                type: 5,
+                elem: '.safe-area-bg',
+                msg: ''
+            });
+            $.post('/camera/takePhoto', {'rtspUrl': $('#rtspUrl').val()}, function(res) {
+                if(res.code == 0) {
+                    popup.success('拍照完成');
+                    $('#fileName').val(res.data);
+                    window.resetSelection();
+                    window.loadImage(res.data);
+                } else {
+                    popup.failure(res.msg);
+                }
+                loading.blockRemove(".safe-area-bg", 1000);
+            })
+        }
+
+        // 加载图片
+        window.loadImage = function(fileName) {
+            if(fileName == null || fileName == '') {
+                return ;
+            }
+            var w = parseInt($('#canvas-wrapper').width());
+            var canvas = document.getElementById('canvasBg');
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            img.onload = function () {
+                var h = parseInt(img.height * w / img.width);
+                $('#canvas-wrapper').css('height', h + 'px');
+                $('#canvas-action').css('width', w + 'px').css('height', h + 'px');
+                document.getElementById("canvasBg").width = w;
+                document.getElementById("canvasBg").height = h;
+                document.getElementById("canvasFront").width = w;
+                document.getElementById("canvasFront").height = h;
+
+                //
+                //if(multiPoints == null || multiPoints.length == 0) {
+                    $('#fileWidth').val(img.width);
+                    $('#fileHeight').val(img.height);
+                    $('#canvasWidth').val(w);
+                    $('#canvasHeight').val(h);
+                    // $('#scaleRatio').val((img.width / w).toFixed(2));
+                    $('#scaleRatio').val((img.width / w).toFixed(1));
+                //}
+
+                //
+                ctx.drawImage(img, 0, 0, w, h);
+
+                //
+                if(multiPoints != null && multiPoints.length > 0) {
+                    var ratio = (w / img.width).toFixed(2);
+                    var tmMultiPoints = [];
+                    var mLen = multiPoints.length;
+                    for (var i = 0; i < mLen; i++) {
+                        context.beginPath();
+                        var tmPoint = multiPoints[i];
+                        var tmLen = tmPoint.length;
+                        var newPoint = [];
+                        for (var j = 0; j < tmLen; j++) {
+                            // newPoint.push({
+                            //     x: parseInt(tmPoint[j].x * ratio),
+                            //     y: parseInt(tmPoint[j].y * ratio)
+                            // });
+
+                            newPoint.push({
+                                x: Math.ceil(tmPoint[j].x * ratio),
+                                y: Math.ceil(tmPoint[j].y * ratio)
+                            });
+
+
+                        }
+                        tmMultiPoints.push(newPoint);
+                        for (var j = 0; j < tmLen; j++) {
+                            if (j == 0) {
+                                context.moveTo(newPoint[0].x, newPoint[0].y);
+                            } else {
+                                context.lineTo(newPoint[j].x, newPoint[j].y);
+                            }
+                        }
+                        context.fillStyle = "rgba(64, 158, 255, .4)";
+                        context.fill();
+                        context.lineWidth = 2;
+                        context.strokeStyle = "#409EFF";
+                        context.closePath();
+                        context.stroke();
+
+                        for (var j = 0; j < tmLen; j++) {
+                            window.drawCircle(newPoint[j].x, newPoint[j].y);
+                        }
+                        //window.drawCircle(parseInt(startPosition.x), parseInt(startPosition.y));
+                    }
+                    multiPoints = tmMultiPoints;
+                }
+            }
+            img.src = '/image/stream?fileName=' + fileName;
+        }
+
+        //
+        window.getClientOffset = function(event) {
+            var sLeft = $('#canvas-wrapper').offset().left;
+            var sTop = $('#canvas-wrapper').offset().top;
+            const { pageX, pageY } = event.touches ? event.touches[0] : event;
+            const x = pageX - sLeft;
+            const y = pageY - sTop;
+            return {
+                x,
+                y
+            }
+        }
+
+        //
+        window.drawCircle = function(x, y) {
+            context.beginPath();
+            context.arc(x, y, 4, 0, 2*Math.PI);
+            // context.closePath();
+            context.strokeStyle = "#409EFF";
+            context.fillStyle = "#409EFF";
+            context.fill();
+            context.closePath();
+            context.stroke();
+        }
+
+        //
+        window.clearCanvas = function() {
+            context.clearRect(0, 0, canvasEle.width, canvasEle.height);
+        }
+
+        //
+        window.mouseDownListener = function(event) {
+            var clickPoint = window.getClientOffset(event);
+            window.clearCanvas();
+            var len = tempMarkPoint.length;
+            if(len == 0) {
+                window.drawCircle(Math.ceil(clickPoint.x), Math.ceil(clickPoint.y));
+            } else if(len == 1) {
+                context.beginPath();
+                context.moveTo(tempMarkPoint[0].x, tempMarkPoint[0].y);
+                context.lineTo(clickPoint.x, clickPoint.y);
+                context.fillStyle = "rgba(64, 158, 255, .4)";
+                context.fill();
+                context.lineWidth = 2;
+                context.strokeStyle = "#409EFF";
+                context.closePath();
+                context.stroke();
+                window.drawCircle(tempMarkPoint[0].x, tempMarkPoint[0].y);
+                window.drawCircle(Math.ceil(clickPoint.x), Math.ceil(clickPoint.y));
+            } else {
+                context.beginPath();
+                for(var i = 0; i < len; i++) {
+                    if(i == 0) {
+                        context.moveTo(tempMarkPoint[0].x, tempMarkPoint[0].y);
+                    } else {
+                        context.lineTo(tempMarkPoint[i].x, tempMarkPoint[i].y);
+                    }
+                }
+                context.lineTo(Math.ceil(clickPoint.x), Math.ceil(clickPoint.y));
+                context.fillStyle = "rgba(64, 158, 255, .4)";
+                context.fill();
+                context.lineWidth = 2;
+                context.strokeStyle = "#409EFF";
+                context.closePath();
+                context.stroke();
+                for(var i = 0; i < len; i++) {
+                    window.drawCircle(tempMarkPoint[i].x, tempMarkPoint[i].y);
+                }
+                window.drawCircle(Math.ceil(clickPoint.x), Math.ceil(clickPoint.y));
+            }
+            //
+            tempMarkPoint.push({
+                x: Math.ceil(clickPoint.x),
+                y: Math.ceil(clickPoint.y)
+            });
+
+            // 重绘已有标记点
+            if(tempMarkPoints.length > 0) {
+                var pointSize = tempMarkPoints.length;
+                for(var k = 0; k < pointSize; k++) {
+                    var markPoint = tempMarkPoints[k];
+                    var tmLen = markPoint.length;
+                    context.beginPath();
+                    for(var j = 0; j < tmLen; j++) {
+                        if(j == 0) {
+                            context.moveTo(markPoint[0].x, markPoint[0].y);
+                        } else {
+                            context.lineTo(markPoint[j].x, markPoint[j].y);
+                        }
+                    }
+                    context.fillStyle = "rgba(64, 158, 255, .3)";
+                    context.fill();
+                    context.lineWidth = 2;
+                    context.strokeStyle = "#409EFF";
+                    context.closePath();
+                    context.stroke();
+                    for(var j = 0; j < tmLen; j++) {
+                        window.drawCircle(markPoint[j].x, markPoint[j].y);
+                    }
+                }
+            }
+        }
+
+        //
+        window.resetSelection = function() {
+            window.clearCanvas();
+            points = [];
+            multiPoints = [];
+            updatePoint = true;
+            popup.success('选区已重置');
+        }
+
+        //
+        window.updateRtsp = function() {
+            loading.block({
+                type: 5,
+                elem: '.safe-area-bg',
+                msg: ''
+            });
+            $.post('/camera/updateRtsp', {'id': $('#id').val()}, function(res) {
+                if(res.code == 0) {
+                    popup.success('地址已更新');
+                    $('#rtspUrl').val(res.data);
+                } else {
+                    popup.failure(res.msg);
+                }
+                loading.blockRemove(".safe-area-bg", 1000);
+            })
+        }
+
+        //
+        $('#canvasFront').on('mousedown', window.mouseDownListener);
+        $('#close-layer').click(function() {
+            parent.layer.close(parent.layer.getFrameIndex(window.name));
+        });
+
+        //
+        var current_algorithm_id = '';
+        window.handleMarkPoints = function(obj, algorithm_id) {
+            //
+            if(current_algorithm_id == algorithm_id) {
+                current_algorithm_id = '';
+                var that = $('#algorithm_mark_' + algorithm_id);
+                if(markMap.has(algorithm_id)) {
+                    if(markMap.get(algorithm_id) == null || markMap.get(algorithm_id) == '') {
+                        that.removeClass().addClass('unmark');
+                        that.text('标记');
+                    } else {
+                        that.removeClass().addClass('marked');
+                        that.text('已标记');
+                    }
+                } else {
+                    that.removeClass().addClass('unmark');
+                    that.text('标记');
+                }
+            } else {
+                //
+                if(current_algorithm_id != '') {
+                    var thatOld = $('#algorithm_mark_' + current_algorithm_id);
+                    thatOld.removeClass();
+                    if(markMap.has(algorithm_id)) {
+                        if(markMap.get(algorithm_id) == null || markMap.get(algorithm_id) == '') {
+                            thatOld.addClass('unmark');
+                            thatOld.text('标记');
+                        } else {
+                            thatOld.addClass('marked');
+                            thatOld.text('已标记');
+                        }
+                    } else {
+                        thatOld.removeClass().addClass('unmark');
+                        thatOld.text('标记');
+                    }
+                }
+                //
+                current_algorithm_id = algorithm_id;
+                //
+                if(markMap.has(current_algorithm_id)) {
+                    var mark_points = markMap.get(current_algorithm_id);
+                    if(mark_points != null && mark_points != '') {
+                        tempMarkPoints = JSON.parse(mark_points);
+                        window.handleMarkPaint();
+                    }
+                }
+                //
+                $(obj).removeClass().addClass('marking');
+                $(obj).text('标记中');
+            }
+        }
+        //
+        window.handleMarkPaint = function() {
+            window.clearCanvas();
+            var pointSize = tempMarkPoints.length;
+            for(var k = 0; k < pointSize; k++) {
+                var markPoint = tempMarkPoints[k];
+                var tmLen = markPoint.length;
+                context.beginPath();
+                for(var j = 0; j < tmLen; j++) {
+                    if(j == 0) {
+                        context.moveTo(markPoint[0].x, markPoint[0].y);
+                    } else {
+                        context.lineTo(markPoint[j].x, markPoint[j].y);
+                    }
+                }
+                context.fillStyle = "rgba(64, 158, 255, .3)";
+                context.fill();
+                context.lineWidth = 2;
+                context.strokeStyle = "#409EFF";
+                context.closePath();
+                context.stroke();
+                for(var j = 0; j < tmLen; j++) {
+                    window.drawCircle(markPoint[j].x, markPoint[j].y);
+                }
+            }
+        }
+        //
+        window.handleNewPoint = function() {
+            if(tempMarkPoint.length == 0) {
+                return ;
+            }
+            if(tempMarkPoint.length < 3) {
+                popup.failure('当前标记少于3个点');
+                return ;
+            }
+            tempMarkPoints.push(tempMarkPoint);
+            tempMarkPoint = [];
+            popup.success('开始新点标记');
+        }
+
+        //
+        window.handleSavePoints = function() {
+            //
+            if(current_algorithm_id == '') {
+                popup.failure('请选择要标记的算法');
+                return ;
+            }
+            //
+            if(tempMarkPoint > 0 && tempMarkPoint.length < 3) {
+                popup.failure('当前标记少于3个点');
+                return ;
+            }
+            //
+            if(tempMarkPoint.length > 0) {
+                tempMarkPoints.push(tempMarkPoint);
+            }
+            //
+            markMap.set(current_algorithm_id, JSON.stringify(tempMarkPoints));
+            var that = $('#algorithm_mark_' + current_algorithm_id);
+            that.removeClass().addClass('marked');
+            that.text('已标记');
+        }
+
+        //
+        window.loadImage(fileName);
+    })
+</script>
+</html>

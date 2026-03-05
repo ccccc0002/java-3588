@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>摄像头管理</title>
+    <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/static/js/webuploader/webuploader.css">
+    <link rel="stylesheet" type="text/css" href="/static/js/webuploader/webuploader.custom.css">
+    <style>
+        .tip-info { color: #999999; margin-top: 5px; }
+        .layui-form-label { width: 120px; }
+        .layui-input-block { margin-left: 160px; }
+        .safe-area-wrapper { margin: 0; padding: 12px 18px 0px 10px; }
+        .safe-area-bg { margin: 10px 0px; width: 100%; height: 300px; border: 2px solid #1e9fff; position: relative; }
+        .canvas-action { position: absolute; width: 0; height: 0; left: 0; top: 0; z-index: 50; }
+        .safe-area-btns { display: flex; flex-direction: row; justify-content: space-between; }
+        .safe-area-help { font-size: 14px; color: #999999; margin-right: 20px; }
+    </style>
+    <script type="text/html" id="checkTpl">
+        {{# if(d.checked) { }}
+        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true" checked/>
+        {{# } else { }}
+        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true"/>
+        {{# } }}
+
+    </script>
+</head>
+<body>
+<form class="layui-form">
+    <input type="hidden" id="id" name="id" value="${(camera.id)!''}">
+    <div class="mainBox">
+        <div class="layui-row">
+            <div class="layui-col-md5 layui-col-sm5">
+                <div class="main-container">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">摄像头名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="name" name="name" lay-verify="required" autocomplete="off" placeholder="请输入摄像头名称" class="layui-input" value="${(camera.name)!''}">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">摄像头RTSP流</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="rtspUrl" name="rtspUrl" lay-verify="required" autocomplete="off" placeholder="请输入摄像头RTSP流地址" class="layui-input" value="${(camera.rtspUrl)!''}">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">告警间隔(秒)</label>
+                        <div class="layui-input-block">
+                            <input type="number" id="intervalTime" name="intervalTime" lay-verify="required" autocomplete="off" placeholder="请输入告警间隔(秒)" class="layui-input" value="${(camera.intervalTime)!''}">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">算法关联</label>
+                        <div class="layui-input-block">
+                            <table id="table" lay-filter="table"></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-col-md7 layui-col-sm7">
+                <div class="safe-area-wrapper">
+                    <p id="safeAreaText">禁止区域标记</p>
+                    <div id="canvas-wrapper" class="safe-area-bg">
+                        <canvas id="canvasBg"></canvas>
+                        <div id="canvas-action" class="canvas-action">
+                            <canvas id="canvasFront"></canvas>
+                        </div>
+                    </div>
+                    <div class="safe-area-btns">
+                        <div id="uploader">
+                            <div id="fileList"></div>
+                            <div>
+                                <div id="picker" >选择摄像头照片</div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="safe-area-help">点击鼠标开始标记</span>
+                            <button type="button" class="pear-btn pear-btn-danger" onclick="window.resetSelection();">重置选区</button>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="params" id="params" value="${(camera.params)!''}">
+                <input type="hidden" name="fileName" id="fileName" value="${(camera.fileName)!''}">
+                <input type="hidden" name="fileWidth" id="fileWidth" value="${(camera.fileWidth)!''}">
+                <input type="hidden" name="fileHeight" id="fileHeight" value="${(camera.fileHeight)!''}">
+                <input type="hidden" name="canvasWidth" id="canvasWidth" value="${(camera.canvasWidth)!''}">
+                <input type="hidden" name="canvasHeight" id="canvasHeight" value="${(camera.canvasHeight)!''}">
+                <input type="hidden" name="scaleRatio" id="scaleRatio" value="${(camera.scaleRatio)!''}">
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit="" lay-filter="save">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button class="pear-btn pear-btn-sm" id="close-layer">
+                <i class="layui-icon layui-icon-close"></i>
+                关闭
+            </button>
+        </div>
+    </div>
+</form>
+</body>
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script src="/static/js/jquery.3.6.1.min.js"></script>
+<script src="/static/js/webuploader/webuploader.min.js"></script>
+<script>
+    layui.use(['form', 'jquery', 'popup', 'table'], function() {
+        let form = layui.form;
+        let $ = layui.jquery;
+        let popup = layui.popup;
+        let table = layui.table;
+
+        //
+        const canvasEle = document.getElementById('canvasFront');
+        const context = canvasEle.getContext('2d');
+        let startPosition = { x: 0, y: 0 };
+        var points = [];
+        var fileName = '${(camera.fileName)!''}';
+        var apiParams = '${(camera.apiParams)!''}';
+        if(apiParams != '') {
+            points = JSON.parse(apiParams);
+        }
+
+        //
+        let cols = [{
+            title: '算法名称',
+            field: 'name'
+        }, {
+            title: '选择',
+            field: 'name',
+            templet: '#checkTpl',
+            width: 80,
+            align: 'center'
+        }];
+
+        //
+        table.render({
+            elem: '#table',
+            url: '/camera/algorithm/listData?cameraId=${(camera.id)!''}',
+            method: 'post',
+            page: false,
+            cols: [cols],
+            skin: 'line',
+            toolbar: false,
+            defaultToolbar: []
+        });
+
+        //
+        form.on('submit(save)', function(data) {
+            var algorithms = [];
+            $('input[name="algorithm"]:checked').each(function() {
+                algorithms.push($(this).val());
+            });
+
+            if(algorithms.length == 0) {
+                popup.failure("请至少选择一个算法");
+                return false;
+            }
+
+            if(points.length > 0 && points.length < 3) {
+                popup.failure("禁止区域标记错误，请至少选择3个节点");
+                return false;
+            }
+
+            if(points.length > 0 && ($('#fileName').val() == '')) {
+                popup.failure("禁止区域已标记，但是没有上传摄像头照片");
+                return false;
+            }
+
+            //
+            var dataJSON = {
+                'id': $('#id').val(),
+                'name': $('#name').val(),
+                'rtspUrl': $('#rtspUrl').val(),
+                'intervalTime': $('#intervalTime').val(),
+                'algorithmvos': algorithms.join(','),
+                'params': (points.length > 0) ? JSON.stringify(points) : '',
+                'fileName': $('#fileName').val(),
+                'fileWidth': $('#fileWidth').val(),
+                'fileHeight': $('#fileHeight').val(),
+                'canvasWidth': $('#canvasWidth').val(),
+                'canvasHeight': $('#canvasHeight').val(),
+                'scaleRatio': $('#scaleRatio').val()
+            }
+
+            var loading = layer.load(2, { shade: [0.15,'#000'] });
+            $.post('/camera/save', dataJSON, function(res) {
+                layer.close(loading);
+                if(res.code == 0) {
+                    layer.msg('操作成功', {icon:1, time:1000}, function() {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name));
+                        parent.layui.table.reload('table');
+                    });
+                } else {
+                    popup.failure(res.msg);
+                }
+            });
+            return false;
+        });
+
+        //
+        var uploader = WebUploader.create({
+            pick: {
+                id: '#picker',
+                label: '选择摄像头照片'
+            },
+            compress: false,
+            auto: true,
+            swf: '/static/js/webuploader/Uploader.swf',
+            server: '/image/upload',
+            accept: {
+                title: 'Images',
+                extensions: 'jpg,jpeg,png',
+                mimeTypes: 'image/jpg, image/jpeg, image/png'
+            }
+        });
+
+        uploader.on('uploadSuccess', function(file, response) {
+            if(response.code == 0) {
+                popup.success('摄像头照片上传完成');
+                $('#fileName').val(response.data);
+                window.resetSelection();
+                window.loadImage(response.data);
+            } else {
+                popup.failure(response.msg);
+            }
+        });
+
+        uploader.on('uploadError', function(file) {
+            popup.failure('摄像头照片上传失败，请尝试重新操作.');
+        });
+
+        uploader.on('uploadComplete', function() {
+            uploader.reset();
+        });
+
+        window.loadImage = function(fileName) {
+            if(fileName == null || fileName == '') {
+                return ;
+            }
+            var w = parseInt($('#canvas-wrapper').width());
+            var canvas = document.getElementById('canvasBg');
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            img.onload = function () {
+                var h = parseInt(img.height * w / img.width);
+                $('#canvas-wrapper').css('height', h + 'px');
+                $('#canvas-action').css('width', w + 'px').css('height', h + 'px');
+                document.getElementById("canvasBg").width = w;
+                document.getElementById("canvasBg").height = h;
+                document.getElementById("canvasFront").width = w;
+                document.getElementById("canvasFront").height = h;
+
+                //
+                if(points.length == 0) {
+                    $('#fileWidth').val(img.width);
+                    $('#fileHeight').val(img.height);
+                    $('#canvasWidth').val(w);
+                    $('#canvasHeight').val(h);
+                    $('#scaleRatio').val((img.width / w).toFixed(2));
+                }
+
+                //
+                ctx.drawImage(img, 0, 0, w, h);
+
+                //
+                if(points.length > 0) {
+                    var len = points.length;
+                    var ratio = (w / img.width).toFixed(2);
+
+                    var newPoints = [];
+                    for(var i = 0; i < len; i++) {
+                        var p = points[i];
+                        newPoints.push({
+                            x: parseInt(p.x * ratio),
+                            y: parseInt(p.y * ratio)
+                        });
+                    }
+                    points = newPoints;
+
+                    //
+                    context.beginPath();
+                    for(var i = 0; i < len; i++) {
+                        if(i == 0) {
+                            context.moveTo(points[0].x, points[0].y);
+                        } else {
+                            context.lineTo(points[i].x, points[i].y);
+                        }
+                    }
+                    context.fillStyle = "rgba(64, 158, 255, .4)";
+                    context.fill();
+                    context.lineWidth = 2;
+                    context.strokeStyle = "#409EFF";
+                    context.closePath();
+                    context.stroke();
+                    for(var i = 0; i < len; i++) {
+                        window.drawCircle(points[i].x, points[i].y);
+                    }
+                }
+            }
+            img.src = '/image/stream?fileName=' + fileName;
+        }
+
+        //
+        window.getClientOffset = function(event) {
+            var sLeft = $('#canvas-wrapper').offset().left;
+            var sTop = $('#canvas-wrapper').offset().top;
+            const { pageX, pageY } = event.touches ? event.touches[0] : event;
+            const x = pageX - sLeft;
+            const y = pageY - sTop;
+            return {
+                x,
+                y
+            }
+        }
+
+        //
+        window.drawCircle = function(x, y) {
+            context.beginPath();
+            context.arc(x, y, 4, 0, 2*Math.PI);
+            // context.closePath();
+            context.strokeStyle = "#409EFF";
+            context.fillStyle = "#409EFF";
+            context.fill();
+            context.stroke();
+        }
+
+        //
+        window.clearCanvas = function() {
+            context.clearRect(0, 0, canvasEle.width, canvasEle.height);
+        }
+
+        //
+        window.mouseDownListener = function(event) {
+            startPosition = window.getClientOffset(event);
+            var len = points.length;
+            if(len == 0) {
+                window.drawCircle(parseInt(startPosition.x), parseInt(startPosition.y));
+            } else if(len == 1) {
+                window.clearCanvas();
+                context.beginPath();
+                context.moveTo(points[0].x, points[0].y);
+                context.lineTo(startPosition.x, startPosition.y);
+                context.fillStyle = "rgba(64, 158, 255, .4)";
+                context.fill();
+                context.lineWidth = 2;
+                context.strokeStyle = "#409EFF";
+                context.stroke();
+                window.drawCircle(points[0].x, points[0].y);
+                window.drawCircle(parseInt(startPosition.x), parseInt(startPosition.y));
+            } else {
+                window.clearCanvas();
+                context.beginPath();
+                for(var i = 0; i < len; i++) {
+                    if(i == 0) {
+                        context.moveTo(points[0].x, points[0].y);
+                    } else {
+                        context.lineTo(points[i].x, points[i].y);
+                    }
+                }
+                context.lineTo(parseInt(startPosition.x), parseInt(startPosition.y));
+                context.fillStyle = "rgba(64, 158, 255, .4)";
+                context.fill();
+                context.lineWidth = 2;
+                context.strokeStyle = "#409EFF";
+                context.closePath();
+                context.stroke();
+                for(var i = 0; i < len; i++) {
+                    window.drawCircle(points[i].x, points[i].y);
+                }
+                window.drawCircle(parseInt(startPosition.x), parseInt(startPosition.y));
+            }
+            points.push({
+                x: parseInt(startPosition.x),
+                y: parseInt(startPosition.y)
+            });
+        }
+
+        //
+        window.resetSelection = function() {
+            window.clearCanvas();
+            points = [];
+            popup.success('选区已重置');
+        }
+
+        //
+        $('#canvasFront').on('mousedown', window.mouseDownListener);
+        $('#close-layer').click(function() {
+            parent.layer.close(parent.layer.getFrameIndex(window.name));
+        });
+
+        //
+        window.loadImage(fileName);
+    })
+</script>
+</html>
