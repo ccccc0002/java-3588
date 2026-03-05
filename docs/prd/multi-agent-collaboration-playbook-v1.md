@@ -70,6 +70,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\Run-Stream-Validation
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\Validate-Inference-Contracts.ps1 -BaseUrl "http://127.0.0.1:8080" -CameraId 1 -ModelId 1 -AlgorithmId 1
 ```
+13. TDD test gate (mandatory before merge):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\testing\Run-Tdd-Gate.ps1
+```
 
 ## 4. Conflict Control Policy
 1. One task lock can be owned by only one agent at any time.
@@ -106,3 +110,10 @@ Recommended sync cadence:
 2. This playbook uses project-level hook scripts (`Invoke-Hook.ps1`) as functional equivalent.
 3. If repository is later initialized with git, this hook system can be mapped to native hooks.
 4. Event-driven sync requires `GITHUB_TOKEN` to push to remote GitHub repository.
+
+## 8. TDD Policy (Mandatory)
+1. New feature/bugfix must start from failing test case (RED).
+2. Implementation is allowed only after test case is committed locally (GREEN target).
+3. Refactor must keep tests green (REFACTOR).
+4. `scripts/testing/Run-Tdd-Gate.ps1` must pass before push/merge.
+5. GitHub Action `tdd-gate` is the branch-level quality gate for unit tests.

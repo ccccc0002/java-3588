@@ -33,6 +33,8 @@
 26. 已完成：补齐 `pom.xml`（Spring Boot 2.7.18，JDK 11，Maven 构建链路落地）。
 27. 已完成：修复历史乱码造成的编译阻塞（`StreamController`、`ModelServiceImpl`、`CameraServiceImpl` 等）。
 28. 已完成：在 RK3588 远程环境 `192.168.1.104` 执行 `mvn -DskipTests compile/package` 双通过。
+29. 已完成：新增推理域 TDD 单元测试（`InferenceRoutingService`、`InferenceIdempotencyService`、`InferenceApiController`），共 9 条用例全通过。
+30. 已完成：新增 `scripts/testing/Run-Tdd-Gate.ps1` 与 GitHub Actions `tdd-gate` 测试门禁。
 
 ## 2. 小队与职责
 1. 媒体小队：流媒体接入、播放链路、流状态管理
