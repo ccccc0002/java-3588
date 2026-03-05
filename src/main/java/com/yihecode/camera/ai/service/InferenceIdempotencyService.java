@@ -56,6 +56,14 @@ public class InferenceIdempotencyService {
         return data;
     }
 
+    public synchronized Map<String, Object> stats() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("key_size", keySeenAt.size());
+        data.put("window_ms", getWindowMs());
+        data.put("cleanup_trigger_size", CLEANUP_TRIGGER_SIZE);
+        return data;
+    }
+
     private String buildKey(String traceId, Long cameraId, Long timestampMs) {
         return traceId + "|" + cameraId + "|" + timestampMs;
     }

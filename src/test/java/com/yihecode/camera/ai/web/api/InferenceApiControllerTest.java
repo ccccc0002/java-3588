@@ -208,4 +208,24 @@ class InferenceApiControllerTest {
         assertEquals("legacy", data.get("global_backend_type"));
         assertEquals("legacy", data.get("backend_type"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void idempotentStats_shouldReturnServiceData() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("key_size", 12);
+        stats.put("window_ms", 600000L);
+        stats.put("cleanup_trigger_size", 2000);
+        when(inferenceIdempotencyService.stats()).thenReturn(stats);
+
+        JsonResult result = inferenceApiController.idempotentStats();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertTrue(data.get("trace_id") != null && !"".equals(String.valueOf(data.get("trace_id"))));
+        Map<String, Object> idempotent = (Map<String, Object>) data.get("idempotent");
+        assertEquals(12, ((Number) idempotent.get("key_size")).intValue());
+        assertEquals(600000L, ((Number) idempotent.get("window_ms")).longValue());
+        assertEquals(2000, ((Number) idempotent.get("cleanup_trigger_size")).intValue());
+    }
 }

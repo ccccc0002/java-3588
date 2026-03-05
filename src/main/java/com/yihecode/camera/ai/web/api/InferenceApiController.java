@@ -178,6 +178,23 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/idempotent/stats"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult idempotentStats() {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("idempotent", inferenceIdempotencyService.stats());
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference idempotent stats api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference idempotent stats api failed: " + e.getMessage(), data);
+        }
+    }
+
     private InferenceRequest buildTestRequest(String traceId, Map<String, Object> body, Long cameraId, Long modelId, String source) {
         Map<String, Object> payload = body == null ? new HashMap<>() : body;
 
