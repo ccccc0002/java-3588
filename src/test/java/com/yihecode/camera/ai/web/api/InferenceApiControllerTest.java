@@ -374,6 +374,8 @@ class InferenceApiControllerTest {
         assertEquals(500, routes.size());
         assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
         assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
+        assertEquals(true, data.get("truncated"));
+        assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
     }
 
     @Test
@@ -405,5 +407,23 @@ class InferenceApiControllerTest {
         assertEquals(15L, ((Number) routes.get(3).get("camera_id")).longValue());
         assertEquals(16L, ((Number) routes.get(4).get("camera_id")).longValue());
         assertEquals(14L, ((Number) routes.get(5).get("camera_id")).longValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldReportNotTruncatedWhenWithinLimit() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, "1-3");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(false, data.get("truncated"));
+        assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(3, routes.size());
     }
 }

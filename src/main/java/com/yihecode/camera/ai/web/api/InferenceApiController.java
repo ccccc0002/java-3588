@@ -212,7 +212,8 @@ public class InferenceApiController {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
-            List<Long> cameraIds = resolveCameraIds(payload.get("camera_ids"), cameraIdsText);
+            CameraIdResolveResult resolveResult = resolveCameraIds(payload.get("camera_ids"), cameraIdsText);
+            List<Long> cameraIds = resolveResult.cameraIds;
             if (cameraIds.isEmpty()) {
                 cameraIds.add(1L);
             }
@@ -239,6 +240,8 @@ public class InferenceApiController {
             data.put("trace_id", traceId);
             data.put("global_backend_type", globalBackend);
             data.put("route_list", routeList);
+            data.put("truncated", resolveResult.truncated);
+            data.put("max_camera_ids", ROUTE_BATCH_MAX_CAMERA_IDS);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference route batch api failed, trace_id={}", traceId, e);
@@ -323,88 +326,92 @@ public class InferenceApiController {
         return list;
     }
 
-    private List<Long> resolveCameraIds(Object bodyCameraIds, String queryCameraIds) {
+    private CameraIdResolveResult resolveCameraIds(Object bodyCameraIds, String queryCameraIds) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
-        addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
-        addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
-        return new ArrayList<>(ordered);
+        boolean truncated = addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
+        if (!truncated) {
+            truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        return new CameraIdResolveResult(new ArrayList<>(ordered), truncated);
     }
 
-    private void addCameraIds(LinkedHashSet<Long> ordered, Object value, int maxSize) {
+    private boolean addCameraIds(LinkedHashSet<Long> ordered, Object value, int maxSize) {
         if (ordered == null || value == null) {
-            return;
+            return false;
         }
         if (ordered.size() >= maxSize) {
-            return;
+            return true;
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
             for (Object item : list) {
-                addCameraIds(ordered, item, maxSize);
-                if (ordered.size() >= maxSize) {
-                    break;
+                if (addCameraIds(ordered, item, maxSize)) {
+                    return true;
                 }
             }
-            return;
+            return false;
         }
         if (value instanceof String) {
             String text = String.valueOf(value).trim();
             if (text.isEmpty()) {
-                return;
+                return false;
             }
             String[] parts = text.split(",");
             for (String part : parts) {
-                addCameraIdToken(ordered, part, maxSize);
-                if (ordered.size() >= maxSize) {
-                    break;
+                if (addCameraIdToken(ordered, part, maxSize)) {
+                    return true;
                 }
             }
-            return;
+            return false;
         }
         Long cameraId = toLong(value);
         if (cameraId != null) {
+            if (ordered.size() >= maxSize) {
+                return true;
+            }
             ordered.add(cameraId);
         }
+        return false;
     }
 
-    private void addCameraIdToken(LinkedHashSet<Long> ordered, String rawToken, int maxSize) {
+    private boolean addCameraIdToken(LinkedHashSet<Long> ordered, String rawToken, int maxSize) {
         if (ordered == null || rawToken == null || ordered.size() >= maxSize) {
-            return;
+            return ordered != null && ordered.size() >= maxSize;
         }
         String token = rawToken.trim();
         if (token.isEmpty()) {
-            return;
+            return false;
         }
-        if (tryAddCameraRange(ordered, token, maxSize)) {
-            return;
-        }
-        Long cameraId = toLong(token);
-        if (cameraId != null && ordered.size() < maxSize) {
-            ordered.add(cameraId);
-        }
-    }
 
-    private boolean tryAddCameraRange(LinkedHashSet<Long> ordered, String token, int maxSize) {
         String[] rangeParts = token.split("-", -1);
-        if (rangeParts.length != 2) {
-            return false;
-        }
-        Long start = toLong(rangeParts[0].trim());
-        Long end = toLong(rangeParts[1].trim());
-        if (start == null || end == null) {
-            return false;
+        if (rangeParts.length == 2) {
+            Long start = toLong(rangeParts[0].trim());
+            Long end = toLong(rangeParts[1].trim());
+            if (start != null && end != null) {
+                long step = start <= end ? 1L : -1L;
+                long current = start;
+                while (true) {
+                    if (ordered.size() >= maxSize) {
+                        return true;
+                    }
+                    ordered.add(current);
+                    if (current == end) {
+                        return false;
+                    }
+                    current += step;
+                }
+            }
         }
 
-        long step = start <= end ? 1L : -1L;
-        long current = start;
-        while (ordered.size() < maxSize) {
-            ordered.add(current);
-            if (current == end) {
-                break;
-            }
-            current += step;
+        Long cameraId = toLong(token);
+        if (cameraId == null) {
+            return false;
         }
-        return true;
+        if (ordered.size() >= maxSize) {
+            return true;
+        }
+        ordered.add(cameraId);
+        return false;
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {
@@ -457,5 +464,15 @@ public class InferenceApiController {
 
     private String nextTraceId() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private static class CameraIdResolveResult {
+        private final List<Long> cameraIds;
+        private final boolean truncated;
+
+        private CameraIdResolveResult(List<Long> cameraIds, boolean truncated) {
+            this.cameraIds = cameraIds;
+            this.truncated = truncated;
+        }
     }
 }
