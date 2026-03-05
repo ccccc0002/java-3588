@@ -54,4 +54,16 @@ class InferenceIdempotencyServiceTest {
         assertEquals("fresh", data.get("status"));
         assertEquals(600000L, ((Number) data.get("window_ms")).longValue());
     }
+
+    @Test
+    void stats_shouldExposeCurrentSizeAndWindow() {
+        when(configService.getByValTag("infer_idempotent_window_ms")).thenReturn("300000");
+
+        inferenceIdempotencyService.checkAndMark("trace-c", 102L, 33333L);
+        Map<String, Object> stats = inferenceIdempotencyService.stats();
+
+        assertEquals(1, ((Number) stats.get("key_size")).intValue());
+        assertEquals(300000L, ((Number) stats.get("window_ms")).longValue());
+        assertEquals(2000, ((Number) stats.get("cleanup_trigger_size")).intValue());
+    }
 }
