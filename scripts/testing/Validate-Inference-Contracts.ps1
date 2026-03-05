@@ -145,6 +145,18 @@ $dispatchIdempotent = Get-PropValue -Obj $dispatchData -Name "idempotent"
 $dispatchIdempotentStatus = Get-PropValue -Obj $dispatchIdempotent -Name "status"
 $checks += New-CheckResult -Api "/api/inference/dispatch" -Passed (($dispatchResp.code -eq 0) -and ($dispatchTraceId -ne $null) -and ($dispatchTraceId -ne "") -and ($dispatchBackend -ne $null) -and ($dispatchBackend -ne "") -and ($dispatchResult -ne $null) -and ($dispatchReport -ne $null) -and ($dispatchReportStatus -ne $null) -and ($dispatchReportStatus -ne "") -and ($dispatchIdempotent -ne $null) -and ($dispatchIdempotentStatus -ne $null) -and ($dispatchIdempotentStatus -ne "") -and (Is-ExpectedBackend -ActualBackend $dispatchBackend)) -Detail ("code={0}; trace_id={1}; backend_type={2}; expected_backend={3}; report_status={4}; idem_status={5}" -f $dispatchResp.code, $dispatchTraceId, $dispatchBackend, $ExpectedBackendType, $dispatchReportStatus, $dispatchIdempotentStatus)
 
+$routeReq = @{
+    camera_id = $CameraId
+}
+
+$routeResp = Invoke-ApiPostJson -Path "/api/inference/route" -BodyObj $routeReq
+$routeData = Get-PropValue -Obj $routeResp -Name "data"
+$routeTraceId = Get-PropValue -Obj $routeData -Name "trace_id"
+$routeCameraId = Get-PropValue -Obj $routeData -Name "camera_id"
+$routeBackend = Get-PropValue -Obj $routeData -Name "backend_type"
+$routeGlobalBackend = Get-PropValue -Obj $routeData -Name "global_backend_type"
+$checks += New-CheckResult -Api "/api/inference/route" -Passed (($routeResp.code -eq 0) -and ($routeTraceId -ne $null) -and ($routeTraceId -ne "") -and ($routeCameraId -ne $null) -and (([long]$routeCameraId) -eq $CameraId) -and ($routeBackend -ne $null) -and ($routeBackend -ne "") -and ($routeGlobalBackend -ne $null) -and ($routeGlobalBackend -ne "") -and (Is-ExpectedBackend -ActualBackend $routeBackend)) -Detail ("code={0}; trace_id={1}; camera_id={2}; backend_type={3}; global_backend_type={4}; expected_backend={5}" -f $routeResp.code, $routeTraceId, $routeCameraId, $routeBackend, $routeGlobalBackend, $ExpectedBackendType)
+
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
 $failedCount = ($checks | Where-Object { -not $_.passed }).Count
