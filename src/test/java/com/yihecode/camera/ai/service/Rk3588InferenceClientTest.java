@@ -152,4 +152,27 @@ class Rk3588InferenceClientTest {
         assertEquals(1920, decode.getIntValue("max_width"));
         assertEquals(1080, decode.getIntValue("max_height"));
     }
+
+    @Test
+    void infer_shouldNotIncludeDecodeHints_whenDecodeConfigMissing() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-nodecode\",\"camera_id\":502,\"latency_ms\":6,\"detections\":[]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-nodecode");
+        request.setCameraId(502L);
+        request.setModelId(901L);
+        request.setFrameMeta(new HashMap<>());
+
+        InferenceResult result = rk3588InferenceClient.infer(request);
+
+        assertEquals("trace-nodecode", result.getTraceId());
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), payloadCaptor.capture());
+        JSONObject payload = JSON.parseObject(payloadCaptor.getValue());
+        assertTrue(payload.getJSONObject("decode") == null);
+    }
 }
