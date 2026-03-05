@@ -40,6 +40,10 @@ public class Rk3588InferenceClient implements InferenceClient {
         data.put("trace_id", traceId);
         data.put("backend", getBackendType());
         data.put("service_url", baseUrl);
+        Map<String, Object> decodeHints = buildDecodeHints();
+        if (!decodeHints.isEmpty()) {
+            data.put("decode_hints", decodeHints);
+        }
 
         if (StrUtil.isBlank(baseUrl)) {
             data.put("status", "misconfigured");

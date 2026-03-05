@@ -75,6 +75,30 @@ class Rk3588InferenceClientTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void health_shouldExposeDecodeHints_whenDecodeConfigProvided() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080/");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1200");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_decode_backend")).thenReturn("mpp");
+        when(configService.getByValTag("infer_decode_hwaccel")).thenReturn("rga");
+        when(configService.getByValTag("infer_decode_max_width")).thenReturn("1280");
+        when(configService.getByValTag("infer_decode_max_height")).thenReturn("720");
+        when(inferenceHttpGateway.get(eq("http://rkhost:18080/health"), eq(1200)))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"runtime\":\"rknn\"}"));
+
+        Map<String, Object> data = rk3588InferenceClient.health("trace-health-decode");
+
+        assertEquals("ok", data.get("status"));
+        Map<String, Object> decodeHints = (Map<String, Object>) data.get("decode_hints");
+        assertNotNull(decodeHints);
+        assertEquals("mpp", decodeHints.get("backend"));
+        assertEquals("rga", decodeHints.get("hwaccel"));
+        assertEquals(1280, ((Number) decodeHints.get("max_width")).intValue());
+        assertEquals(720, ((Number) decodeHints.get("max_height")).intValue());
+    }
+
+    @Test
     void infer_shouldRetryAndFallbackTraceCamera_whenSecondAttemptSucceeds() {
         when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080/");
         when(configService.getByValTag("infer_timeout_ms")).thenReturn("800");
