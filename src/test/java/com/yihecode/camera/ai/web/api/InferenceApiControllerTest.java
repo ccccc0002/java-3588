@@ -375,4 +375,35 @@ class InferenceApiControllerTest {
         assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
         assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldParseRangeTokensInsideBodyListItems() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        Map<String, Object> body = new HashMap<>();
+        List<Object> cameraIds = new ArrayList<>();
+        cameraIds.add("10-12");
+        cameraIds.add(12L);
+        cameraIds.add("15,16");
+        cameraIds.add("not-number");
+        cameraIds.add(14L);
+        body.put("camera_ids", cameraIds);
+
+        JsonResult result = inferenceApiController.routeBatch(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(6, routes.size());
+        assertEquals(10L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(11L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(12L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(15L, ((Number) routes.get(3).get("camera_id")).longValue());
+        assertEquals(16L, ((Number) routes.get(4).get("camera_id")).longValue());
+        assertEquals(14L, ((Number) routes.get(5).get("camera_id")).longValue());
+    }
 }

@@ -189,6 +189,26 @@ $routeBatchFirstCameraId = Get-PropValue -Obj $routeBatchFirst -Name "camera_id"
 $routeBatchFirstBackend = Get-PropValue -Obj $routeBatchFirst -Name "backend_type"
 $checks += New-CheckResult -Api "/api/inference/route/batch" -Passed (($routeBatchResp.code -eq 0) -and ($routeBatchTraceId -ne $null) -and ($routeBatchTraceId -ne "") -and ($routeBatchGlobalBackend -ne $null) -and ($routeBatchGlobalBackend -ne "") -and ($routeBatchList -is [System.Collections.IList]) -and ($routeBatchList.Count -gt 0) -and ($routeBatchFirstCameraId -ne $null) -and (([long]$routeBatchFirstCameraId) -eq $CameraId) -and ($routeBatchFirstBackend -ne $null) -and ($routeBatchFirstBackend -ne "") -and (Is-ExpectedBackend -ActualBackend $routeBatchFirstBackend)) -Detail ("code={0}; trace_id={1}; global_backend_type={2}; first_camera_id={3}; first_backend_type={4}; expected_backend={5}" -f $routeBatchResp.code, $routeBatchTraceId, $routeBatchGlobalBackend, $routeBatchFirstCameraId, $routeBatchFirstBackend, $ExpectedBackendType)
 
+$nextCameraId = $CameraId + 1
+$routeBatchRangeReq = @{
+    camera_ids = ("{0}-{1},{0}" -f $CameraId, $nextCameraId)
+}
+$routeBatchRangeResp = Invoke-ApiPostJson -Path "/api/inference/route/batch" -BodyObj $routeBatchRangeReq
+$routeBatchRangeData = Get-PropValue -Obj $routeBatchRangeResp -Name "data"
+$routeBatchRangeTraceId = Get-PropValue -Obj $routeBatchRangeData -Name "trace_id"
+$routeBatchRangeList = Get-PropValue -Obj $routeBatchRangeData -Name "route_list"
+$routeBatchRangeFirst = $null
+$routeBatchRangeSecond = $null
+if ($routeBatchRangeList -is [System.Collections.IList] -and $routeBatchRangeList.Count -gt 0) {
+    $routeBatchRangeFirst = $routeBatchRangeList[0]
+}
+if ($routeBatchRangeList -is [System.Collections.IList] -and $routeBatchRangeList.Count -gt 1) {
+    $routeBatchRangeSecond = $routeBatchRangeList[1]
+}
+$routeBatchRangeFirstCameraId = Get-PropValue -Obj $routeBatchRangeFirst -Name "camera_id"
+$routeBatchRangeSecondCameraId = Get-PropValue -Obj $routeBatchRangeSecond -Name "camera_id"
+$checks += New-CheckResult -Api "/api/inference/route/batch(range)" -Passed (($routeBatchRangeResp.code -eq 0) -and ($routeBatchRangeTraceId -ne $null) -and ($routeBatchRangeTraceId -ne "") -and ($routeBatchRangeList -is [System.Collections.IList]) -and ($routeBatchRangeList.Count -ge 2) -and ($routeBatchRangeFirstCameraId -ne $null) -and ($routeBatchRangeSecondCameraId -ne $null) -and (([long]$routeBatchRangeFirstCameraId) -eq $CameraId) -and (([long]$routeBatchRangeSecondCameraId) -eq $nextCameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchRangeResp.code, $routeBatchRangeTraceId, $routeBatchRangeFirstCameraId, $routeBatchRangeSecondCameraId, $CameraId, $nextCameraId)
+
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
 $failedCount = ($checks | Where-Object { -not $_.passed }).Count
