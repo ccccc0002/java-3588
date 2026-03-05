@@ -292,6 +292,26 @@ class InferenceRoutingServiceTest {
     }
 
     @Test
+    void overrideSourceForCamera_shouldReturnDirectMap_whenOverrideMatchedByRootMap() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"100\":\"rk3588_rknn\"}");
+
+        String source = inferenceRoutingService.overrideSourceForCamera(100L);
+
+        assertEquals("direct_map", source);
+    }
+
+    @Test
+    void overrideSourceForCamera_shouldReturnArrayRange_whenOverrideMatchedByRangeAlias() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("[{\"range\":\"420-400\",\"backend\":\"rk3588_rknn\"}]");
+
+        String source = inferenceRoutingService.overrideSourceForCamera(410L);
+
+        assertEquals("array_range", source);
+    }
+
+    @Test
     void isCameraOverrideHit_shouldReturnFalse_whenOverrideNotMatched() {
         when(configService.getByValTag("infer_backend_camera_overrides"))
                 .thenReturn("{\"101\":\"rk3588_rknn\"}");

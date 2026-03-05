@@ -20,6 +20,8 @@ public class InferenceRoutingService {
     private static final String BACKEND_LEGACY = "legacy";
     private static final String BACKEND_RK3588 = "rk3588_rknn";
 
+    private static final OverrideDecision NO_OVERRIDE = new OverrideDecision(null, null);
+
     @Autowired
     private ConfigService configService;
 
@@ -44,7 +46,12 @@ public class InferenceRoutingService {
 
     public String overrideBackendForCamera(Long cameraId) {
         String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
-        return resolveOverrideBackend(overrideConfig, cameraId);
+        return resolveOverrideDecision(overrideConfig, cameraId).backend;
+    }
+
+    public String overrideSourceForCamera(Long cameraId) {
+        String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
+        return resolveOverrideDecision(overrideConfig, cameraId).source;
     }
 
     public boolean isCameraOverrideHit(Long cameraId) {
@@ -97,9 +104,9 @@ public class InferenceRoutingService {
         return legacyInferenceClient;
     }
 
-    private String resolveOverrideBackend(String configText, Long cameraId) {
+    private OverrideDecision resolveOverrideDecision(String configText, Long cameraId) {
         if (cameraId == null || StrUtil.isBlank(configText)) {
-            return null;
+            return NO_OVERRIDE;
         }
         try {
             Object parsed = JSON.parse(configText);
@@ -110,40 +117,40 @@ public class InferenceRoutingService {
                 return resolveFromArray((JSONArray) parsed, cameraId);
             }
         } catch (Exception ignored) {
-            return null;
+            return NO_OVERRIDE;
         }
-        return null;
+        return NO_OVERRIDE;
     }
 
-    private String resolveFromObject(JSONObject root, Long cameraId) {
+    private OverrideDecision resolveFromObject(JSONObject root, Long cameraId) {
         if (root == null || cameraId == null) {
-            return null;
+            return NO_OVERRIDE;
         }
 
         String cameraKey = String.valueOf(cameraId);
         String direct = normalizeBackendStrict(root.getString(cameraKey));
         if (StrUtil.isNotBlank(direct)) {
-            return direct;
+            return new OverrideDecision(direct, "direct_map");
         }
 
         Object cameraOverridesObj = root.get("camera_overrides");
         if (cameraOverridesObj instanceof JSONObject) {
             String nested = normalizeBackendStrict(((JSONObject) cameraOverridesObj).getString(cameraKey));
             if (StrUtil.isNotBlank(nested)) {
-                return nested;
+                return new OverrideDecision(nested, "camera_overrides_map");
             }
         } else if (cameraOverridesObj instanceof JSONArray) {
-            String nested = resolveFromArray((JSONArray) cameraOverridesObj, cameraId);
-            if (StrUtil.isNotBlank(nested)) {
-                return nested;
+            OverrideDecision nested = resolveFromArray((JSONArray) cameraOverridesObj, cameraId);
+            if (StrUtil.isNotBlank(nested.backend)) {
+                return new OverrideDecision(nested.backend, "camera_overrides_" + nested.source);
             }
         }
 
         Object overridesObj = root.get("overrides");
         if (overridesObj instanceof JSONArray) {
-            String nested = resolveFromArray((JSONArray) overridesObj, cameraId);
-            if (StrUtil.isNotBlank(nested)) {
-                return nested;
+            OverrideDecision nested = resolveFromArray((JSONArray) overridesObj, cameraId);
+            if (StrUtil.isNotBlank(nested.backend)) {
+                return new OverrideDecision(nested.backend, "overrides_" + nested.source);
             }
         }
 
@@ -153,15 +160,15 @@ public class InferenceRoutingService {
                 continue;
             }
             if (containsCameraId(entry.getValue(), cameraId)) {
-                return backend;
+                return new OverrideDecision(backend, "backend_group");
             }
         }
-        return null;
+        return NO_OVERRIDE;
     }
 
-    private String resolveFromArray(JSONArray items, Long cameraId) {
+    private OverrideDecision resolveFromArray(JSONArray items, Long cameraId) {
         if (items == null || cameraId == null) {
-            return null;
+            return NO_OVERRIDE;
         }
         for (int i = 0; i < items.size(); i++) {
             Object item = items.get(i);
@@ -175,10 +182,11 @@ public class InferenceRoutingService {
                     toLong(obj.get("id"))
             );
             boolean matchedByCameraId = itemCameraId != null && cameraId.equals(itemCameraId);
-            boolean matchedByRange = containsCameraId(obj.get("camera_range"), cameraId)
-                    || containsCameraId(obj.get("range"), cameraId)
-                    || containsCameraId(obj.get("camera_ids"), cameraId)
-                    || containsCameraId(obj.get("cameras"), cameraId);
+            boolean matchedByCameraRange = containsCameraId(obj.get("camera_range"), cameraId);
+            boolean matchedByRangeAlias = containsCameraId(obj.get("range"), cameraId);
+            boolean matchedByCameraIds = containsCameraId(obj.get("camera_ids"), cameraId);
+            boolean matchedByCamerasAlias = containsCameraId(obj.get("cameras"), cameraId);
+            boolean matchedByRange = matchedByCameraRange || matchedByRangeAlias || matchedByCameraIds || matchedByCamerasAlias;
             if (!matchedByCameraId && !matchedByRange) {
                 continue;
             }
@@ -190,10 +198,22 @@ public class InferenceRoutingService {
             );
             String normalized = normalizeBackendStrict(backend);
             if (StrUtil.isNotBlank(normalized)) {
-                return normalized;
+                String source = "array_match";
+                if (matchedByCameraId) {
+                    source = "array_camera_id";
+                } else if (matchedByCameraRange) {
+                    source = "array_camera_range";
+                } else if (matchedByRangeAlias) {
+                    source = "array_range";
+                } else if (matchedByCameraIds) {
+                    source = "array_camera_ids";
+                } else if (matchedByCamerasAlias) {
+                    source = "array_cameras";
+                }
+                return new OverrideDecision(normalized, source);
             }
         }
-        return null;
+        return NO_OVERRIDE;
     }
 
     private boolean containsCameraId(Object value, Long cameraId) {
@@ -318,5 +338,15 @@ public class InferenceRoutingService {
             return BACKEND_LEGACY;
         }
         return null;
+    }
+
+    private static class OverrideDecision {
+        private final String backend;
+        private final String source;
+
+        private OverrideDecision(String backend, String source) {
+            this.backend = backend;
+            this.source = source;
+        }
     }
 }
