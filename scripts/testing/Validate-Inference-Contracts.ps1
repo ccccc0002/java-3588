@@ -5,6 +5,7 @@ param(
     [long]$AlgorithmId = 1,
     [string]$Source = "test://frame",
     [string]$ExpectedBackendType = "",
+    [string]$ExpectedOverrideSource = "",
     [string]$Cookie = "",
     [int]$TimeoutSec = 10
 )
@@ -94,6 +95,19 @@ function Is-ExpectedBackend {
     return $ActualBackend.Trim().ToLowerInvariant() -eq $ExpectedBackendType.Trim().ToLowerInvariant()
 }
 
+function Is-ExpectedOverrideSource {
+    param(
+        [string]$ActualSource
+    )
+    if ([string]::IsNullOrWhiteSpace($ExpectedOverrideSource)) {
+        return $true
+    }
+    if ([string]::IsNullOrWhiteSpace($ActualSource)) {
+        return $false
+    }
+    return $ActualSource.Trim().ToLowerInvariant() -eq $ExpectedOverrideSource.Trim().ToLowerInvariant()
+}
+
 $checks = @()
 
 $healthResp = Invoke-ApiGet -Path "/api/inference/health"
@@ -155,7 +169,8 @@ $routeTraceId = Get-PropValue -Obj $routeData -Name "trace_id"
 $routeCameraId = Get-PropValue -Obj $routeData -Name "camera_id"
 $routeBackend = Get-PropValue -Obj $routeData -Name "backend_type"
 $routeGlobalBackend = Get-PropValue -Obj $routeData -Name "global_backend_type"
-$checks += New-CheckResult -Api "/api/inference/route" -Passed (($routeResp.code -eq 0) -and ($routeTraceId -ne $null) -and ($routeTraceId -ne "") -and ($routeCameraId -ne $null) -and (([long]$routeCameraId) -eq $CameraId) -and ($routeBackend -ne $null) -and ($routeBackend -ne "") -and ($routeGlobalBackend -ne $null) -and ($routeGlobalBackend -ne "") -and (Is-ExpectedBackend -ActualBackend $routeBackend)) -Detail ("code={0}; trace_id={1}; camera_id={2}; backend_type={3}; global_backend_type={4}; expected_backend={5}" -f $routeResp.code, $routeTraceId, $routeCameraId, $routeBackend, $routeGlobalBackend, $ExpectedBackendType)
+$routeOverrideSource = Get-PropValue -Obj $routeData -Name "override_source"
+$checks += New-CheckResult -Api "/api/inference/route" -Passed (($routeResp.code -eq 0) -and ($routeTraceId -ne $null) -and ($routeTraceId -ne "") -and ($routeCameraId -ne $null) -and (([long]$routeCameraId) -eq $CameraId) -and ($routeBackend -ne $null) -and ($routeBackend -ne "") -and ($routeGlobalBackend -ne $null) -and ($routeGlobalBackend -ne "") -and (Is-ExpectedBackend -ActualBackend $routeBackend) -and (Is-ExpectedOverrideSource -ActualSource $routeOverrideSource)) -Detail ("code={0}; trace_id={1}; camera_id={2}; backend_type={3}; global_backend_type={4}; override_source={5}; expected_backend={6}; expected_override_source={7}" -f $routeResp.code, $routeTraceId, $routeCameraId, $routeBackend, $routeGlobalBackend, $routeOverrideSource, $ExpectedBackendType, $ExpectedOverrideSource)
 
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 

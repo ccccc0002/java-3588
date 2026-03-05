@@ -312,6 +312,26 @@ class InferenceRoutingServiceTest {
     }
 
     @Test
+    void overrideSourceForCamera_shouldReturnBackendGroupComma_whenBackendGroupUsesCommaExpression() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"rk3588_rknn\":[\"100,105-110,200\"]}");
+
+        String source = inferenceRoutingService.overrideSourceForCamera(106L);
+
+        assertEquals("backend_group_comma", source);
+    }
+
+    @Test
+    void overrideSourceForCamera_shouldReturnBackendGroupExact_whenBackendGroupUsesExactNumber() {
+        when(configService.getByValTag("infer_backend_camera_overrides"))
+                .thenReturn("{\"rk3588_rknn\":[100]}");
+
+        String source = inferenceRoutingService.overrideSourceForCamera(100L);
+
+        assertEquals("backend_group_exact", source);
+    }
+
+    @Test
     void isCameraOverrideHit_shouldReturnFalse_whenOverrideNotMatched() {
         when(configService.getByValTag("infer_backend_camera_overrides"))
                 .thenReturn("{\"101\":\"rk3588_rknn\"}");

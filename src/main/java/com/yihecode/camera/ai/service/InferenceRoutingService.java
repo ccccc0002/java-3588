@@ -159,8 +159,9 @@ public class InferenceRoutingService {
             if (StrUtil.isBlank(backend)) {
                 continue;
             }
-            if (containsCameraId(entry.getValue(), cameraId)) {
-                return new OverrideDecision(backend, "backend_group");
+            String groupedSource = detectCameraMatchSource(entry.getValue(), cameraId);
+            if (StrUtil.isNotBlank(groupedSource)) {
+                return new OverrideDecision(backend, "backend_group_" + groupedSource);
             }
         }
         return NO_OVERRIDE;
@@ -217,77 +218,84 @@ public class InferenceRoutingService {
     }
 
     private boolean containsCameraId(Object value, Long cameraId) {
+        return StrUtil.isNotBlank(detectCameraMatchSource(value, cameraId));
+    }
+
+    private boolean matchesCameraExpression(String value, Long cameraId) {
+        return StrUtil.isNotBlank(cameraExpressionMatchSource(value, cameraId));
+    }
+
+    private String detectCameraMatchSource(Object value, Long cameraId) {
         if (value == null || cameraId == null) {
-            return false;
+            return null;
         }
         if (value instanceof Number) {
-            return cameraId.equals(((Number) value).longValue());
+            return cameraId.equals(((Number) value).longValue()) ? "exact" : null;
         }
         if (value instanceof String) {
-            if (matchesCameraExpression((String) value, cameraId)) {
-                return true;
-            }
-            return false;
+            return cameraExpressionMatchSource((String) value, cameraId);
         }
         if (value instanceof JSONArray) {
             JSONArray arr = (JSONArray) value;
             for (int i = 0; i < arr.size(); i++) {
-                if (containsCameraId(arr.get(i), cameraId)) {
-                    return true;
+                String source = detectCameraMatchSource(arr.get(i), cameraId);
+                if (StrUtil.isNotBlank(source)) {
+                    return source;
                 }
             }
-            return false;
+            return null;
         }
         if (value instanceof List) {
             List<?> arr = (List<?>) value;
             for (Object item : arr) {
-                if (containsCameraId(item, cameraId)) {
-                    return true;
+                String source = detectCameraMatchSource(item, cameraId);
+                if (StrUtil.isNotBlank(source)) {
+                    return source;
                 }
             }
-            return false;
+            return null;
         }
-        return false;
+        return null;
     }
 
-    private boolean matchesCameraExpression(String value, Long cameraId) {
+    private String cameraExpressionMatchSource(String value, Long cameraId) {
         if (cameraId == null || StrUtil.isBlank(value)) {
-            return false;
+            return null;
         }
         String text = StrUtil.trim(value);
         if (StrUtil.isBlank(text)) {
-            return false;
+            return null;
         }
         if (text.contains(",")) {
             String[] parts = text.split(",");
             for (String part : parts) {
-                if (matchesCameraExpression(part, cameraId)) {
-                    return true;
+                if (StrUtil.isNotBlank(cameraExpressionMatchSource(part, cameraId))) {
+                    return "comma";
                 }
             }
-            return false;
+            return null;
         }
 
         Long exact = toLong(text);
         if (exact != null) {
-            return cameraId.equals(exact);
+            return cameraId.equals(exact) ? "exact" : null;
         }
         if (!text.contains("-")) {
-            return false;
+            return null;
         }
 
         String[] parts = text.split("-", 2);
         if (parts.length != 2) {
-            return false;
+            return null;
         }
         Long start = toLong(parts[0]);
         Long end = toLong(parts[1]);
         if (start == null || end == null) {
-            return false;
+            return null;
         }
         long min = Math.min(start, end);
         long max = Math.max(start, end);
-        return cameraId >= min && cameraId <= max;
+        return (cameraId >= min && cameraId <= max) ? "range" : null;
     }
 
     private Long toLong(Object value) {
