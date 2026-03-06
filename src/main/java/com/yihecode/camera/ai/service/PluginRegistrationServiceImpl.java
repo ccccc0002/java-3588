@@ -96,6 +96,8 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
                                                  String runtime,
                                                  String status,
                                                  Boolean healthy,
+                                                 Boolean dispatchReady,
+                                                 String capability,
                                                  Integer offset,
                                                  Integer limit) {
         int resolvedOffset = Math.max(0, offset == null ? 0 : offset);
@@ -103,7 +105,7 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         List<Map<String, Object>> filtered = new ArrayList<>();
         for (PluginRegistryRecord record : pluginRegistryService.list()) {
             Map<String, Object> mapped = toMap(record);
-            if (!matchesFilters(mapped, pluginId, runtime, status, healthy)) {
+            if (!matchesFilters(mapped, pluginId, runtime, status, healthy, dispatchReady, capability)) {
                 continue;
             }
             filtered.add(mapped);
@@ -122,6 +124,8 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         data.put("effective_offset", start);
         data.put("limit", resolvedLimit);
         data.put("has_more", end < total);
+        data.put("dispatch_ready_filter", dispatchReady);
+        data.put("capability_filter", StrUtil.isBlank(capability) ? null : capability.trim());
         data.put("plugins", window);
         return data;
     }
@@ -276,7 +280,9 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
                                    String pluginId,
                                    String runtime,
                                    String status,
-                                   Boolean healthy) {
+                                   Boolean healthy,
+                                   Boolean dispatchReady,
+                                   String capability) {
         if (!containsIgnoreCase((String) mapped.get("plugin_id"), pluginId)) {
             return false;
         }
@@ -287,6 +293,12 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
             return false;
         }
         if (healthy != null && !healthy.equals(mapped.get("healthy"))) {
+            return false;
+        }
+        if (dispatchReady != null && dispatchReady != isDispatchReadyMap(mapped)) {
+            return false;
+        }
+        if (StrUtil.isNotBlank(capability) && !containsCapabilityMap(mapped, capability)) {
             return false;
         }
         return true;
@@ -300,6 +312,40 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
             return false;
         }
         return actual.toLowerCase(Locale.ROOT).contains(expectedPart.trim().toLowerCase(Locale.ROOT));
+    }
+
+
+    private boolean isDispatchReadyMap(Map<String, Object> mapped) {
+        if (mapped == null) {
+            return false;
+        }
+        Object healthy = mapped.get("healthy");
+        if (!Boolean.TRUE.equals(healthy)) {
+            return false;
+        }
+        if (StrUtil.equalsIgnoreCase(String.valueOf(mapped.get("status")), "disabled")) {
+            return false;
+        }
+        if (!containsCapabilityMap(mapped, "inference")) {
+            return false;
+        }
+        return StrUtil.isNotBlank((String) mapped.get("infer_url")) || StrUtil.isNotBlank((String) mapped.get("health_url"));
+    }
+
+    private boolean containsCapabilityMap(Map<String, Object> mapped, String expected) {
+        if (mapped == null || StrUtil.isBlank(expected)) {
+            return false;
+        }
+        Object value = mapped.get("capabilities");
+        if (!(value instanceof List<?>)) {
+            return false;
+        }
+        for (Object item : (List<?>) value) {
+            if (item != null && StrUtil.equalsIgnoreCase(String.valueOf(item).trim(), expected.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

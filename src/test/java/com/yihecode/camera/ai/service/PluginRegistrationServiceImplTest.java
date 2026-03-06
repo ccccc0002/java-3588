@@ -116,7 +116,7 @@ class PluginRegistrationServiceImplTest {
         record.setVersion("1.0.0");
         when(pluginRegistryService.list()).thenReturn(Arrays.asList(record));
 
-        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-1", null, null, null, null, 0, 100);
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-1", null, null, null, null, null, null, 0, 100);
 
         assertEquals("trace-plugin-list-1", data.get("trace_id"));
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
@@ -144,7 +144,7 @@ class PluginRegistrationServiceImplTest {
 
         when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second));
 
-        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-2", "detector", "rk3588", "healthy", true, 0, 10);
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-2", "detector", "rk3588", "healthy", true, null, null, 0, 10);
 
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
         assertEquals(1, plugins.size());
@@ -244,6 +244,47 @@ class PluginRegistrationServiceImplTest {
         assertEquals(2, ((Number) capabilityCounts.get("inference")).intValue());
         assertEquals(1, ((Number) capabilityCounts.get("alert")).intValue());
         assertEquals(1, ((Number) capabilityCounts.get("stream")).intValue());
+    }
+
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listRegistrations_shouldFilterByCapabilityAndDispatchReady() {
+        PluginRegistryRecord first = new PluginRegistryRecord();
+        first.setRegistrationId("face-detector:1.0.0");
+        first.setPluginId("face-detector");
+        first.setRuntime("rk3588_rknn");
+        first.setCapabilities(Arrays.asList("inference", "alert"));
+        first.setInferUrl("http://plugin-a:19090/v1/infer");
+        first.setHealthy(true);
+        first.setStatus("healthy");
+
+        PluginRegistryRecord second = new PluginRegistryRecord();
+        second.setRegistrationId("stream-proxy:1.0.0");
+        second.setPluginId("stream-proxy");
+        second.setRuntime("http_proxy");
+        second.setCapabilities(Arrays.asList("stream"));
+        second.setHealthy(true);
+        second.setStatus("healthy");
+
+        PluginRegistryRecord third = new PluginRegistryRecord();
+        third.setRegistrationId("helmet-detector:1.0.0");
+        third.setPluginId("helmet-detector");
+        third.setRuntime("rk3588_rknn");
+        third.setCapabilities(Arrays.asList("inference"));
+        third.setInferUrl("http://plugin-b:19090/v1/infer");
+        third.setHealthy(false);
+        third.setStatus("unreachable");
+
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second, third));
+
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-3", null, null, null, null, true, "inference", 0, 10);
+
+        List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
+        assertEquals(1, plugins.size());
+        assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+        assertEquals(Boolean.TRUE, data.get("dispatch_ready_filter"));
+        assertEquals("inference", data.get("capability_filter"));
     }
 
 }

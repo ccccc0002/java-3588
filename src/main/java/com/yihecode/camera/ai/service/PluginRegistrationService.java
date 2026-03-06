@@ -15,6 +15,8 @@ public interface PluginRegistrationService {
                                           String runtime,
                                           String status,
                                           Boolean healthy,
+                                          Boolean dispatchReady,
+                                          String capability,
                                           Integer offset,
                                           Integer limit);
 

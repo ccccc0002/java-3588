@@ -150,25 +150,25 @@ class PluginApiControllerTest {
         Map<String, Object> listing = new HashMap<>();
         listing.put("trace_id", "trace-plugin-list-2");
         listing.put("plugins", Arrays.asList(Map.of("registration_id", "face-detector:1.0.0")));
-        when(pluginRegistrationService.listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100))).thenReturn(listing);
+        when(pluginRegistrationService.listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100))).thenReturn(listing);
 
-        JsonResult result = pluginApiController.list(null, null, null, null, 0, 100);
+        JsonResult result = pluginApiController.list(null, null, null, null, null, null, 0, 100);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
         assertEquals(1, plugins.size());
         assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
-        verify(pluginRegistrationService).listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100));
+        verify(pluginRegistrationService).listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100));
     }
 
     @Test
     void list_shouldForwardFilters() {
-        when(pluginRegistrationService.listRegistrations(anyString(), anyString(), anyString(), anyString(), any(), anyInt(), anyInt())).thenReturn(Map.of("plugins", Arrays.asList()));
+        when(pluginRegistrationService.listRegistrations(anyString(), anyString(), anyString(), anyString(), any(), any(), any(), anyInt(), anyInt())).thenReturn(Map.of("plugins", Arrays.asList()));
 
-        pluginApiController.list("detector", "rk3588", "healthy", true, 5, 20);
+        pluginApiController.list("detector", "rk3588", "healthy", true, null, null, 5, 20);
 
-        verify(pluginRegistrationService).listRegistrations(anyString(), eq("detector"), eq("rk3588"), eq("healthy"), eq(true), eq(5), eq(20));
+        verify(pluginRegistrationService).listRegistrations(anyString(), eq("detector"), eq("rk3588"), eq("healthy"), eq(true), eq(null), eq(null), eq(5), eq(20));
     }
 
     @Test
@@ -241,6 +241,17 @@ class PluginApiControllerTest {
         assertEquals(1, ((Number) data.get("dispatch_ready_count")).intValue());
         assertEquals(1, ((Number) ((Map<String, Object>) data.get("status_counts")).get("healthy")).intValue());
         verify(pluginRegistrationService).stats(anyString());
+    }
+
+
+    @Test
+    void list_shouldForwardDispatchReadyAndCapabilityFilters() {
+        when(pluginRegistrationService.listRegistrations(anyString(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(Map.of("plugins", Arrays.asList()));
+
+        pluginApiController.list("detector", "rk3588", "healthy", true, true, "inference", 5, 20);
+
+        verify(pluginRegistrationService).listRegistrations(anyString(), eq("detector"), eq("rk3588"), eq("healthy"), eq(true), eq(true), eq("inference"), eq(5), eq(20));
     }
 
 }

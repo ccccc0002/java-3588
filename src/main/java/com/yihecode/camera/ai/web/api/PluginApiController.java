@@ -83,6 +83,8 @@ public class PluginApiController {
                            @RequestParam(value = "runtime", required = false) String runtime,
                            @RequestParam(value = "status", required = false) String status,
                            @RequestParam(value = "healthy", required = false) Boolean healthy,
+                           @RequestParam(value = "dispatch_ready", required = false) Boolean dispatchReady,
+                           @RequestParam(value = "capability", required = false) String capability,
                            @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
                            @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit) {
         String traceId = UUID.randomUUID().toString();
@@ -94,6 +96,8 @@ public class PluginApiController {
                 trimToNull(runtime),
                 trimToNull(status),
                 healthy,
+                dispatchReady,
+                trimToNull(capability),
                 offset,
                 limit));
         data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
