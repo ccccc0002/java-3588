@@ -455,6 +455,11 @@ class InferenceApiControllerTest {
         assertEquals("skipped", report.get("status"));
         Map<String, Object> replayMetaData = (Map<String, Object>) data.get("replay_meta");
         assertEquals(1, ((Number) replayMetaData.get("replay_count")).intValue());
+        Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
+        assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
+        assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
+        assertEquals(2, ((Number) replayBudget.get("remaining_replay_attempts")).intValue());
+        assertEquals(false, replayBudget.get("replay_exhausted"));
         Map<String, Object> request = (Map<String, Object>) data.get("request");
         Map<String, Object> frame = (Map<String, Object>) request.get("frame");
         assertEquals("dead_letter_replay", frame.get("replay_source"));
@@ -499,6 +504,7 @@ class InferenceApiControllerTest {
         assertEquals(11L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals(3, ((Number) data.get("replay_count")).intValue());
         assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
+        assertEquals(true, data.get("replay_exhausted"));
         assertTrue(String.valueOf(result.getMsg()).contains("replay attempts exhausted"));
     }
 
