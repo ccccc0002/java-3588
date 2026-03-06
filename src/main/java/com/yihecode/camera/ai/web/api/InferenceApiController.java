@@ -481,11 +481,13 @@ public class InferenceApiController {
                                             @RequestParam(value = "dry_run", required = false) Integer dryRunFlag,
                                             @RequestParam(value = "dead_letter_ids", required = false) String deadLetterIdsText,
                                             @RequestParam(value = "ids", required = false) String idsText,
-                                            @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag) {
+                                            @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag,
+                                            @RequestParam(value = "offset", required = false) Integer offset) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             Integer requestedLimit = firstInteger(payload.get("limit"), limit);
+            Integer requestedOffset = firstInteger(payload.get("offset"), offset);
             Integer effectivePersistReportFlag = firstInteger(payload.get("persist_report"), persistReportFlag);
             Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
@@ -496,20 +498,31 @@ public class InferenceApiController {
             boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
             int effectiveLimit = normalizeDeadLetterReplayBatchLimit(requestedLimit, maxLimit);
+            int effectiveOffset = normalizeReplayBatchOffset(requestedOffset);
+            int fetchLimit = resolveReplayBatchFetchLimit(effectiveLimit, effectiveOffset, maxLimit);
             boolean truncated = requestedLimit != null && requestedLimit > 0 && requestedLimit > effectiveLimit;
-            List<Long> selectedIds = resolveDeadLetterIds(effectiveLimit, bodyDeadLetterIds, bodyIds, deadLetterIdsText, idsText);
+            List<Long> selectedIds = resolveDeadLetterIds(fetchLimit, bodyDeadLetterIds, bodyIds, deadLetterIdsText, idsText);
             boolean explicitIdsMode = !selectedIds.isEmpty();
-            List<Map<String, Object>> candidates;
+            List<Map<String, Object>> sourceCandidates;
             if (explicitIdsMode) {
-                candidates = new ArrayList<>();
+                sourceCandidates = new ArrayList<>();
                 for (Long itemId : selectedIds) {
                     Map<String, Object> item = new HashMap<>();
                     item.put("dead_letter_id", itemId);
-                    candidates.add(item);
+                    sourceCandidates.add(item);
                 }
             } else {
-                candidates = inferenceDeadLetterService.latest(effectiveLimit, onlyRetryable, onlyExhausted);
+                sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted);
             }
+
+            int totalSelectedCount = sourceCandidates.size();
+            int appliedOffset = Math.min(effectiveOffset, totalSelectedCount);
+            List<Map<String, Object>> candidates = new ArrayList<>();
+            for (int i = appliedOffset; i < totalSelectedCount && candidates.size() < effectiveLimit; i++) {
+                candidates.add(sourceCandidates.get(i));
+            }
+            int nextOffset = appliedOffset + candidates.size();
+            boolean hasMore = nextOffset < totalSelectedCount;
 
             int successCount = 0;
             int failedCount = 0;
@@ -592,7 +605,12 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("requested_limit", requestedLimit);
+            data.put("requested_offset", requestedOffset == null ? 0 : requestedOffset);
             data.put("effective_limit", effectiveLimit);
+            data.put("effective_offset", appliedOffset);
+            data.put("next_offset", nextOffset);
+            data.put("has_more", hasMore);
+            data.put("total_selected_count", totalSelectedCount);
             data.put("max_limit", maxLimit);
             data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
@@ -695,6 +713,22 @@ public class InferenceApiController {
             return defaultLimit;
         }
         return Math.min(requestedLimit, effectiveMax);
+    }
+
+    private int normalizeReplayBatchOffset(Integer requestedOffset) {
+        if (requestedOffset == null || requestedOffset <= 0) {
+            return 0;
+        }
+        return requestedOffset;
+    }
+
+    private int resolveReplayBatchFetchLimit(int effectiveLimit, int effectiveOffset, int maxLimit) {
+        int effectiveMax = Math.max(1, maxLimit);
+        long desired = (long) effectiveLimit + (long) effectiveOffset;
+        if (desired <= 0) {
+            return Math.min(effectiveLimit, effectiveMax);
+        }
+        return (int) Math.min(desired, (long) effectiveMax);
     }
 
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})

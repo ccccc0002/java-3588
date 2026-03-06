@@ -705,7 +705,7 @@ class InferenceApiControllerTest {
         when(inferenceDeadLetterService.markReplay(eq(22L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta2);
         when(inferenceDeadLetterService.removeById(anyLong())).thenReturn(true);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, null, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, null, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -780,7 +780,7 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.infer(any())).thenReturn(infer);
         when(inferenceDeadLetterService.markReplay(eq(31L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, null, 1, null, null, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, null, 1, null, null, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -818,7 +818,7 @@ class InferenceApiControllerTest {
         candidates.add(c2);
         when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(candidates);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -850,7 +850,7 @@ class InferenceApiControllerTest {
     @Test
     @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldUseExplicitDeadLetterIdsWhenProvided() {
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "52,51,52", null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "52,51,52", null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -881,7 +881,7 @@ class InferenceApiControllerTest {
         when(configService.getByValTag("infer_dead_letter_replay_batch_max_limit")).thenReturn("2");
         when(inferenceDeadLetterService.latest(2, true, false)).thenReturn(candidates);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -900,7 +900,7 @@ class InferenceApiControllerTest {
     void deadLetterReplayBatch_shouldClampExplicitIdsByConfiguredMax() {
         when(configService.getByValTag("infer_dead_letter_replay_batch_max_limit")).thenReturn("2");
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "71,72,73", null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "71,72,73", null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -969,7 +969,7 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.infer(any())).thenReturn(infer);
         when(inferenceDeadLetterService.markReplay(eq(81L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, null, 1, null, null, null, null, 1);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, null, 1, null, null, null, null, 1, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -1008,7 +1008,7 @@ class InferenceApiControllerTest {
         ids.add(92L);
         body.put("dead_letter_ids", ids);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -1038,7 +1038,7 @@ class InferenceApiControllerTest {
 
         when(inferenceDeadLetterService.latest(1, true, false)).thenReturn(candidates);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -1103,7 +1103,7 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.infer(any())).thenReturn(infer);
         when(inferenceDeadLetterService.markReplay(eq(111L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, null, 1, null, null, null, null, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, null, 1, null, null, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -1113,6 +1113,65 @@ class InferenceApiControllerTest {
         assertEquals(1, ((Number) data.get("remaining_count")).intValue());
 
         verify(inferenceDeadLetterService, never()).tryAcquireReplay(eq(113L), anyString(), anyInt());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldApplyOffsetWindowForDryRunLatest() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 201L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 202L);
+        Map<String, Object> c3 = new HashMap<>();
+        c3.put("dead_letter_id", 203L);
+        Map<String, Object> c4 = new HashMap<>();
+        c4.put("dead_letter_id", 204L);
+        candidates.add(c1);
+        candidates.add(c2);
+        candidates.add(c3);
+        candidates.add(c4);
+
+        when(inferenceDeadLetterService.latest(4, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 2, 0, 1, 1, null, 1, null, null, null, 2);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(2, ((Number) data.get("requested_offset")).intValue());
+        assertEquals(2, ((Number) data.get("effective_offset")).intValue());
+        assertEquals(4, ((Number) data.get("total_selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("processed_count")).intValue());
+        assertEquals(4, ((Number) data.get("next_offset")).intValue());
+        assertEquals(false, data.get("has_more"));
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        assertEquals(2, results.size());
+        assertEquals(203L, ((Number) results.get(0).get("dead_letter_id")).longValue());
+        assertEquals(204L, ((Number) results.get(1).get("dead_letter_id")).longValue());
+
+        verify(inferenceDeadLetterService).latest(4, true, false);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldClampOffsetWhenBeyondSelectedCount() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("dead_letter_ids", "301,302");
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, 10);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(10, ((Number) data.get("requested_offset")).intValue());
+        assertEquals(2, ((Number) data.get("effective_offset")).intValue());
+        assertEquals(2, ((Number) data.get("total_selected_count")).intValue());
+        assertEquals(0, ((Number) data.get("selected_count")).intValue());
+        assertEquals(0, ((Number) data.get("processed_count")).intValue());
+        assertEquals(2, ((Number) data.get("next_offset")).intValue());
+        assertEquals(false, data.get("has_more"));
+        assertEquals(0, ((Number) data.get("remaining_count")).intValue());
     }
 
     private Map<String, Object> buildAcquireResult(boolean acquired, String reason, Map<String, Object> entry) {
