@@ -271,11 +271,13 @@ public class InferenceApiController {
     @RequestMapping(value = {"/dead-letter/latest"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult deadLetterLatest(@RequestParam(value = "limit", required = false) Integer limit,
-                                       @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag) {
+                                       @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
+                                       @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
-            List<Map<String, Object>> latest = inferenceDeadLetterService.latest(limit, onlyRetryable);
+            boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
+            List<Map<String, Object>> latest = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
             List<Map<String, Object>> display = new ArrayList<>();
             for (Map<String, Object> item : latest) {
                 display.add(enrichDeadLetterReplayBudget(item));

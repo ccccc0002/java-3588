@@ -344,10 +344,10 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-latest");
         item.put("replay_count", 1);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, false, false)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, null);
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -366,10 +366,10 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-retryable");
         item.put("replay_count", 2);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, true)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, 1);
+        JsonResult result = inferenceApiController.deadLetterLatest(5, 1, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -378,6 +378,28 @@ class InferenceApiControllerTest {
         assertEquals("trace-dl-retryable", deadLetter.get(0).get("trace_id"));
         assertEquals(1, ((Number) deadLetter.get(0).get("remaining_replay_attempts")).intValue());
         assertEquals(false, deadLetter.get(0).get("replay_exhausted"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterLatest_shouldUseOnlyExhaustedFilterWhenRequested() {
+        List<Map<String, Object>> latest = new ArrayList<>();
+        Map<String, Object> item = new HashMap<>();
+        item.put("trace_id", "trace-dl-exhausted");
+        item.put("replay_count", 3);
+        latest.add(item);
+        when(inferenceDeadLetterService.latest(5, false, true)).thenReturn(latest);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
+        assertEquals(1, deadLetter.size());
+        assertEquals("trace-dl-exhausted", deadLetter.get(0).get("trace_id"));
+        assertEquals(0, ((Number) deadLetter.get(0).get("remaining_replay_attempts")).intValue());
+        assertEquals(true, deadLetter.get(0).get("replay_exhausted"));
     }
 
     @Test
