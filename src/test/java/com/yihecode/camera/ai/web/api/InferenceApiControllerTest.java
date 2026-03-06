@@ -482,4 +482,72 @@ class InferenceApiControllerTest {
         assertEquals(31L, ((Number) routes.get(6).get("camera_id")).longValue());
         assertEquals(false, data.get("truncated"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldAcceptQueryCamerasAlias() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, null, "501,503-504", null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(3, routes.size());
+        assertEquals(501L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(503L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(504L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(false, data.get("truncated"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldAcceptQueryCameraRangeAlias() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, null, null, "620-618", null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(3, routes.size());
+        assertEquals(620L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(619L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(618L, ((Number) routes.get(2).get("camera_id")).longValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldMergeAllQueryAliasesInStableOrder() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(
+                null,
+                "700,701",
+                "701,702",
+                "703-704",
+                "705,704"
+        );
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(6, routes.size());
+        assertEquals(700L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(701L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(702L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(703L, ((Number) routes.get(3).get("camera_id")).longValue());
+        assertEquals(704L, ((Number) routes.get(4).get("camera_id")).longValue());
+        assertEquals(705L, ((Number) routes.get(5).get("camera_id")).longValue());
+        assertEquals(false, data.get("truncated"));
+    }
 }

@@ -208,11 +208,26 @@ public class InferenceApiController {
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult routeBatch(@RequestBody(required = false) Map<String, Object> body,
-                                 @RequestParam(value = "camera_ids", required = false) String cameraIdsText) {
+                                 @RequestParam(value = "camera_ids", required = false) String cameraIdsText,
+                                 @RequestParam(value = "cameras", required = false) String camerasText,
+                                 @RequestParam(value = "camera_range", required = false) String cameraRangeText,
+                                 @RequestParam(value = "range", required = false) String rangeText) {
+        return routeBatchInternal(body, cameraIdsText, camerasText, cameraRangeText, rangeText);
+    }
+
+    JsonResult routeBatch(Map<String, Object> body, String cameraIdsText) {
+        return routeBatchInternal(body, cameraIdsText, null, null, null);
+    }
+
+    private JsonResult routeBatchInternal(Map<String, Object> body,
+                                          String cameraIdsText,
+                                          String camerasText,
+                                          String cameraRangeText,
+                                          String rangeText) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
-            CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText);
+            CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText, camerasText, cameraRangeText, rangeText);
             List<Long> cameraIds = resolveResult.cameraIds;
             if (cameraIds.isEmpty()) {
                 cameraIds.add(1L);
@@ -326,7 +341,11 @@ public class InferenceApiController {
         return list;
     }
 
-    private CameraIdResolveResult resolveCameraIds(Map<String, Object> payload, String queryCameraIds) {
+    private CameraIdResolveResult resolveCameraIds(Map<String, Object> payload,
+                                                   String queryCameraIds,
+                                                   String queryCameras,
+                                                   String queryCameraRange,
+                                                   String queryRange) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
         Object bodyCameraIds = payload == null ? null : payload.get("camera_ids");
         Object bodyCameras = payload == null ? null : payload.get("cameras");
@@ -345,6 +364,15 @@ public class InferenceApiController {
         }
         if (!truncated) {
             truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        if (!truncated) {
+            truncated = addCameraIds(ordered, queryCameras, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        if (!truncated) {
+            truncated = addCameraIds(ordered, queryCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS);
+        }
+        if (!truncated) {
+            truncated = addCameraIds(ordered, queryRange, ROUTE_BATCH_MAX_CAMERA_IDS);
         }
         return new CameraIdResolveResult(new ArrayList<>(ordered), truncated);
     }
