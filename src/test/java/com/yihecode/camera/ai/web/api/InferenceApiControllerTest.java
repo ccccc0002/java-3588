@@ -588,4 +588,51 @@ class InferenceApiControllerTest {
         assertEquals(true, data.get("truncated"));
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldExposeParseStatsForMixedTokens() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, "100-102,101,bad, ,102,103-101");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(4, routes.size());
+        assertEquals(100L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(101L, ((Number) routes.get(1).get("camera_id")).longValue());
+        assertEquals(102L, ((Number) routes.get(2).get("camera_id")).longValue());
+        assertEquals(103L, ((Number) routes.get(3).get("camera_id")).longValue());
+        assertEquals(4, ((Number) data.get("resolved_camera_count")).intValue());
+        assertEquals(5, ((Number) data.get("input_token_count")).intValue());
+        assertEquals(1, ((Number) data.get("invalid_token_count")).intValue());
+        assertEquals(4, ((Number) data.get("duplicate_filtered_count")).intValue());
+        assertEquals(false, data.get("truncated"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldExposeZeroParseStatsWhenFallingBackToDefaultCamera() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(1L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(1L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(1L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, ",,");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(1, routes.size());
+        assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(1, ((Number) data.get("resolved_camera_count")).intValue());
+        assertEquals(0, ((Number) data.get("input_token_count")).intValue());
+        assertEquals(0, ((Number) data.get("invalid_token_count")).intValue());
+        assertEquals(0, ((Number) data.get("duplicate_filtered_count")).intValue());
+        assertEquals(false, data.get("truncated"));
+    }
 }
