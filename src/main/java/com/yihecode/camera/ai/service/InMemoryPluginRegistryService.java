@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.service;
 
 import cn.hutool.core.util.StrUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,6 +16,10 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
 
     private final Map<String, PluginRegistryRecord> registry = new LinkedHashMap<>();
     private final Object lock = new Object();
+    private volatile boolean loaded = false;
+
+    @Autowired(required = false)
+    private PluginRegistryPersistenceService pluginRegistryPersistenceService;
 
     @Override
     public void save(PluginRegistryRecord record) {
@@ -22,7 +27,9 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
             return;
         }
         synchronized (lock) {
+            ensureLoadedLocked();
             registry.put(record.getRegistrationId(), copy(record));
+            persistLocked();
         }
     }
 
@@ -32,6 +39,7 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
             return Optional.empty();
         }
         synchronized (lock) {
+            ensureLoadedLocked();
             PluginRegistryRecord record = registry.get(registrationId.trim());
             return record == null ? Optional.empty() : Optional.of(copy(record));
         }
@@ -40,12 +48,8 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
     @Override
     public List<PluginRegistryRecord> list() {
         synchronized (lock) {
-            List<PluginRegistryRecord> records = new ArrayList<>();
-            for (PluginRegistryRecord record : registry.values()) {
-                records.add(copy(record));
-            }
-            records.sort(Comparator.comparing(PluginRegistryRecord::getUpdatedAtMs, Comparator.nullsLast(Comparator.reverseOrder())));
-            return records;
+            ensureLoadedLocked();
+            return snapshotLocked();
         }
     }
 
@@ -55,8 +59,45 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
             return false;
         }
         synchronized (lock) {
-            return registry.remove(registrationId.trim()) != null;
+            ensureLoadedLocked();
+            boolean removed = registry.remove(registrationId.trim()) != null;
+            if (removed) {
+                persistLocked();
+            }
+            return removed;
         }
+    }
+
+    private void ensureLoadedLocked() {
+        if (loaded) {
+            return;
+        }
+        loaded = true;
+        if (pluginRegistryPersistenceService == null) {
+            return;
+        }
+        List<PluginRegistryRecord> persisted = pluginRegistryPersistenceService.loadAll();
+        for (PluginRegistryRecord record : persisted) {
+            if (record != null && StrUtil.isNotBlank(record.getRegistrationId())) {
+                registry.put(record.getRegistrationId(), copy(record));
+            }
+        }
+    }
+
+    private void persistLocked() {
+        if (pluginRegistryPersistenceService == null) {
+            return;
+        }
+        pluginRegistryPersistenceService.saveAll(snapshotLocked());
+    }
+
+    private List<PluginRegistryRecord> snapshotLocked() {
+        List<PluginRegistryRecord> records = new ArrayList<>();
+        for (PluginRegistryRecord record : registry.values()) {
+            records.add(copy(record));
+        }
+        records.sort(Comparator.comparing(PluginRegistryRecord::getUpdatedAtMs, Comparator.nullsLast(Comparator.reverseOrder())));
+        return records;
     }
 
     private PluginRegistryRecord copy(PluginRegistryRecord source) {

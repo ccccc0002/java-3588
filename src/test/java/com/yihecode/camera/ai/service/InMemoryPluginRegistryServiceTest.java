@@ -1,7 +1,10 @@
 package com.yihecode.camera.ai.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class InMemoryPluginRegistryServiceTest {
 
@@ -62,5 +69,34 @@ class InMemoryPluginRegistryServiceTest {
 
         assertTrue(removed);
         assertFalse(pluginRegistryService.findByRegistrationId("face-detector:1.0.0").isPresent());
+    }
+
+    @Test
+    void save_shouldPersistSnapshotWhenPersistenceConfigured() {
+        PluginRegistryPersistenceService persistenceService = mock(PluginRegistryPersistenceService.class);
+        ReflectionTestUtils.setField(pluginRegistryService, "pluginRegistryPersistenceService", persistenceService);
+
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+
+        pluginRegistryService.save(record);
+
+        verify(persistenceService).saveAll(anyList());
+    }
+
+    @Test
+    void list_shouldLoadPersistedSnapshotOnFirstAccess() {
+        InMemoryPluginRegistryService service = new InMemoryPluginRegistryService();
+        PluginRegistryPersistenceService persistenceService = mock(PluginRegistryPersistenceService.class);
+        ReflectionTestUtils.setField(service, "pluginRegistryPersistenceService", persistenceService);
+
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+        when(persistenceService.loadAll()).thenReturn(Arrays.asList(record));
+
+        List<PluginRegistryRecord> records = service.list();
+
+        assertEquals(1, records.size());
+        assertEquals("face-detector:1.0.0", records.get(0).getRegistrationId());
     }
 }
