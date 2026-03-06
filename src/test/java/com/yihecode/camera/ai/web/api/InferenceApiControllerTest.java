@@ -491,6 +491,14 @@ class InferenceApiControllerTest {
         assertEquals("body_range", hitSources.get(3));
         assertEquals("query_camera_ids", hitSources.get(4));
         assertEquals(null, data.get("truncated_source"));
+        Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
+        assertEquals(5, sourceStats.size());
+        Map<String, Object> bodyCamerasStats = (Map<String, Object>) sourceStats.get("body_cameras");
+        assertEquals(2, ((Number) bodyCamerasStats.get("input_token_count")).intValue());
+        assertEquals(3, ((Number) bodyCamerasStats.get("expanded_candidate_count")).intValue());
+        assertEquals(1, ((Number) bodyCamerasStats.get("duplicate_filtered_count")).intValue());
+        assertEquals(2, ((Number) bodyCamerasStats.get("unique_added_count")).intValue());
+        assertEquals(false, bodyCamerasStats.get("truncated"));
     }
 
     @Test
@@ -580,6 +588,16 @@ class InferenceApiControllerTest {
         List<String> hitSources = (List<String>) data.get("hit_sources");
         assertEquals(0, hitSources.size());
         assertEquals(null, data.get("truncated_source"));
+        Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
+        assertEquals(2, sourceStats.size());
+        Map<String, Object> queryCamerasStats = (Map<String, Object>) sourceStats.get("query_cameras");
+        assertEquals(1, ((Number) queryCamerasStats.get("input_token_count")).intValue());
+        assertEquals(1, ((Number) queryCamerasStats.get("invalid_token_count")).intValue());
+        assertEquals(0, ((Number) queryCamerasStats.get("unique_added_count")).intValue());
+        Map<String, Object> queryCameraRangeStats = (Map<String, Object>) sourceStats.get("query_camera_range");
+        assertEquals(1, ((Number) queryCameraRangeStats.get("input_token_count")).intValue());
+        assertEquals(1, ((Number) queryCameraRangeStats.get("invalid_token_count")).intValue());
+        assertEquals(0, ((Number) queryCameraRangeStats.get("unique_added_count")).intValue());
     }
 
     @Test
@@ -605,6 +623,12 @@ class InferenceApiControllerTest {
         assertEquals("query_cameras", hitSources.get(0));
         assertEquals("query_camera_range", hitSources.get(1));
         assertEquals("query_camera_range", data.get("truncated_source"));
+        Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
+        Map<String, Object> queryRangeStats = (Map<String, Object>) sourceStats.get("query_camera_range");
+        assertEquals(true, queryRangeStats.get("truncated"));
+        assertEquals(1, ((Number) queryRangeStats.get("input_token_count")).intValue());
+        assertEquals(200, ((Number) queryRangeStats.get("expanded_candidate_count")).intValue());
+        assertEquals(200, ((Number) queryRangeStats.get("unique_added_count")).intValue());
     }
 
     @Test
@@ -635,6 +659,14 @@ class InferenceApiControllerTest {
         assertEquals(1, hitSources.size());
         assertEquals("query_camera_ids", hitSources.get(0));
         assertEquals(null, data.get("truncated_source"));
+        Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
+        Map<String, Object> queryCameraIdsStats = (Map<String, Object>) sourceStats.get("query_camera_ids");
+        assertEquals(5, ((Number) queryCameraIdsStats.get("input_token_count")).intValue());
+        assertEquals(8, ((Number) queryCameraIdsStats.get("expanded_candidate_count")).intValue());
+        assertEquals(1, ((Number) queryCameraIdsStats.get("invalid_token_count")).intValue());
+        assertEquals(4, ((Number) queryCameraIdsStats.get("duplicate_filtered_count")).intValue());
+        assertEquals(4, ((Number) queryCameraIdsStats.get("unique_added_count")).intValue());
+        assertEquals(false, queryCameraIdsStats.get("truncated"));
     }
 
     @Test
@@ -659,5 +691,7 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("duplicate_filtered_count")).intValue());
         assertEquals(true, data.get("default_fallback_used"));
         assertEquals(false, data.get("truncated"));
+        Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
+        assertEquals(0, sourceStats.size());
     }
 }

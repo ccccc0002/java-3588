@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -266,6 +267,7 @@ public class InferenceApiController {
             data.put("duplicate_filtered_count", resolveResult.duplicateFilteredCount);
             data.put("hit_sources", resolveResult.hitSources);
             data.put("truncated_source", resolveResult.truncatedSource);
+            data.put("source_stats", resolveResult.sourceStats);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference route batch api failed, trace_id={}", traceId, e);
@@ -392,7 +394,8 @@ public class InferenceApiController {
                 stats.invalidTokenCount,
                 stats.duplicateFilteredCount,
                 new ArrayList<>(stats.hitSources),
-                stats.truncatedSource
+                stats.truncatedSource,
+                stats.toSourceStatsMap()
         );
     }
 
@@ -431,9 +434,12 @@ public class InferenceApiController {
             return false;
         }
         stats.inputTokenCount += 1;
+        SourceParseStats sourceStats = getOrCreateSourceStats(stats, sourceName);
+        sourceStats.inputTokenCount += 1;
         Long cameraId = toLong(value);
         if (cameraId == null) {
             stats.invalidTokenCount += 1;
+            sourceStats.invalidTokenCount += 1;
             return false;
         }
         return addCameraIdValue(ordered, cameraId, maxSize, stats, sourceName);
@@ -453,6 +459,8 @@ public class InferenceApiController {
             return false;
         }
         stats.inputTokenCount += 1;
+        SourceParseStats sourceStats = getOrCreateSourceStats(stats, sourceName);
+        sourceStats.inputTokenCount += 1;
 
         String[] rangeParts = token.split("-", -1);
         if (rangeParts.length == 2) {
@@ -476,6 +484,7 @@ public class InferenceApiController {
         Long cameraId = toLong(token);
         if (cameraId == null) {
             stats.invalidTokenCount += 1;
+            sourceStats.invalidTokenCount += 1;
             return false;
         }
         return addCameraIdValue(ordered, cameraId, maxSize, stats, sourceName);
@@ -490,20 +499,25 @@ public class InferenceApiController {
             return false;
         }
         markSourceHit(stats, sourceName);
+        SourceParseStats sourceStats = getOrCreateSourceStats(stats, sourceName);
         if (ordered.size() >= maxSize) {
             markTruncatedSource(stats, sourceName);
+            sourceStats.truncated = true;
             return true;
         }
         if (stats != null) {
             stats.expandedCandidateCount += 1;
         }
+        sourceStats.expandedCandidateCount += 1;
         if (ordered.contains(cameraId)) {
             if (stats != null) {
                 stats.duplicateFilteredCount += 1;
             }
+            sourceStats.duplicateFilteredCount += 1;
             return false;
         }
         ordered.add(cameraId);
+        sourceStats.uniqueAddedCount += 1;
         return false;
     }
 
@@ -521,6 +535,21 @@ public class InferenceApiController {
         if (StrUtil.isBlank(stats.truncatedSource)) {
             stats.truncatedSource = sourceName;
         }
+        SourceParseStats sourceStats = getOrCreateSourceStats(stats, sourceName);
+        sourceStats.truncated = true;
+    }
+
+    private SourceParseStats getOrCreateSourceStats(CameraIdParseStats stats, String sourceName) {
+        if (stats == null || StrUtil.isBlank(sourceName)) {
+            return new SourceParseStats();
+        }
+        SourceParseStats sourceStats = stats.sourceStats.get(sourceName);
+        if (sourceStats != null) {
+            return sourceStats;
+        }
+        SourceParseStats created = new SourceParseStats();
+        stats.sourceStats.put(sourceName, created);
+        return created;
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {
@@ -584,6 +613,7 @@ public class InferenceApiController {
         private final int duplicateFilteredCount;
         private final List<String> hitSources;
         private final String truncatedSource;
+        private final Map<String, Map<String, Object>> sourceStats;
 
         private CameraIdResolveResult(List<Long> cameraIds,
                                       boolean truncated,
@@ -592,7 +622,8 @@ public class InferenceApiController {
                                       int invalidTokenCount,
                                       int duplicateFilteredCount,
                                       List<String> hitSources,
-                                      String truncatedSource) {
+                                      String truncatedSource,
+                                      Map<String, Map<String, Object>> sourceStats) {
             this.cameraIds = cameraIds;
             this.truncated = truncated;
             this.inputTokenCount = inputTokenCount;
@@ -601,6 +632,7 @@ public class InferenceApiController {
             this.duplicateFilteredCount = duplicateFilteredCount;
             this.hitSources = hitSources == null ? new ArrayList<>() : hitSources;
             this.truncatedSource = truncatedSource;
+            this.sourceStats = sourceStats == null ? new LinkedHashMap<>() : sourceStats;
         }
     }
 
@@ -611,5 +643,34 @@ public class InferenceApiController {
         private int duplicateFilteredCount;
         private final LinkedHashSet<String> hitSources = new LinkedHashSet<>();
         private String truncatedSource;
+        private final Map<String, SourceParseStats> sourceStats = new LinkedHashMap<>();
+
+        private Map<String, Map<String, Object>> toSourceStatsMap() {
+            Map<String, Map<String, Object>> data = new LinkedHashMap<>();
+            for (Map.Entry<String, SourceParseStats> entry : sourceStats.entrySet()) {
+                data.put(entry.getKey(), entry.getValue().toMap());
+            }
+            return data;
+        }
+    }
+
+    private static class SourceParseStats {
+        private int inputTokenCount;
+        private int expandedCandidateCount;
+        private int invalidTokenCount;
+        private int duplicateFilteredCount;
+        private int uniqueAddedCount;
+        private boolean truncated;
+
+        private Map<String, Object> toMap() {
+            Map<String, Object> data = new HashMap<>();
+            data.put("input_token_count", inputTokenCount);
+            data.put("expanded_candidate_count", expandedCandidateCount);
+            data.put("invalid_token_count", invalidTokenCount);
+            data.put("duplicate_filtered_count", duplicateFilteredCount);
+            data.put("unique_added_count", uniqueAddedCount);
+            data.put("truncated", truncated);
+            return data;
+        }
     }
 }
