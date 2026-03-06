@@ -82,6 +82,10 @@ public class InferenceDeadLetterService {
 
     public synchronized Map<String, Object> stats() {
         Map<String, Object> data = new HashMap<>();
+        Map<String, Object> backendTypeCounts = new LinkedHashMap<>();
+        Map<String, Object> errorTypeCounts = new LinkedHashMap<>();
+        Map<String, Object> pluginIdCounts = new LinkedHashMap<>();
+        Map<String, Object> pluginRegistrationIdCounts = new LinkedHashMap<>();
         int replayedEntryCount = 0;
         int replaySuccessEntryCount = 0;
         int replayFailedEntryCount = 0;
@@ -92,6 +96,10 @@ public class InferenceDeadLetterService {
         int replayInProgressEntryCount = 0;
         int maxReplayAttempts = maxReplayAttempts();
         for (Map<String, Object> entry : deadLetters) {
+            incrementCount(backendTypeCounts, asCounterKey(entry.get("backend_type")));
+            incrementCount(errorTypeCounts, asCounterKey(entry.get("error_type")));
+            incrementCount(pluginIdCounts, asCounterKey(extractPluginField(entry, "plugin_id")));
+            incrementCount(pluginRegistrationIdCounts, asCounterKey(extractPluginField(entry, "registration_id")));
             if (toBoolean(entry.get("replay_in_progress"), false)) {
                 replayInProgressEntryCount++;
             }
@@ -132,6 +140,10 @@ public class InferenceDeadLetterService {
         data.put("retryable_entry_count", retryableEntryCount);
         data.put("non_retryable_entry_count", nonRetryableEntryCount);
         data.put("replay_in_progress_entry_count", replayInProgressEntryCount);
+        data.put("backend_type_counts", backendTypeCounts);
+        data.put("error_type_counts", errorTypeCounts);
+        data.put("plugin_id_counts", pluginIdCounts);
+        data.put("plugin_registration_id_counts", pluginRegistrationIdCounts);
         data.put("next_dead_letter_id", sequence + 1);
 
         Long oldestId = null;
@@ -143,6 +155,49 @@ public class InferenceDeadLetterService {
         data.put("oldest_dead_letter_id", oldestId);
         data.put("newest_dead_letter_id", newestId);
         return data;
+    }
+
+
+
+    private void incrementCount(Map<String, Object> counts, String key) {
+        if (StrUtil.isBlank(key)) {
+            return;
+        }
+        Object current = counts.get(key);
+        int next = current instanceof Number ? ((Number) current).intValue() + 1 : 1;
+        counts.put(key, next);
+    }
+
+    private String extractPluginField(Map<String, Object> entry, String field) {
+        if (entry == null || StrUtil.isBlank(field)) {
+            return null;
+        }
+        Object pluginDispatchObj = entry.get("plugin_dispatch");
+        if (pluginDispatchObj instanceof Map) {
+            Object value = ((Map<?, ?>) pluginDispatchObj).get(field);
+            if (value != null) {
+                return String.valueOf(value);
+            }
+        }
+        Object pluginRouteObj = entry.get("plugin_route");
+        if (pluginRouteObj instanceof Map) {
+            Object pluginObj = ((Map<?, ?>) pluginRouteObj).get("plugin");
+            if (pluginObj instanceof Map) {
+                Object value = ((Map<?, ?>) pluginObj).get(field);
+                if (value != null) {
+                    return String.valueOf(value);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String asCounterKey(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        return StrUtil.isBlank(text) ? null : text;
     }
 
     public int maxReplayAttempts() {

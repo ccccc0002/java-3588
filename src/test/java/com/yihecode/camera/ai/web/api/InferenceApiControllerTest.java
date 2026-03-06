@@ -385,6 +385,10 @@ class InferenceApiControllerTest {
         stats.put("retryable_entry_count", 3);
         stats.put("non_retryable_entry_count", 0);
         stats.put("replay_in_progress_entry_count", 1);
+        stats.put("backend_type_counts", Map.of("rk3588_rknn", 2, "legacy", 1));
+        stats.put("error_type_counts", Map.of("IllegalStateException", 1));
+        stats.put("plugin_id_counts", Map.of("face-detector", 2));
+        stats.put("plugin_registration_id_counts", Map.of("face-detector:1.0.0", 2));
         when(inferenceDeadLetterService.stats()).thenReturn(stats);
 
         JsonResult result = inferenceApiController.deadLetterStats();
@@ -399,6 +403,8 @@ class InferenceApiControllerTest {
         assertEquals(3, ((Number) deadLetter.get("retryable_entry_count")).intValue());
         assertEquals(0, ((Number) deadLetter.get("non_retryable_entry_count")).intValue());
         assertEquals(1, ((Number) deadLetter.get("replay_in_progress_entry_count")).intValue());
+        assertEquals(2, ((Number) ((Map<String, Object>) deadLetter.get("backend_type_counts")).get("rk3588_rknn")).intValue());
+        assertEquals(2, ((Number) ((Map<String, Object>) deadLetter.get("plugin_registration_id_counts")).get("face-detector:1.0.0")).intValue());
     }
 
     @Test

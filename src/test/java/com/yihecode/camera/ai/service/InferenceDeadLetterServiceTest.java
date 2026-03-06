@@ -74,6 +74,7 @@ class InferenceDeadLetterServiceTest {
     @Test
     void latest_shouldFilterOnlyRetryableWhenRequested() {
         lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
         when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("3");
 
         Map<String, Object> first = new HashMap<>();
@@ -228,4 +229,52 @@ class InferenceDeadLetterServiceTest {
         assertEquals(1, ((Number) stats.get("non_retryable_entry_count")).intValue());
         assertEquals(0, ((Number) stats.get("replay_in_progress_entry_count")).intValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void stats_shouldAggregateBackendAndPluginDimensions() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("3");
+
+        Map<String, Object> first = new HashMap<>();
+        first.put("trace_id", "trace-plugin-1");
+        first.put("backend_type", "rk3588_rknn");
+        first.put("error_type", "IllegalStateException");
+        first.put("plugin_route", Map.of("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector"
+        )));
+
+        Map<String, Object> second = new HashMap<>();
+        second.put("trace_id", "trace-plugin-2");
+        second.put("backend_type", "rk3588_rknn");
+        second.put("error_type", "TimeoutException");
+        second.put("plugin_dispatch", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector"
+        ));
+
+        Map<String, Object> third = new HashMap<>();
+        third.put("trace_id", "trace-legacy-1");
+        third.put("backend_type", "legacy");
+        third.put("error_type", "IllegalArgumentException");
+
+        inferenceDeadLetterService.record(first);
+        inferenceDeadLetterService.record(second);
+        inferenceDeadLetterService.record(third);
+
+        Map<String, Object> stats = inferenceDeadLetterService.stats();
+        Map<String, Object> backendCounts = (Map<String, Object>) stats.get("backend_type_counts");
+        Map<String, Object> errorTypeCounts = (Map<String, Object>) stats.get("error_type_counts");
+        Map<String, Object> pluginIdCounts = (Map<String, Object>) stats.get("plugin_id_counts");
+        Map<String, Object> pluginRegistrationCounts = (Map<String, Object>) stats.get("plugin_registration_id_counts");
+
+        assertEquals(2, ((Number) backendCounts.get("rk3588_rknn")).intValue());
+        assertEquals(1, ((Number) backendCounts.get("legacy")).intValue());
+        assertEquals(1, ((Number) errorTypeCounts.get("TimeoutException")).intValue());
+        assertEquals(1, ((Number) errorTypeCounts.get("IllegalArgumentException")).intValue());
+        assertEquals(2, ((Number) pluginIdCounts.get("face-detector")).intValue());
+        assertEquals(2, ((Number) pluginRegistrationCounts.get("face-detector:1.0.0")).intValue());
+    }
+
 }
