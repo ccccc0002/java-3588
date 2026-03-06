@@ -707,6 +707,9 @@ class InferenceApiControllerTest {
         assertEquals(2, ((Number) data.get("processed_count")).intValue());
         assertEquals(2, ((Number) data.get("success_count")).intValue());
         assertEquals(0, ((Number) data.get("failed_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_replay_in_progress_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_replay_exhausted_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
         List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
         assertEquals(2, results.size());
         assertEquals(0, ((Number) results.get(0).get("code")).intValue());
@@ -768,6 +771,9 @@ class InferenceApiControllerTest {
         assertEquals(2, ((Number) data.get("selected_count")).intValue());
         assertEquals(1, ((Number) data.get("success_count")).intValue());
         assertEquals(1, ((Number) data.get("failed_count")).intValue());
+        assertEquals(1, ((Number) data.get("failed_replay_in_progress_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_replay_exhausted_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
         List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
         assertEquals(2, results.size());
         assertEquals(true, results.get(1).get("replay_in_progress"));

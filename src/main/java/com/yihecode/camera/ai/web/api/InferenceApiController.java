@@ -478,6 +478,9 @@ public class InferenceApiController {
 
             int successCount = 0;
             int failedCount = 0;
+            int failedReplayInProgressCount = 0;
+            int failedReplayExhaustedCount = 0;
+            int failedOtherCount = 0;
             List<Map<String, Object>> results = new ArrayList<>();
             for (Map<String, Object> candidate : candidates) {
                 Long deadLetterId = toLong(candidate.get("dead_letter_id"));
@@ -488,6 +491,7 @@ public class InferenceApiController {
                     invalid.put("msg", "invalid dead letter id");
                     results.add(invalid);
                     failedCount++;
+                    failedOtherCount++;
                     continue;
                 }
 
@@ -506,6 +510,15 @@ public class InferenceApiController {
                     successCount++;
                 } else {
                     failedCount++;
+                    boolean replayInProgress = toBooleanFlag(replayData.get("replay_in_progress"), false);
+                    boolean replayExhausted = toBooleanFlag(replayData.get("replay_exhausted"), false);
+                    if (replayInProgress) {
+                        failedReplayInProgressCount++;
+                    } else if (replayExhausted) {
+                        failedReplayExhaustedCount++;
+                    } else {
+                        failedOtherCount++;
+                    }
                 }
             }
 
@@ -518,6 +531,9 @@ public class InferenceApiController {
             data.put("processed_count", results.size());
             data.put("success_count", successCount);
             data.put("failed_count", failedCount);
+            data.put("failed_replay_in_progress_count", failedReplayInProgressCount);
+            data.put("failed_replay_exhausted_count", failedReplayExhaustedCount);
+            data.put("failed_other_count", failedOtherCount);
             data.put("results", results);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
