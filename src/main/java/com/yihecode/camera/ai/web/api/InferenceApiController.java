@@ -261,6 +261,7 @@ public class InferenceApiController {
             data.put("truncated", resolveResult.truncated);
             data.put("max_camera_ids", ROUTE_BATCH_MAX_CAMERA_IDS);
             data.put("input_token_count", resolveResult.inputTokenCount);
+            data.put("expanded_candidate_count", resolveResult.expandedCandidateCount);
             data.put("invalid_token_count", resolveResult.invalidTokenCount);
             data.put("duplicate_filtered_count", resolveResult.duplicateFilteredCount);
             data.put("hit_sources", resolveResult.hitSources);
@@ -387,6 +388,7 @@ public class InferenceApiController {
                 new ArrayList<>(ordered),
                 truncated,
                 stats.inputTokenCount,
+                stats.expandedCandidateCount,
                 stats.invalidTokenCount,
                 stats.duplicateFilteredCount,
                 new ArrayList<>(stats.hitSources),
@@ -492,6 +494,9 @@ public class InferenceApiController {
             markTruncatedSource(stats, sourceName);
             return true;
         }
+        if (stats != null) {
+            stats.expandedCandidateCount += 1;
+        }
         if (ordered.contains(cameraId)) {
             if (stats != null) {
                 stats.duplicateFilteredCount += 1;
@@ -574,6 +579,7 @@ public class InferenceApiController {
         private final List<Long> cameraIds;
         private final boolean truncated;
         private final int inputTokenCount;
+        private final int expandedCandidateCount;
         private final int invalidTokenCount;
         private final int duplicateFilteredCount;
         private final List<String> hitSources;
@@ -582,6 +588,7 @@ public class InferenceApiController {
         private CameraIdResolveResult(List<Long> cameraIds,
                                       boolean truncated,
                                       int inputTokenCount,
+                                      int expandedCandidateCount,
                                       int invalidTokenCount,
                                       int duplicateFilteredCount,
                                       List<String> hitSources,
@@ -589,6 +596,7 @@ public class InferenceApiController {
             this.cameraIds = cameraIds;
             this.truncated = truncated;
             this.inputTokenCount = inputTokenCount;
+            this.expandedCandidateCount = expandedCandidateCount;
             this.invalidTokenCount = invalidTokenCount;
             this.duplicateFilteredCount = duplicateFilteredCount;
             this.hitSources = hitSources == null ? new ArrayList<>() : hitSources;
@@ -598,6 +606,7 @@ public class InferenceApiController {
 
     private static class CameraIdParseStats {
         private int inputTokenCount;
+        private int expandedCandidateCount;
         private int invalidTokenCount;
         private int duplicateFilteredCount;
         private final LinkedHashSet<String> hitSources = new LinkedHashSet<>();

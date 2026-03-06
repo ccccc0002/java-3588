@@ -627,6 +627,7 @@ class InferenceApiControllerTest {
         assertEquals(103L, ((Number) routes.get(3).get("camera_id")).longValue());
         assertEquals(4, ((Number) data.get("resolved_camera_count")).intValue());
         assertEquals(5, ((Number) data.get("input_token_count")).intValue());
+        assertEquals(8, ((Number) data.get("expanded_candidate_count")).intValue());
         assertEquals(1, ((Number) data.get("invalid_token_count")).intValue());
         assertEquals(4, ((Number) data.get("duplicate_filtered_count")).intValue());
         assertEquals(false, data.get("truncated"));
@@ -653,6 +654,7 @@ class InferenceApiControllerTest {
         assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
         assertEquals(1, ((Number) data.get("resolved_camera_count")).intValue());
         assertEquals(0, ((Number) data.get("input_token_count")).intValue());
+        assertEquals(0, ((Number) data.get("expanded_candidate_count")).intValue());
         assertEquals(0, ((Number) data.get("invalid_token_count")).intValue());
         assertEquals(0, ((Number) data.get("duplicate_filtered_count")).intValue());
         assertEquals(true, data.get("default_fallback_used"));
