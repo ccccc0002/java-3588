@@ -229,7 +229,8 @@ public class InferenceApiController {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText, camerasText, cameraRangeText, rangeText);
             List<Long> cameraIds = resolveResult.cameraIds;
-            if (cameraIds.isEmpty()) {
+            boolean defaultFallbackUsed = cameraIds.isEmpty();
+            if (defaultFallbackUsed) {
                 cameraIds.add(1L);
             }
 
@@ -256,6 +257,7 @@ public class InferenceApiController {
             data.put("global_backend_type", globalBackend);
             data.put("route_list", routeList);
             data.put("resolved_camera_count", routeList.size());
+            data.put("default_fallback_used", defaultFallbackUsed);
             data.put("truncated", resolveResult.truncated);
             data.put("max_camera_ids", ROUTE_BATCH_MAX_CAMERA_IDS);
             data.put("input_token_count", resolveResult.inputTokenCount);

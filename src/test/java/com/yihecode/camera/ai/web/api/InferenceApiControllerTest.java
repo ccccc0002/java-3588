@@ -309,6 +309,7 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
         assertEquals(1, routes.size());
         assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(true, data.get("default_fallback_used"));
     }
 
     @Test
@@ -423,6 +424,7 @@ class InferenceApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(false, data.get("truncated"));
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        assertEquals(false, data.get("default_fallback_used"));
         List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
         assertEquals(3, routes.size());
     }
@@ -633,6 +635,7 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("input_token_count")).intValue());
         assertEquals(0, ((Number) data.get("invalid_token_count")).intValue());
         assertEquals(0, ((Number) data.get("duplicate_filtered_count")).intValue());
+        assertEquals(true, data.get("default_fallback_used"));
         assertEquals(false, data.get("truncated"));
     }
 }
