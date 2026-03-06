@@ -284,6 +284,7 @@ class InferenceDeadLetterServiceTest {
         Map<String, Object> first = new HashMap<>();
         first.put("trace_id", "trace-plugin-a");
         first.put("backend_type", "rk3588_rknn");
+        first.put("error_type", "PluginTimeoutException");
         first.put("plugin_dispatch", Map.of(
                 "registration_id", "face-detector:1.0.0",
                 "plugin_id", "face-detector"
@@ -292,6 +293,7 @@ class InferenceDeadLetterServiceTest {
         Map<String, Object> second = new HashMap<>();
         second.put("trace_id", "trace-plugin-b");
         second.put("backend_type", "legacy");
+        second.put("error_type", "DecodeException");
         second.put("plugin_dispatch", Map.of(
                 "registration_id", "helmet-detector:1.0.0",
                 "plugin_id", "helmet-detector"
@@ -300,7 +302,7 @@ class InferenceDeadLetterServiceTest {
         inferenceDeadLetterService.record(first);
         inferenceDeadLetterService.record(second);
 
-        List<Map<String, Object>> latest = inferenceDeadLetterService.latest(10, false, false, "rk3588", null, "face-detector:1.0");
+        List<Map<String, Object>> latest = inferenceDeadLetterService.latest(10, false, false, "rk3588", null, "face-detector:1.0", "timeout");
 
         assertEquals(1, latest.size());
         assertEquals("trace-plugin-a", latest.get(0).get("trace_id"));

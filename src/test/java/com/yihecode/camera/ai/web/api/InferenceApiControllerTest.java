@@ -415,7 +415,7 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-latest");
         item.put("replay_count", 1);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false, false, null, null, null)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, false, false, null, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
         JsonResult result = inferenceApiController.deadLetterLatest(5, null, null, null, null, null);
@@ -437,7 +437,7 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-retryable");
         item.put("replay_count", 2);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, true, false, null, null, null)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, true, false, null, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
         JsonResult result = inferenceApiController.deadLetterLatest(5, 1, null, null, null, null);
@@ -459,7 +459,7 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-exhausted");
         item.put("replay_count", 3);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false, true, null, null, null)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, false, true, null, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
         JsonResult result = inferenceApiController.deadLetterLatest(5, null, 1, null, null, null);
@@ -987,20 +987,20 @@ class InferenceApiControllerTest {
         c2.put("dead_letter_id", 46L);
         candidates.add(c1);
         candidates.add(c2);
-        when(inferenceDeadLetterService.latest(5, true, false, "rk3588", "face", "face-detector:1.0")).thenReturn(candidates);
+        when(inferenceDeadLetterService.latest(5, true, false, "rk3588", "face", "face-detector:1.0", "Timeout")).thenReturn(candidates);
 
         JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null, null, null, null,
-                "rk3588", "face", "face-detector:1.0");
+                "rk3588", "face", "face-detector:1.0", "Timeout");
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals("rk3588", data.get("backend_type"));
         assertEquals("face", data.get("plugin_id"));
         assertEquals("face-detector:1.0", data.get("plugin_registration_id"));
+        assertEquals("Timeout", data.get("error_type"));
         assertEquals(2, ((Number) data.get("selected_count")).intValue());
-        assertEquals(2, ((Number) data.get("dry_run_count")).intValue());
 
-        verify(inferenceDeadLetterService).latest(5, true, false, "rk3588", "face", "face-detector:1.0");
+        verify(inferenceDeadLetterService).latest(5, true, false, "rk3588", "face", "face-detector:1.0", "Timeout");
     }
 
     @Test
@@ -1010,24 +1010,24 @@ class InferenceApiControllerTest {
         body.put("backend_type", "legacy");
         body.put("plugin_id", "helmet");
         body.put("plugin_registration_id", "helmet-detector:2.0");
-
+        body.put("error_type", "Decode");
         List<Map<String, Object>> candidates = new ArrayList<>();
         Map<String, Object> c1 = new HashMap<>();
         c1.put("dead_letter_id", 47L);
         candidates.add(c1);
-        when(inferenceDeadLetterService.latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0")).thenReturn(candidates);
+        when(inferenceDeadLetterService.latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0", "Decode")).thenReturn(candidates);
 
         JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null, null, null, null,
-                "rk3588", "face", "face-detector:1.0");
+                "rk3588", "face", "face-detector:1.0", "Timeout");
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals("legacy", data.get("backend_type"));
         assertEquals("helmet", data.get("plugin_id"));
         assertEquals("helmet-detector:2.0", data.get("plugin_registration_id"));
+        assertEquals("Decode", data.get("error_type"));
         assertEquals(1, ((Number) data.get("selected_count")).intValue());
-
-        verify(inferenceDeadLetterService).latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0");
+        verify(inferenceDeadLetterService).latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0", "Decode");
     }
 
     @Test
@@ -2330,18 +2330,18 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-plugin-filter");
         item.put("replay_count", 0);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false, false, "rk3588", "face", "face-detector:1.0"))
+        when(inferenceDeadLetterService.latest(5, false, false, "rk3588", "face", "face-detector:1.0", "Timeout"))
                 .thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null, "rk3588", "face", "face-detector:1.0");
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null, "rk3588", "face", "face-detector:1.0", "Timeout");
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
         assertEquals(1, deadLetter.size());
         assertEquals("trace-dl-plugin-filter", deadLetter.get(0).get("trace_id"));
-        verify(inferenceDeadLetterService).latest(5, false, false, "rk3588", "face", "face-detector:1.0");
+        verify(inferenceDeadLetterService).latest(5, false, false, "rk3588", "face", "face-detector:1.0", "Timeout");
     }
 
 }

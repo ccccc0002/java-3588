@@ -57,7 +57,7 @@ public class InferenceDeadLetterService {
     }
 
     public synchronized List<Map<String, Object>> latest(Integer limit, Boolean onlyRetryable, Boolean onlyExhausted) {
-        return latest(limit, onlyRetryable, onlyExhausted, null, null, null);
+        return latest(limit, onlyRetryable, onlyExhausted, null, null, null, null);
     }
 
     public synchronized List<Map<String, Object>> latest(Integer limit,
@@ -66,6 +66,16 @@ public class InferenceDeadLetterService {
                                                          String backendType,
                                                          String pluginId,
                                                          String pluginRegistrationId) {
+        return latest(limit, onlyRetryable, onlyExhausted, backendType, pluginId, pluginRegistrationId, null);
+    }
+
+    public synchronized List<Map<String, Object>> latest(Integer limit,
+                                                         Boolean onlyRetryable,
+                                                         Boolean onlyExhausted,
+                                                         String backendType,
+                                                         String pluginId,
+                                                         String pluginRegistrationId,
+                                                         String errorType) {
         int effectiveLimit = normalizeListLimit(limit);
         boolean retryableOnly = onlyRetryable != null && onlyRetryable;
         boolean exhaustedOnly = onlyExhausted != null && onlyExhausted;
@@ -91,6 +101,9 @@ public class InferenceDeadLetterService {
                 continue;
             }
             if (!matchesTextFilter(extractPluginField(entry, "registration_id"), pluginRegistrationId)) {
+                continue;
+            }
+            if (!matchesTextFilter(entry == null ? null : entry.get("error_type"), errorType)) {
                 continue;
             }
             result.add(new LinkedHashMap<>(entry));

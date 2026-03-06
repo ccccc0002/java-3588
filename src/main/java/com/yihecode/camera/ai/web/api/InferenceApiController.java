@@ -354,6 +354,15 @@ public class InferenceApiController {
         }
     }
 
+    public JsonResult deadLetterLatest(Integer limit,
+                                       Integer onlyRetryableFlag,
+                                       Integer onlyExhaustedFlag,
+                                       String backendType,
+                                       String pluginId,
+                                       String pluginRegistrationId) {
+        return deadLetterLatest(limit, onlyRetryableFlag, onlyExhaustedFlag, backendType, pluginId, pluginRegistrationId, null);
+    }
+
     @RequestMapping(value = {"/dead-letter/latest"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult deadLetterLatest(@RequestParam(value = "limit", required = false) Integer limit,
@@ -361,7 +370,8 @@ public class InferenceApiController {
                                        @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
                                        @RequestParam(value = "backend_type", required = false) String backendType,
                                        @RequestParam(value = "plugin_id", required = false) String pluginId,
-                                       @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId) {
+                                       @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId,
+                                       @RequestParam(value = "error_type", required = false) String errorType) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
@@ -372,7 +382,8 @@ public class InferenceApiController {
                     onlyExhausted,
                     trimToNull(backendType),
                     trimToNull(pluginId),
-                    trimToNull(pluginRegistrationId)
+                    trimToNull(pluginRegistrationId),
+                    trimToNull(errorType)
             );
             List<Map<String, Object>> display = new ArrayList<>();
             for (Map<String, Object> item : latest) {
@@ -604,7 +615,7 @@ public class InferenceApiController {
                                             Integer strictResumeFlag,
                                             Integer expectedTotalSelectedCountFlag) {
         return deadLetterReplayBatch(body, limit, persistReportFlag, ackOnSuccessFlag, onlyRetryableFlag, onlyExhaustedFlag, dryRunFlag,
-                deadLetterIdsText, idsText, stopOnErrorFlag, offset, strictResumeFlag, expectedTotalSelectedCountFlag, null, null, null);
+                deadLetterIdsText, idsText, stopOnErrorFlag, offset, strictResumeFlag, expectedTotalSelectedCountFlag, null, null, null, null);
     }
 
     @RequestMapping(value = {"/dead-letter/replay/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
@@ -624,7 +635,8 @@ public class InferenceApiController {
                                             @RequestParam(value = "expected_total_selected_count", required = false) Integer expectedTotalSelectedCountFlag,
                                             @RequestParam(value = "backend_type", required = false) String backendType,
                                             @RequestParam(value = "plugin_id", required = false) String pluginId,
-                                            @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId) {
+                                            @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId,
+                                            @RequestParam(value = "error_type", required = false) String errorType) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
@@ -642,6 +654,7 @@ public class InferenceApiController {
             String selectedBackendType = trimToNull(firstString(payload.get("backend_type"), backendType, null));
             String selectedPluginId = trimToNull(firstString(payload.get("plugin_id"), pluginId, null));
             String selectedPluginRegistrationId = trimToNull(firstString(payload.get("plugin_registration_id"), pluginRegistrationId, null));
+            String selectedErrorType = trimToNull(firstString(payload.get("error_type"), errorType, null));
             boolean dryRun = toBooleanFlag(firstNonNull(payload.get("dry_run"), dryRunFlag), false);
             boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
             boolean strictResume = toBooleanFlag(firstNonNull(payload.get("strict_resume"), strictResumeFlag), false);
@@ -660,11 +673,11 @@ public class InferenceApiController {
                     item.put("dead_letter_id", itemId);
                     sourceCandidates.add(item);
                 }
-            } else if (selectedBackendType == null && selectedPluginId == null && selectedPluginRegistrationId == null) {
+            } else if (selectedBackendType == null && selectedPluginId == null && selectedPluginRegistrationId == null && selectedErrorType == null) {
                 sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted);
             } else {
                 sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted,
-                        selectedBackendType, selectedPluginId, selectedPluginRegistrationId);
+                        selectedBackendType, selectedPluginId, selectedPluginRegistrationId, selectedErrorType);
             }
 
             int totalSelectedCount = sourceCandidates.size();
@@ -834,6 +847,7 @@ public class InferenceApiController {
             data.put("backend_type", selectedBackendType);
             data.put("plugin_id", selectedPluginId);
             data.put("plugin_registration_id", selectedPluginRegistrationId);
+            data.put("error_type", selectedErrorType);
             data.put("dry_run", dryRun);
             data.put("stop_on_error", stopOnError);
             data.put("stopped_on_error", stoppedOnError);
