@@ -1250,6 +1250,43 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldExposeWindowFingerprint() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("dead_letter_ids", "451,452");
+        body.put("dry_run", 1);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(null, data.get("expected_window_fingerprint"));
+        String actual = String.valueOf(data.get("actual_window_fingerprint"));
+        assertEquals(64, actual.length());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldFailWhenStrictResumeWindowFingerprintMismatched() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+        body.put("expected_total_selected_count", 2);
+        body.put("expected_window_fingerprint", "deadbeef");
+        body.put("dead_letter_ids", "461,462");
+        body.put("dry_run", 1);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals("deadbeef", data.get("expected_window_fingerprint"));
+        String actual = String.valueOf(data.get("actual_window_fingerprint"));
+        assertEquals(64, actual.length());
+        assertTrue(!"deadbeef".equals(actual));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldSupportStrictResumeFromQueryParams() {
         List<Map<String, Object>> candidates = new ArrayList<>();
         Map<String, Object> c1 = new HashMap<>();

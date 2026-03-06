@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -493,6 +495,7 @@ public class InferenceApiController {
             Integer effectivePersistReportFlag = firstInteger(payload.get("persist_report"), persistReportFlag);
             Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
             Integer expectedTotalSelectedCount = firstInteger(payload.get("expected_total_selected_count"), expectedTotalSelectedCountFlag);
+            String expectedWindowFingerprint = firstString(payload.get("expected_window_fingerprint"), null, null);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
             Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
@@ -520,6 +523,7 @@ public class InferenceApiController {
             }
 
             int totalSelectedCount = sourceCandidates.size();
+            String actualWindowFingerprint = computeReplayBatchWindowFingerprint(sourceCandidates);
             int appliedOffset = Math.min(effectiveOffset, totalSelectedCount);
             List<Map<String, Object>> candidates = new ArrayList<>();
             for (int i = appliedOffset; i < totalSelectedCount && candidates.size() < effectiveLimit; i++) {
@@ -544,9 +548,23 @@ public class InferenceApiController {
                     data.put("strict_resume", true);
                     data.put("expected_total_selected_count", expectedTotalSelectedCount);
                     data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("expected_window_fingerprint", expectedWindowFingerprint);
+                    data.put("actual_window_fingerprint", actualWindowFingerprint);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
+                }
+                if (StrUtil.isNotBlank(expectedWindowFingerprint) && !expectedWindowFingerprint.equals(actualWindowFingerprint)) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("trace_id", traceId);
+                    data.put("strict_resume", true);
+                    data.put("expected_total_selected_count", expectedTotalSelectedCount);
+                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("expected_window_fingerprint", expectedWindowFingerprint);
+                    data.put("actual_window_fingerprint", actualWindowFingerprint);
+                    data.put("effective_limit", effectiveLimit);
+                    data.put("effective_offset", appliedOffset);
+                    return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window fingerprint changed", data);
                 }
             }
 
@@ -640,6 +658,8 @@ public class InferenceApiController {
             data.put("strict_resume", strictResume);
             data.put("expected_total_selected_count", expectedTotalSelectedCount);
             data.put("actual_total_selected_count", totalSelectedCount);
+            data.put("expected_window_fingerprint", expectedWindowFingerprint);
+            data.put("actual_window_fingerprint", actualWindowFingerprint);
             data.put("max_limit", maxLimit);
             data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
@@ -1342,6 +1362,38 @@ public class InferenceApiController {
             return second;
         }
         return fallback;
+    }
+
+    private String computeReplayBatchWindowFingerprint(List<Map<String, Object>> sourceCandidates) {
+        StringBuilder payload = new StringBuilder();
+        if (sourceCandidates != null) {
+            for (Map<String, Object> candidate : sourceCandidates) {
+                if (payload.length() > 0) {
+                    payload.append(",");
+                }
+                Long deadLetterId = candidate == null ? null : toLong(candidate.get("dead_letter_id"));
+                payload.append(deadLetterId == null ? "null" : deadLetterId);
+            }
+        }
+        return sha256Hex(payload.toString());
+    }
+
+    private String sha256Hex(String raw) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encoded = digest.digest((raw == null ? "" : raw).getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(encoded.length * 2);
+            for (byte b : encoded) {
+                String part = Integer.toHexString(b & 0xFF);
+                if (part.length() == 1) {
+                    hex.append('0');
+                }
+                hex.append(part);
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("failed to compute replay batch window fingerprint", e);
+        }
     }
 
     private String nextTraceId() {
