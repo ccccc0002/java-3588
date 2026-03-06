@@ -206,6 +206,44 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/circuit/status"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult circuitStatus() {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            data.put("circuit", inferenceRoutingService.circuitStatus(traceId));
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference circuit status api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            return JsonResultUtils.fail("inference circuit status api failed: " + e.getMessage(), data);
+        }
+    }
+
+    @RequestMapping(value = {"/circuit/reset"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult circuitReset() {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            data.put("circuit", inferenceRoutingService.resetCircuit(traceId));
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference circuit reset api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("backend_type", inferenceRoutingService.currentBackendType());
+            return JsonResultUtils.fail("inference circuit reset api failed: " + e.getMessage(), data);
+        }
+    }
+
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult routeBatch(@RequestBody(required = false) Map<String, Object> body,

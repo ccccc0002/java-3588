@@ -75,6 +75,40 @@ public class InferenceRoutingService {
         return data;
     }
 
+    public Map<String, Object> circuitStatus(String traceId) {
+        String backend = currentBackendType();
+        InferenceClient client = resolveClient(backend);
+        Map<String, Object> data = client.circuitStatus(traceId);
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        if (!data.containsKey("trace_id")) {
+            data.put("trace_id", traceId);
+        }
+        if (!data.containsKey("backend")) {
+            data.put("backend", backend);
+        }
+        data.put("route_backend", backend);
+        return data;
+    }
+
+    public Map<String, Object> resetCircuit(String traceId) {
+        String backend = currentBackendType();
+        InferenceClient client = resolveClient(backend);
+        Map<String, Object> data = client.resetCircuit(traceId);
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        if (!data.containsKey("trace_id")) {
+            data.put("trace_id", traceId);
+        }
+        if (!data.containsKey("backend")) {
+            data.put("backend", backend);
+        }
+        data.put("route_backend", backend);
+        return data;
+    }
+
     public InferenceResult infer(InferenceRequest request) {
         Long cameraId = request == null ? null : request.getCameraId();
         String backend = backendTypeForCamera(cameraId);

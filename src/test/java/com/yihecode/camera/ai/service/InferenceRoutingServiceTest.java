@@ -340,4 +340,35 @@ class InferenceRoutingServiceTest {
 
         assertEquals(false, hit);
     }
+
+    @Test
+    void circuitStatus_shouldRouteToCurrentBackendClient() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("rk3588_rknn");
+        Map<String, Object> clientData = new HashMap<>();
+        clientData.put("circuit_open", false);
+        when(rk3588InferenceClient.circuitStatus("trace-cs-1")).thenReturn(clientData);
+
+        Map<String, Object> result = inferenceRoutingService.circuitStatus("trace-cs-1");
+
+        assertEquals("trace-cs-1", result.get("trace_id"));
+        assertEquals("rk3588_rknn", result.get("backend"));
+        assertEquals("rk3588_rknn", result.get("route_backend"));
+        assertEquals(false, result.get("circuit_open"));
+        verify(rk3588InferenceClient).circuitStatus("trace-cs-1");
+        verifyNoInteractions(legacyInferenceClient);
+    }
+
+    @Test
+    void circuitReset_shouldFillDefaults_whenClientReturnsNull() {
+        when(configService.getByValTag("infer_backend_type")).thenReturn("rk3588_rknn");
+        when(rk3588InferenceClient.resetCircuit("trace-cr-1")).thenReturn(null);
+
+        Map<String, Object> result = inferenceRoutingService.resetCircuit("trace-cr-1");
+
+        assertEquals("trace-cr-1", result.get("trace_id"));
+        assertEquals("rk3588_rknn", result.get("backend"));
+        assertEquals("rk3588_rknn", result.get("route_backend"));
+        verify(rk3588InferenceClient).resetCircuit("trace-cr-1");
+        verifyNoInteractions(legacyInferenceClient);
+    }
 }

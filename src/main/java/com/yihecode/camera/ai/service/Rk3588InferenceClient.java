@@ -111,6 +111,33 @@ public class Rk3588InferenceClient implements InferenceClient {
     }
 
     @Override
+    public Map<String, Object> circuitStatus(String traceId) {
+        CircuitSnapshot snapshot = getCircuitSnapshot();
+        Map<String, Object> data = new HashMap<>();
+        data.put("trace_id", traceId);
+        data.put("backend", getBackendType());
+        data.put("supported", true);
+        data.put("circuit_open", snapshot.open);
+        data.put("circuit_open_until_ms", snapshot.open ? snapshot.openUntilMs : 0L);
+        data.put("consecutive_failures", consecutiveFailureCount);
+        return data;
+    }
+
+    @Override
+    public Map<String, Object> resetCircuit(String traceId) {
+        clearCircuitOnSuccess();
+        Map<String, Object> data = new HashMap<>();
+        data.put("trace_id", traceId);
+        data.put("backend", getBackendType());
+        data.put("supported", true);
+        data.put("reset", true);
+        data.put("circuit_open", false);
+        data.put("circuit_open_until_ms", 0L);
+        data.put("consecutive_failures", 0);
+        return data;
+    }
+
+    @Override
     public InferenceResult infer(InferenceRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("inference request is null");

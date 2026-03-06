@@ -240,6 +240,46 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void circuitStatus_shouldReturnServiceData() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("trace_id", "trace-cs-api");
+        status.put("backend", "rk3588_rknn");
+        status.put("route_backend", "rk3588_rknn");
+        status.put("circuit_open", false);
+        when(inferenceRoutingService.circuitStatus(anyString())).thenReturn(status);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("rk3588_rknn");
+
+        JsonResult result = inferenceApiController.circuitStatus();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        Map<String, Object> circuit = (Map<String, Object>) data.get("circuit");
+        assertEquals(false, circuit.get("circuit_open"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void circuitReset_shouldReturnServiceData() {
+        Map<String, Object> reset = new HashMap<>();
+        reset.put("trace_id", "trace-cr-api");
+        reset.put("backend", "rk3588_rknn");
+        reset.put("route_backend", "rk3588_rknn");
+        reset.put("reset", true);
+        when(inferenceRoutingService.resetCircuit(anyString())).thenReturn(reset);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("rk3588_rknn");
+
+        JsonResult result = inferenceApiController.circuitReset();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        Map<String, Object> circuit = (Map<String, Object>) data.get("circuit");
+        assertEquals(true, circuit.get("reset"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void routeBatch_shouldReturnResolvedBackendsForMultipleCameras() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");

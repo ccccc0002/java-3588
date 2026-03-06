@@ -273,4 +273,54 @@ class Rk3588InferenceClientTest {
         verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString());
         verifyNoMoreInteractions(inferenceHttpGateway);
     }
+
+    @Test
+    void circuitStatus_shouldReportOpenState_afterBreakerOpened() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_fail_threshold")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_open_seconds")).thenReturn("60");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(500, "{\"error\":\"busy\"}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-circuit-status");
+        request.setCameraId(603L);
+        request.setModelId(1003L);
+        request.setFrameMeta(new HashMap<>());
+        assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
+
+        Map<String, Object> status = rk3588InferenceClient.circuitStatus("trace-circuit-status");
+
+        assertEquals("rk3588_rknn", status.get("backend"));
+        assertEquals(Boolean.TRUE, status.get("supported"));
+        assertEquals(Boolean.TRUE, status.get("circuit_open"));
+        assertTrue(((Number) status.get("circuit_open_until_ms")).longValue() > 0);
+    }
+
+    @Test
+    void resetCircuit_shouldClearOpenState_afterBreakerOpened() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_fail_threshold")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_open_seconds")).thenReturn("60");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(500, "{\"error\":\"busy\"}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-circuit-reset");
+        request.setCameraId(604L);
+        request.setModelId(1004L);
+        request.setFrameMeta(new HashMap<>());
+        assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
+
+        Map<String, Object> reset = rk3588InferenceClient.resetCircuit("trace-circuit-reset");
+        Map<String, Object> status = rk3588InferenceClient.circuitStatus("trace-circuit-reset");
+
+        assertEquals(Boolean.TRUE, reset.get("reset"));
+        assertEquals(Boolean.FALSE, status.get("circuit_open"));
+        assertEquals(0L, ((Number) status.get("circuit_open_until_ms")).longValue());
+    }
 }
