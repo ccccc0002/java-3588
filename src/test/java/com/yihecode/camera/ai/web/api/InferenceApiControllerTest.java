@@ -362,6 +362,36 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterGet_shouldReturnEntryWhenExists() {
+        Map<String, Object> item = new HashMap<>();
+        item.put("dead_letter_id", 77L);
+        item.put("trace_id", "trace-get-77");
+        when(inferenceDeadLetterService.findById(77L)).thenReturn(item);
+
+        JsonResult result = inferenceApiController.deadLetterGet(77L);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        assertEquals(77L, ((Number) deadLetter.get("dead_letter_id")).longValue());
+        assertEquals("trace-get-77", deadLetter.get("trace_id"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterGet_shouldFailWhenNotFound() {
+        when(inferenceDeadLetterService.findById(78L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.deadLetterGet(78L);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(78L, ((Number) data.get("dead_letter_id")).longValue());
+        assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplay_shouldReplayAndAckWhenRequested() {
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("trace_id", "trace-old");

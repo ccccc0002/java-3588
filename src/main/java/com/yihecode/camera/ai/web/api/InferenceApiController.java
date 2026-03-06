@@ -285,6 +285,31 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/dead-letter/get"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterGet(@RequestParam(value = "dead_letter_id", required = false) Long deadLetterId) {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> deadLetter = inferenceDeadLetterService.findById(deadLetterId);
+            if (deadLetter == null) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("trace_id", traceId);
+                data.put("dead_letter_id", deadLetterId);
+                return JsonResultUtils.fail("inference dead-letter get failed: dead letter not found", data);
+            }
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter", deadLetter);
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter get api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter_id", deadLetterId);
+            return JsonResultUtils.fail("inference dead-letter get api failed: " + e.getMessage(), data);
+        }
+    }
+
     @RequestMapping(value = {"/dead-letter/clear"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult deadLetterClear() {
