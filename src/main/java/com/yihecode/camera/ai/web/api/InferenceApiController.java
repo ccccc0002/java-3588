@@ -497,9 +497,36 @@ public class InferenceApiController {
             frame.put("replay_count", replayCount + 1);
             payload.put("frame", frame);
             InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
-            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
-            InferenceResult result = inferenceRoutingService.infer(request);
+            Map<String, Object> replayPluginRoute = firstPluginRoute(payload, entry);
+            applyPluginRoute(request, replayPluginRoute);
+            String pluginBackendHint = extractPluginBackendHint(replayPluginRoute);
+            boolean pluginDispatchable = isPluginDispatchable(replayPluginRoute);
+            boolean pluginDispatched = false;
+            String pluginDispatchError = null;
+            String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
+                    ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
+                    : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            InferenceResult result;
+            if (pluginDispatchable) {
+                try {
+                    result = pluginInferenceDispatchService.infer(request, replayPluginRoute);
+                    pluginDispatched = true;
+                } catch (Exception pluginEx) {
+                    pluginDispatchError = pluginEx.getMessage();
+                    result = StrUtil.isNotBlank(pluginBackendHint)
+                            ? inferenceRoutingService.infer(request, pluginBackendHint)
+                            : inferenceRoutingService.infer(request);
+                }
+            } else {
+                result = StrUtil.isNotBlank(pluginBackendHint)
+                        ? inferenceRoutingService.infer(request, pluginBackendHint)
+                        : inferenceRoutingService.infer(request);
+            }
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
+            Map<String, Object> pluginDispatch = buildPluginDispatchData(replayPluginRoute, pluginDispatched,
+                    pluginDispatchable ? (pluginDispatched ? null : "plugin_dispatch_failed")
+                            : (shouldAttachPluginRoute(replayPluginRoute) ? "plugin_not_dispatchable" : null),
+                    pluginDispatchError);
 
             boolean entryPersistReport = toBooleanFlag(entry.get("persist_report"), false);
             boolean persistReport = toBooleanFlag(persistReportFlag, entryPersistReport);
@@ -528,6 +555,10 @@ public class InferenceApiController {
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
             data.put("algorithm_id", finalAlgorithmId);
+            if (shouldAttachPluginRoute(replayPluginRoute)) {
+                data.put("plugin_route", replayPluginRoute);
+                data.put("plugin_dispatch", pluginDispatch);
+            }
             data.put("report", reportData);
             data.put("acked", acked);
             data.put("replay_meta", replayMeta);
@@ -1140,6 +1171,19 @@ public class InferenceApiController {
         fallback.put("frame", new HashMap<>());
         fallback.put("roi", Collections.emptyList());
         return fallback;
+    }
+
+
+    private Map<String, Object> firstPluginRoute(Map<String, Object> payload, Map<String, Object> entry) {
+        Map<String, Object> fromPayload = toMap(payload == null ? null : payload.get("plugin_route"));
+        if (shouldAttachPluginRoute(fromPayload)) {
+            return fromPayload;
+        }
+        Map<String, Object> fromEntry = toMap(entry == null ? null : entry.get("plugin_route"));
+        if (shouldAttachPluginRoute(fromEntry)) {
+            return fromEntry;
+        }
+        return fromPayload.isEmpty() ? fromEntry : fromPayload;
     }
 
     private Map<String, Object> enrichDeadLetterReplayBudget(Map<String, Object> entry) {
