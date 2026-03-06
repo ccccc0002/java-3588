@@ -263,6 +263,8 @@ public class InferenceApiController {
             data.put("input_token_count", resolveResult.inputTokenCount);
             data.put("invalid_token_count", resolveResult.invalidTokenCount);
             data.put("duplicate_filtered_count", resolveResult.duplicateFilteredCount);
+            data.put("hit_sources", resolveResult.hitSources);
+            data.put("truncated_source", resolveResult.truncatedSource);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference route batch api failed, trace_id={}", traceId, e);
@@ -359,48 +361,55 @@ public class InferenceApiController {
         Object bodyCameraRange = payload == null ? null : payload.get("camera_range");
         Object bodyRange = payload == null ? null : payload.get("range");
 
-        boolean truncated = addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+        boolean truncated = addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_camera_ids");
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, bodyCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_cameras");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, bodyCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_camera_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, bodyRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_camera_ids");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, queryCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_cameras");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, queryCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_camera_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats);
+            truncated = addCameraIds(ordered, queryRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_range");
         }
         return new CameraIdResolveResult(
                 new ArrayList<>(ordered),
                 truncated,
                 stats.inputTokenCount,
                 stats.invalidTokenCount,
-                stats.duplicateFilteredCount
+                stats.duplicateFilteredCount,
+                new ArrayList<>(stats.hitSources),
+                stats.truncatedSource
         );
     }
 
-    private boolean addCameraIds(LinkedHashSet<Long> ordered, Object value, int maxSize, CameraIdParseStats stats) {
+    private boolean addCameraIds(LinkedHashSet<Long> ordered,
+                                 Object value,
+                                 int maxSize,
+                                 CameraIdParseStats stats,
+                                 String sourceName) {
         if (ordered == null || value == null) {
             return false;
         }
         if (ordered.size() >= maxSize) {
+            markTruncatedSource(stats, sourceName);
             return true;
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
             for (Object item : list) {
-                if (addCameraIds(ordered, item, maxSize, stats)) {
+                if (addCameraIds(ordered, item, maxSize, stats, sourceName)) {
                     return true;
                 }
             }
@@ -413,7 +422,7 @@ public class InferenceApiController {
             }
             String[] parts = text.split(",");
             for (String part : parts) {
-                if (addCameraIdToken(ordered, part, maxSize, stats)) {
+                if (addCameraIdToken(ordered, part, maxSize, stats, sourceName)) {
                     return true;
                 }
             }
@@ -425,11 +434,16 @@ public class InferenceApiController {
             stats.invalidTokenCount += 1;
             return false;
         }
-        return addCameraIdValue(ordered, cameraId, maxSize, stats);
+        return addCameraIdValue(ordered, cameraId, maxSize, stats, sourceName);
     }
 
-    private boolean addCameraIdToken(LinkedHashSet<Long> ordered, String rawToken, int maxSize, CameraIdParseStats stats) {
+    private boolean addCameraIdToken(LinkedHashSet<Long> ordered,
+                                     String rawToken,
+                                     int maxSize,
+                                     CameraIdParseStats stats,
+                                     String sourceName) {
         if (ordered == null || rawToken == null || ordered.size() >= maxSize) {
+            markTruncatedSource(stats, sourceName);
             return ordered != null && ordered.size() >= maxSize;
         }
         String token = rawToken.trim();
@@ -446,7 +460,7 @@ public class InferenceApiController {
                 long step = start <= end ? 1L : -1L;
                 long current = start;
                 while (true) {
-                    if (addCameraIdValue(ordered, current, maxSize, stats)) {
+                    if (addCameraIdValue(ordered, current, maxSize, stats, sourceName)) {
                         return true;
                     }
                     if (current == end) {
@@ -462,14 +476,20 @@ public class InferenceApiController {
             stats.invalidTokenCount += 1;
             return false;
         }
-        return addCameraIdValue(ordered, cameraId, maxSize, stats);
+        return addCameraIdValue(ordered, cameraId, maxSize, stats, sourceName);
     }
 
-    private boolean addCameraIdValue(LinkedHashSet<Long> ordered, Long cameraId, int maxSize, CameraIdParseStats stats) {
+    private boolean addCameraIdValue(LinkedHashSet<Long> ordered,
+                                     Long cameraId,
+                                     int maxSize,
+                                     CameraIdParseStats stats,
+                                     String sourceName) {
         if (ordered == null || cameraId == null) {
             return false;
         }
+        markSourceHit(stats, sourceName);
         if (ordered.size() >= maxSize) {
+            markTruncatedSource(stats, sourceName);
             return true;
         }
         if (ordered.contains(cameraId)) {
@@ -480,6 +500,22 @@ public class InferenceApiController {
         }
         ordered.add(cameraId);
         return false;
+    }
+
+    private void markSourceHit(CameraIdParseStats stats, String sourceName) {
+        if (stats == null || StrUtil.isBlank(sourceName)) {
+            return;
+        }
+        stats.hitSources.add(sourceName);
+    }
+
+    private void markTruncatedSource(CameraIdParseStats stats, String sourceName) {
+        if (stats == null || StrUtil.isBlank(sourceName)) {
+            return;
+        }
+        if (StrUtil.isBlank(stats.truncatedSource)) {
+            stats.truncatedSource = sourceName;
+        }
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {
@@ -540,17 +576,23 @@ public class InferenceApiController {
         private final int inputTokenCount;
         private final int invalidTokenCount;
         private final int duplicateFilteredCount;
+        private final List<String> hitSources;
+        private final String truncatedSource;
 
         private CameraIdResolveResult(List<Long> cameraIds,
                                       boolean truncated,
                                       int inputTokenCount,
                                       int invalidTokenCount,
-                                      int duplicateFilteredCount) {
+                                      int duplicateFilteredCount,
+                                      List<String> hitSources,
+                                      String truncatedSource) {
             this.cameraIds = cameraIds;
             this.truncated = truncated;
             this.inputTokenCount = inputTokenCount;
             this.invalidTokenCount = invalidTokenCount;
             this.duplicateFilteredCount = duplicateFilteredCount;
+            this.hitSources = hitSources == null ? new ArrayList<>() : hitSources;
+            this.truncatedSource = truncatedSource;
         }
     }
 
@@ -558,5 +600,7 @@ public class InferenceApiController {
         private int inputTokenCount;
         private int invalidTokenCount;
         private int duplicateFilteredCount;
+        private final LinkedHashSet<String> hitSources = new LinkedHashSet<>();
+        private String truncatedSource;
     }
 }

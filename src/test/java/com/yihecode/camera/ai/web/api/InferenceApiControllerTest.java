@@ -483,6 +483,14 @@ class InferenceApiControllerTest {
         assertEquals(30L, ((Number) routes.get(5).get("camera_id")).longValue());
         assertEquals(31L, ((Number) routes.get(6).get("camera_id")).longValue());
         assertEquals(false, data.get("truncated"));
+        List<String> hitSources = (List<String>) data.get("hit_sources");
+        assertEquals(5, hitSources.size());
+        assertEquals("body_camera_ids", hitSources.get(0));
+        assertEquals("body_cameras", hitSources.get(1));
+        assertEquals("body_camera_range", hitSources.get(2));
+        assertEquals("body_range", hitSources.get(3));
+        assertEquals("query_camera_ids", hitSources.get(4));
+        assertEquals(null, data.get("truncated_source"));
     }
 
     @Test
@@ -569,6 +577,9 @@ class InferenceApiControllerTest {
         assertEquals(1, routes.size());
         assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
         assertEquals(false, data.get("truncated"));
+        List<String> hitSources = (List<String>) data.get("hit_sources");
+        assertEquals(0, hitSources.size());
+        assertEquals(null, data.get("truncated_source"));
     }
 
     @Test
@@ -589,6 +600,11 @@ class InferenceApiControllerTest {
         assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
         assertEquals(true, data.get("truncated"));
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        List<String> hitSources = (List<String>) data.get("hit_sources");
+        assertEquals(2, hitSources.size());
+        assertEquals("query_cameras", hitSources.get(0));
+        assertEquals("query_camera_range", hitSources.get(1));
+        assertEquals("query_camera_range", data.get("truncated_source"));
     }
 
     @Test
@@ -614,6 +630,10 @@ class InferenceApiControllerTest {
         assertEquals(1, ((Number) data.get("invalid_token_count")).intValue());
         assertEquals(4, ((Number) data.get("duplicate_filtered_count")).intValue());
         assertEquals(false, data.get("truncated"));
+        List<String> hitSources = (List<String>) data.get("hit_sources");
+        assertEquals(1, hitSources.size());
+        assertEquals("query_camera_ids", hitSources.get(0));
+        assertEquals(null, data.get("truncated_source"));
     }
 
     @Test
