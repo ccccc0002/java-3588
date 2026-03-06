@@ -489,6 +489,33 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplay_shouldMarkReplayFailedWhenInferThrows() {
+        Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("trace_id", "trace-replay-fail");
+        requestPayload.put("camera_id", 113L);
+        requestPayload.put("model_id", 213L);
+        requestPayload.put("frame", new HashMap<>());
+        requestPayload.put("roi", new ArrayList<>());
+
+        Map<String, Object> deadLetter = new HashMap<>();
+        deadLetter.put("dead_letter_id", 12L);
+        deadLetter.put("replay_count", 0);
+        deadLetter.put("request_payload", requestPayload);
+        when(inferenceDeadLetterService.findById(12L)).thenReturn(deadLetter);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+        when(inferenceRoutingService.backendTypeForCamera(113L)).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.infer(any())).thenThrow(new IllegalStateException("mock replay infer error"));
+
+        JsonResult result = inferenceApiController.deadLetterReplay(12L, null, null);
+
+        assertTrue(result.getCode() != 0);
+        verify(inferenceDeadLetterService).markReplay(eq(12L), eq(false), anyString(), eq("mock replay infer error"));
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(12L, ((Number) data.get("dead_letter_id")).longValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void routeBatch_shouldReturnResolvedBackendsForMultipleCameras() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");
