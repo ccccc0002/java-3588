@@ -46,6 +46,7 @@ class PluginApiControllerTest {
         body.put("version", "1.0.0");
         body.put("runtime", " rk3588_rknn ");
         body.put("capabilities", Arrays.asList(" inference ", "alert", "inference", " "));
+        body.put("infer_url", " http://plugin-a:19090/v1/infer ");
 
         JsonResult result = pluginApiController.validateManifest(body);
 
@@ -61,6 +62,7 @@ class PluginApiControllerTest {
         assertEquals("1.0.0", normalized.get("version"));
         assertEquals("rk3588_rknn", normalized.get("runtime"));
         assertEquals(Arrays.asList("inference", "alert"), normalized.get("capabilities"));
+        assertEquals("http://plugin-a:19090/v1/infer", normalized.get("infer_url"));
     }
 
     @Test
@@ -121,6 +123,7 @@ class PluginApiControllerTest {
         registration.put("trace_id", "trace-plugin-register-4");
         registration.put("accepted", true);
         registration.put("registration_id", "face-detector:1.0.0");
+        registration.put("infer_url", "http://plugin-a:19090/v1/infer");
         when(pluginRegistrationService.register(anyString(), any(), anyString())).thenReturn(registration);
 
         Map<String, Object> body = new HashMap<>();
@@ -128,6 +131,7 @@ class PluginApiControllerTest {
         body.put("version", "1.0.0");
         body.put("runtime", "rk3588_rknn");
         body.put("capabilities", Arrays.asList("inference"));
+        body.put("infer_url", "http://plugin-a:19090/v1/infer");
         body.put("health_url", "http://plugin-a:19090/health");
 
         JsonResult result = pluginApiController.register(body);
@@ -136,6 +140,7 @@ class PluginApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(Boolean.TRUE, data.get("accepted"));
         assertEquals("face-detector:1.0.0", data.get("registration_id"));
+        assertEquals("http://plugin-a:19090/v1/infer", data.get("infer_url"));
         verify(pluginRegistrationService).register(anyString(), any(), anyString());
     }
 

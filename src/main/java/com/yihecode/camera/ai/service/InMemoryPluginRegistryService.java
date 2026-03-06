@@ -107,6 +107,7 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
         target.setVersion(source.getVersion());
         target.setRuntime(source.getRuntime());
         target.setCapabilities(source.getCapabilities() == null ? new ArrayList<>() : new ArrayList<>(source.getCapabilities()));
+        target.setInferUrl(source.getInferUrl());
         target.setHealthUrl(source.getHealthUrl());
         target.setHealthy(source.getHealthy());
         target.setStatus(source.getStatus());

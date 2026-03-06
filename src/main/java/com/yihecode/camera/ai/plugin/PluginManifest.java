@@ -27,4 +27,9 @@ public class PluginManifest {
      * Declared capabilities of this plugin (e.g. inference, alert).
      */
     private List<String> capabilities = new ArrayList<>();
+
+    /**
+     * Optional explicit inference endpoint for plugin dispatch.
+     */
+    private String inferUrl;
 }

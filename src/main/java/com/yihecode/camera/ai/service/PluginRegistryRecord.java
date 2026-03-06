@@ -13,6 +13,7 @@ public class PluginRegistryRecord {
     private String version;
     private String runtime;
     private List<String> capabilities = new ArrayList<>();
+    private String inferUrl;
     private String healthUrl;
     private Boolean healthy;
     private String status;

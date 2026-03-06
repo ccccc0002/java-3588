@@ -199,6 +199,7 @@ public class PluginRouteResolverService {
         data.put("version", record.getVersion());
         data.put("runtime", record.getRuntime());
         data.put("capabilities", normalizeCapabilities(record.getCapabilities()));
+        data.put("infer_url", record.getInferUrl());
         data.put("health_url", record.getHealthUrl());
         data.put("healthy", record.getHealthy());
         data.put("status", normalizeStatus(record.getStatus(), record.getHealthy()));

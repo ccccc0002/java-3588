@@ -147,6 +147,7 @@ public class PluginApiController {
         manifest.setVersion(trimToNull(firstString(body, "version")));
         manifest.setRuntime(trimToNull(firstString(body, "runtime")));
         manifest.setCapabilities(normalizeCapabilities(body.get("capabilities")));
+        manifest.setInferUrl(trimToNull(firstString(body, "infer_url", "inferUrl")));
         return manifest;
     }
 
@@ -156,6 +157,7 @@ public class PluginApiController {
         data.put("version", trimToNull(manifest.getVersion()));
         data.put("runtime", trimToNull(manifest.getRuntime()));
         data.put("capabilities", normalizeCapabilities(manifest.getCapabilities()));
+        data.put("infer_url", trimToNull(manifest.getInferUrl()));
         return data;
     }
 

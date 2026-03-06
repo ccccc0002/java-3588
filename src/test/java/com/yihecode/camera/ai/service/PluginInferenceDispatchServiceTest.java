@@ -106,4 +106,30 @@ class PluginInferenceDispatchServiceTest {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> pluginInferenceDispatchService.infer(request, pluginRoute));
         assertTrue(ex.getMessage().contains("invalid plugin inference response body"));
     }
+    @Test
+    void infer_shouldPreferExplicitInferUrl_overHealthUrlDerivedPath() {
+        when(inferenceHttpGateway.postJson(eq("http://plugin-c:29090/custom-infer"), eq(3000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-plugin-explicit\",\"camera_id\":703,\"latency_ms\":2,\"detections\":[]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-plugin-explicit");
+        request.setCameraId(703L);
+        request.setModelId(803L);
+        request.setFrameMeta(new HashMap<>());
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("plugin", Map.of(
+                "infer_url", "http://plugin-c:29090/custom-infer",
+                "health_url", "http://plugin-c:29090/health",
+                "runtime", "rk3588_rknn"
+        ));
+
+        InferenceResult result = pluginInferenceDispatchService.infer(request, pluginRoute);
+
+        assertEquals("trace-plugin-explicit", result.getTraceId());
+        verify(inferenceHttpGateway).postJson(eq("http://plugin-c:29090/custom-infer"), eq(3000), anyString());
+    }
 }

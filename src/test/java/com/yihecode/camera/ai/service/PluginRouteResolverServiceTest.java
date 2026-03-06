@@ -91,6 +91,7 @@ class PluginRouteResolverServiceTest {
         newer.setRuntime("rk3588_rknn");
         newer.setCapabilities(Arrays.asList("inference", "alert"));
         newer.setHealthy(true);
+        newer.setInferUrl("http://plugin-b:19090/v1/infer");
         newer.setStatus("healthy");
         newer.setUpdatedAtMs(200L);
 
@@ -106,6 +107,7 @@ class PluginRouteResolverServiceTest {
         assertEquals("registry_search", data.get("source"));
         Map<String, Object> plugin = (Map<String, Object>) data.get("plugin");
         assertEquals("face-detector:1.1.0", plugin.get("registration_id"));
+        assertEquals("http://plugin-b:19090/v1/infer", plugin.get("infer_url"));
         Map<String, Object> selector = (Map<String, Object>) data.get("selector");
         assertEquals(Arrays.asList("inference"), selector.get("capabilities"));
     }

@@ -59,6 +59,7 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         record.setVersion(manifest.getVersion());
         record.setRuntime(manifest.getRuntime());
         record.setCapabilities(manifest.getCapabilities() == null ? new ArrayList<>() : new ArrayList<>(manifest.getCapabilities()));
+        record.setInferUrl(StrUtil.isBlank(manifest.getInferUrl()) ? null : manifest.getInferUrl().trim());
         record.setHealthUrl(StrUtil.isBlank(healthUrl) ? null : healthUrl.trim());
         record.setHealthy(health == null ? null : (Boolean) health.get("healthy"));
         record.setStatus(normalizeStatus(health == null ? null : String.valueOf(health.get("status")), record.getHealthy()));
@@ -222,6 +223,7 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         data.put("version", record.getVersion());
         data.put("runtime", record.getRuntime());
         data.put("capabilities", record.getCapabilities() == null ? new ArrayList<>() : new ArrayList<>(record.getCapabilities()));
+        data.put("infer_url", record.getInferUrl());
         data.put("health_url", record.getHealthUrl());
         data.put("healthy", record.getHealthy());
         data.put("status", normalizeStatus(record.getStatus(), record.getHealthy()));

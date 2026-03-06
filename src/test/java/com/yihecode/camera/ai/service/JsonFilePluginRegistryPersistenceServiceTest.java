@@ -38,6 +38,7 @@ class JsonFilePluginRegistryPersistenceServiceTest {
         first.setRegistrationId("face-detector:1.0.0");
         first.setPluginId("face-detector");
         first.setVersion("1.0.0");
+        first.setInferUrl("http://plugin-a:19090/v1/infer");
 
         PluginRegistryRecord second = new PluginRegistryRecord();
         second.setRegistrationId("helmet-detector:1.0.0");
@@ -50,6 +51,7 @@ class JsonFilePluginRegistryPersistenceServiceTest {
         assertTrue(Files.exists(file));
         assertEquals(2, loaded.size());
         assertEquals("face-detector:1.0.0", loaded.get(0).getRegistrationId());
+        assertEquals("http://plugin-a:19090/v1/infer", loaded.get(0).getInferUrl());
         assertEquals("helmet-detector:1.0.0", loaded.get(1).getRegistrationId());
     }
 
