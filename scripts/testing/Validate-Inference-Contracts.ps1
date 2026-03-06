@@ -164,6 +164,12 @@ $deadLetterLatestTraceId = Get-PropValue -Obj $deadLetterLatestData -Name "trace
 $deadLetterLatest = Get-PropValue -Obj $deadLetterLatestData -Name "dead_letter"
 $checks += New-CheckResult -Api "/api/inference/dead-letter/latest" -Passed (($deadLetterLatestResp.code -eq 0) -and ($deadLetterLatestTraceId -ne $null) -and ($deadLetterLatestTraceId -ne "") -and ($deadLetterLatest -is [System.Collections.IList]) -and ($deadLetterLatest.Count -le 5)) -Detail ("code={0}; trace_id={1}; list_size={2}" -f $deadLetterLatestResp.code, $deadLetterLatestTraceId, ($(if ($deadLetterLatest -is [System.Collections.IList]) { $deadLetterLatest.Count } else { -1 })))
 
+$deadLetterReplayNotFoundResp = Invoke-ApiGet -Path "/api/inference/dead-letter/replay?dead_letter_id=-1"
+$deadLetterReplayNotFoundData = Get-PropValue -Obj $deadLetterReplayNotFoundResp -Name "data"
+$deadLetterReplayNotFoundTraceId = Get-PropValue -Obj $deadLetterReplayNotFoundData -Name "trace_id"
+$deadLetterReplayNotFoundId = Get-PropValue -Obj $deadLetterReplayNotFoundData -Name "dead_letter_id"
+$checks += New-CheckResult -Api "/api/inference/dead-letter/replay(not-found)" -Passed (($deadLetterReplayNotFoundResp.code -ne 0) -and ($deadLetterReplayNotFoundTraceId -ne $null) -and ($deadLetterReplayNotFoundTraceId -ne "") -and ($deadLetterReplayNotFoundId -ne $null) -and (([long]$deadLetterReplayNotFoundId) -eq -1)) -Detail ("code={0}; trace_id={1}; dead_letter_id={2}" -f $deadLetterReplayNotFoundResp.code, $deadLetterReplayNotFoundTraceId, $deadLetterReplayNotFoundId)
+
 $testReq = @{
     camera_id = $CameraId
     model_id = $ModelId
