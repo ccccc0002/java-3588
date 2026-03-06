@@ -148,6 +148,20 @@ $circuitResetRouteBackend = Get-PropValue -Obj $circuitResetCircuit -Name "route
 $circuitResetFlag = Get-PropValue -Obj $circuitResetCircuit -Name "reset"
 $checks += New-CheckResult -Api "/api/inference/circuit/reset" -Passed (($circuitResetResp.code -eq 0) -and ($circuitResetTraceId -ne $null) -and ($circuitResetTraceId -ne "") -and ($circuitResetBackendType -ne $null) -and ($circuitResetBackendType -ne "") -and ($circuitResetCircuit -ne $null) -and ($circuitResetInnerTraceId -ne $null) -and ($circuitResetInnerTraceId -ne "") -and ($circuitResetInnerBackend -ne $null) -and ($circuitResetInnerBackend -ne "") -and ($circuitResetRouteBackend -ne $null) -and ($circuitResetRouteBackend -ne "") -and ($circuitResetFlag -is [bool])) -Detail ("code={0}; trace_id={1}; backend_type={2}; circuit_trace_id={3}; circuit_backend={4}; route_backend={5}; reset={6}" -f $circuitResetResp.code, $circuitResetTraceId, $circuitResetBackendType, $circuitResetInnerTraceId, $circuitResetInnerBackend, $circuitResetRouteBackend, $circuitResetFlag)
 
+$deadLetterStatsResp = Invoke-ApiGet -Path "/api/inference/dead-letter/stats"
+$deadLetterStatsData = Get-PropValue -Obj $deadLetterStatsResp -Name "data"
+$deadLetterStatsTraceId = Get-PropValue -Obj $deadLetterStatsData -Name "trace_id"
+$deadLetterStats = Get-PropValue -Obj $deadLetterStatsData -Name "dead_letter"
+$deadLetterQueueSize = Get-PropValue -Obj $deadLetterStats -Name "queue_size"
+$deadLetterMaxSize = Get-PropValue -Obj $deadLetterStats -Name "max_size"
+$checks += New-CheckResult -Api "/api/inference/dead-letter/stats" -Passed (($deadLetterStatsResp.code -eq 0) -and ($deadLetterStatsTraceId -ne $null) -and ($deadLetterStatsTraceId -ne "") -and ($deadLetterStats -ne $null) -and ($deadLetterQueueSize -ne $null) -and (([int]$deadLetterQueueSize) -ge 0) -and ($deadLetterMaxSize -ne $null) -and (([int]$deadLetterMaxSize) -ge 1)) -Detail ("code={0}; trace_id={1}; queue_size={2}; max_size={3}" -f $deadLetterStatsResp.code, $deadLetterStatsTraceId, $deadLetterQueueSize, $deadLetterMaxSize)
+
+$deadLetterLatestResp = Invoke-ApiGet -Path "/api/inference/dead-letter/latest?limit=5"
+$deadLetterLatestData = Get-PropValue -Obj $deadLetterLatestResp -Name "data"
+$deadLetterLatestTraceId = Get-PropValue -Obj $deadLetterLatestData -Name "trace_id"
+$deadLetterLatest = Get-PropValue -Obj $deadLetterLatestData -Name "dead_letter"
+$checks += New-CheckResult -Api "/api/inference/dead-letter/latest" -Passed (($deadLetterLatestResp.code -eq 0) -and ($deadLetterLatestTraceId -ne $null) -and ($deadLetterLatestTraceId -ne "") -and ($deadLetterLatest -is [System.Collections.IList]) -and ($deadLetterLatest.Count -le 5)) -Detail ("code={0}; trace_id={1}; list_size={2}" -f $deadLetterLatestResp.code, $deadLetterLatestTraceId, ($(if ($deadLetterLatest -is [System.Collections.IList]) { $deadLetterLatest.Count } else { -1 })))
+
 $testReq = @{
     camera_id = $CameraId
     model_id = $ModelId
