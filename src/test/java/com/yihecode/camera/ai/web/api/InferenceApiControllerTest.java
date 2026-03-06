@@ -550,4 +550,42 @@ class InferenceApiControllerTest {
         assertEquals(705L, ((Number) routes.get(5).get("camera_id")).longValue());
         assertEquals(false, data.get("truncated"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldFallbackDefaultCameraWhenAllQueryAliasesInvalid() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(1L)).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(1L)).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(1L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, null, "abc", "x-y", " , ");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(1, routes.size());
+        assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(false, data.get("truncated"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldApplyMaxLimitAcrossMixedQueryAliases() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, null, "1-300", "301-600", null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(500, routes.size());
+        assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
+        assertEquals(true, data.get("truncated"));
+        assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+    }
 }
