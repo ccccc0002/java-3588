@@ -362,6 +362,70 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplay_shouldReplayAndAckWhenRequested() {
+        Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("trace_id", "trace-old");
+        requestPayload.put("camera_id", 111L);
+        requestPayload.put("model_id", 211L);
+        requestPayload.put("frame", new HashMap<>());
+        requestPayload.put("roi", new ArrayList<>());
+
+        Map<String, Object> deadLetter = new HashMap<>();
+        deadLetter.put("dead_letter_id", 10L);
+        deadLetter.put("trace_id", "trace-old");
+        deadLetter.put("camera_id", 111L);
+        deadLetter.put("model_id", 211L);
+        deadLetter.put("algorithm_id", 311L);
+        deadLetter.put("persist_report", false);
+        deadLetter.put("request_payload", requestPayload);
+
+        InferenceResult infer = new InferenceResult();
+        infer.setTraceId("trace-new");
+        infer.setCameraId(111L);
+        infer.setLatencyMs(5L);
+        infer.setBackendType("rk3588_rknn");
+        infer.setAttempt(1);
+        infer.setDetections(new ArrayList<>());
+
+        Map<String, Object> replayMeta = new HashMap<>();
+        replayMeta.put("replay_count", 1);
+        replayMeta.put("last_replay_success", true);
+
+        when(inferenceDeadLetterService.findById(10L)).thenReturn(deadLetter);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.backendTypeForCamera(111L)).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.infer(any())).thenReturn(infer);
+        when(inferenceDeadLetterService.markReplay(eq(10L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
+        when(inferenceDeadLetterService.removeById(10L)).thenReturn(true);
+
+        JsonResult result = inferenceApiController.deadLetterReplay(10L, 0, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(10L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        assertEquals(true, data.get("acked"));
+        Map<String, Object> report = (Map<String, Object>) data.get("report");
+        assertEquals("skipped", report.get("status"));
+        Map<String, Object> replayMetaData = (Map<String, Object>) data.get("replay_meta");
+        assertEquals(1, ((Number) replayMetaData.get("replay_count")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplay_shouldFailWhenDeadLetterNotFound() {
+        when(inferenceDeadLetterService.findById(999L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.deadLetterReplay(999L, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(999L, ((Number) data.get("dead_letter_id")).longValue());
+        assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void routeBatch_shouldReturnResolvedBackendsForMultipleCameras() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");

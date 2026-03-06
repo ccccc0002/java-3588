@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
@@ -301,6 +302,67 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/dead-letter/replay"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterReplay(@RequestParam(value = "dead_letter_id", required = false) Long deadLetterId,
+                                       @RequestParam(value = "persist_report", required = false) Integer persistReportFlag,
+                                       @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag) {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> entry = inferenceDeadLetterService.findById(deadLetterId);
+            if (entry == null) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("trace_id", traceId);
+                data.put("dead_letter_id", deadLetterId);
+                return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found", data);
+            }
+
+            Map<String, Object> payload = extractReplayPayload(entry);
+            payload.put("trace_id", traceId);
+            InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
+            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            InferenceResult result = inferenceRoutingService.infer(request);
+            String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
+
+            boolean entryPersistReport = toBooleanFlag(entry.get("persist_report"), false);
+            boolean persistReport = toBooleanFlag(persistReportFlag, entryPersistReport);
+            Long finalAlgorithmId = firstLong(toLong(entry.get("algorithm_id")), null, request.getModelId());
+
+            Map<String, Object> reportData = new HashMap<>();
+            reportData.put("trace_id", traceId);
+            reportData.put("enabled", persistReport);
+            if (persistReport) {
+                reportData.putAll(inferenceReportBridgeService.persistAndBroadcast(request.getCameraId(), finalAlgorithmId, result, traceId));
+            } else {
+                reportData.put("status", "skipped");
+                reportData.put("reason", "persist_report disabled");
+            }
+
+            Map<String, Object> replayMeta = inferenceDeadLetterService.markReplay(deadLetterId, true, traceId, "ok");
+            boolean ackOnSuccess = toBooleanFlag(ackOnSuccessFlag, false);
+            boolean acked = ackOnSuccess && inferenceDeadLetterService.removeById(deadLetterId);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter_id", deadLetterId);
+            data.put("backend_type", backendType);
+            data.put("request", request.toPayload());
+            data.put("result", result.toMap());
+            data.put("algorithm_id", finalAlgorithmId);
+            data.put("report", reportData);
+            data.put("acked", acked);
+            data.put("replay_meta", replayMeta);
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
+            log.error("inference dead-letter replay api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter_id", deadLetterId);
+            return JsonResultUtils.fail("inference dead-letter replay api failed: " + e.getMessage(), data);
+        }
+    }
+
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult routeBatch(@RequestBody(required = false) Map<String, Object> body,
@@ -452,6 +514,7 @@ public class InferenceApiController {
         event.put("backend_type", inferenceRoutingService.currentBackendType());
         event.put("error_type", exception == null ? null : exception.getClass().getSimpleName());
         event.put("error_message", exception == null ? "" : exception.getMessage());
+        event.put("request_payload", buildDeadLetterRequestPayload(payload, requestTraceId, cameraId, modelId, null));
         event.put("created_at_ms", System.currentTimeMillis());
         try {
             return inferenceDeadLetterService.record(event);
@@ -461,6 +524,42 @@ public class InferenceApiController {
             fallback.put("dead_letter_error", deadLetterEx.getMessage());
             return fallback;
         }
+    }
+
+    private Map<String, Object> buildDeadLetterRequestPayload(Map<String, Object> payload,
+                                                              String requestTraceId,
+                                                              Long cameraId,
+                                                              Long modelId,
+                                                              String source) {
+        try {
+            InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            return new HashMap<>(request.toPayload());
+        } catch (Exception ignored) {
+            Map<String, Object> fallback = new HashMap<>();
+            fallback.put("trace_id", firstString(payload.get("trace_id"), requestTraceId, requestTraceId));
+            fallback.put("camera_id", firstLong(toLong(payload.get("camera_id")), cameraId, 1L));
+            fallback.put("model_id", firstLong(toLong(payload.get("model_id")), modelId, 1L));
+            fallback.put("frame", new HashMap<>());
+            fallback.put("roi", Collections.emptyList());
+            return fallback;
+        }
+    }
+
+    private Map<String, Object> extractReplayPayload(Map<String, Object> entry) {
+        if (entry == null) {
+            return new HashMap<>();
+        }
+        Object payloadObj = entry.get("request_payload");
+        if (payloadObj instanceof Map) {
+            return new HashMap<>((Map<? extends String, ?>) payloadObj);
+        }
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("trace_id", entry.get("trace_id"));
+        fallback.put("camera_id", entry.get("camera_id"));
+        fallback.put("model_id", entry.get("model_id"));
+        fallback.put("frame", new HashMap<>());
+        fallback.put("roi", Collections.emptyList());
+        return fallback;
     }
 
     private Long extractFrameTimestampMs(Map<String, Object> frameMeta) {

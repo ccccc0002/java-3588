@@ -83,4 +83,25 @@ class InferenceDeadLetterServiceTest {
         assertEquals(0, ((Number) clearData.get("queue_size")).intValue());
         assertEquals(0, ((Number) stats.get("queue_size")).intValue());
     }
+
+    @Test
+    void findMarkReplayAndRemove_shouldUpdateAndDeleteEntryById() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        Map<String, Object> event = new HashMap<>();
+        event.put("trace_id", "trace-replay");
+        Map<String, Object> recorded = inferenceDeadLetterService.record(event);
+        Long id = ((Number) recorded.get("dead_letter_id")).longValue();
+
+        Map<String, Object> found = inferenceDeadLetterService.findById(id);
+        assertEquals("trace-replay", found.get("trace_id"));
+
+        Map<String, Object> marked = inferenceDeadLetterService.markReplay(id, true, "trace-replay-1", "ok");
+        assertEquals(1, ((Number) marked.get("replay_count")).intValue());
+        assertEquals(true, marked.get("last_replay_success"));
+        assertEquals("trace-replay-1", marked.get("last_replay_trace_id"));
+
+        boolean removed = inferenceDeadLetterService.removeById(id);
+        assertEquals(true, removed);
+        assertEquals(null, inferenceDeadLetterService.findById(id));
+    }
 }

@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,58 @@ public class InferenceDeadLetterService {
         return data;
     }
 
+    public synchronized Map<String, Object> findById(Long deadLetterId) {
+        if (deadLetterId == null) {
+            return null;
+        }
+        for (Map<String, Object> entry : deadLetters) {
+            Long id = toLong(entry.get("dead_letter_id"));
+            if (id != null && deadLetterId.equals(id)) {
+                return new LinkedHashMap<>(entry);
+            }
+        }
+        return null;
+    }
+
+    public synchronized boolean removeById(Long deadLetterId) {
+        if (deadLetterId == null) {
+            return false;
+        }
+        Iterator<Map<String, Object>> iterator = deadLetters.iterator();
+        while (iterator.hasNext()) {
+            Map<String, Object> entry = iterator.next();
+            Long id = toLong(entry.get("dead_letter_id"));
+            if (id != null && deadLetterId.equals(id)) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public synchronized Map<String, Object> markReplay(Long deadLetterId,
+                                                       boolean success,
+                                                       String replayTraceId,
+                                                       String replayMessage) {
+        if (deadLetterId == null) {
+            return null;
+        }
+        for (Map<String, Object> entry : deadLetters) {
+            Long id = toLong(entry.get("dead_letter_id"));
+            if (id == null || !deadLetterId.equals(id)) {
+                continue;
+            }
+            int replayCount = toInt(entry.get("replay_count"), 0) + 1;
+            entry.put("replay_count", replayCount);
+            entry.put("last_replay_success", success);
+            entry.put("last_replay_trace_id", replayTraceId);
+            entry.put("last_replay_message", replayMessage);
+            entry.put("last_replay_at_ms", System.currentTimeMillis());
+            return new LinkedHashMap<>(entry);
+        }
+        return null;
+    }
+
     private int getMaxSize() {
         String value = configService.getByValTag("infer_dead_letter_max_size");
         if (StrUtil.isBlank(value)) {
@@ -104,6 +157,17 @@ public class InferenceDeadLetterService {
             return DEFAULT_LIST_LIMIT;
         }
         return Math.min(limit, MAX_LIST_LIMIT);
+    }
+
+    private int toInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
     }
 
     private Long toLong(Object value) {
