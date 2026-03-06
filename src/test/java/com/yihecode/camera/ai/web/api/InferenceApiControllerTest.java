@@ -415,10 +415,10 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-latest");
         item.put("replay_count", 1);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false, false)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, false, false, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null);
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -437,10 +437,10 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-retryable");
         item.put("replay_count", 2);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, true, false, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, 1, null);
+        JsonResult result = inferenceApiController.deadLetterLatest(5, 1, null, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -459,10 +459,10 @@ class InferenceApiControllerTest {
         item.put("trace_id", "trace-dl-exhausted");
         item.put("replay_count", 3);
         latest.add(item);
-        when(inferenceDeadLetterService.latest(5, false, true)).thenReturn(latest);
+        when(inferenceDeadLetterService.latest(5, false, true, null, null, null)).thenReturn(latest);
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
-        JsonResult result = inferenceApiController.deadLetterLatest(5, null, 1);
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, 1, null, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -2268,4 +2268,27 @@ class InferenceApiControllerTest {
         verify(pluginInferenceDispatchService).infer(any(), eq(pluginRoute));
         verify(inferenceRoutingService).infer(any(), eq("rk3588_rknn"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterLatest_shouldForwardBackendAndPluginFilters() {
+        List<Map<String, Object>> latest = new ArrayList<>();
+        Map<String, Object> item = new HashMap<>();
+        item.put("trace_id", "trace-dl-plugin-filter");
+        item.put("replay_count", 0);
+        latest.add(item);
+        when(inferenceDeadLetterService.latest(5, false, false, "rk3588", "face", "face-detector:1.0"))
+                .thenReturn(latest);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+
+        JsonResult result = inferenceApiController.deadLetterLatest(5, null, null, "rk3588", "face", "face-detector:1.0");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
+        assertEquals(1, deadLetter.size());
+        assertEquals("trace-dl-plugin-filter", deadLetter.get(0).get("trace_id"));
+        verify(inferenceDeadLetterService).latest(5, false, false, "rk3588", "face", "face-detector:1.0");
+    }
+
 }

@@ -75,7 +75,6 @@ class InferenceDeadLetterServiceTest {
     void latest_shouldFilterOnlyRetryableWhenRequested() {
         lenient().when(configService.getByValTag(anyString())).thenReturn(null);
         lenient().when(configService.getByValTag(anyString())).thenReturn(null);
-        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("3");
 
         Map<String, Object> first = new HashMap<>();
         first.put("trace_id", "trace-a");
@@ -275,6 +274,36 @@ class InferenceDeadLetterServiceTest {
         assertEquals(1, ((Number) errorTypeCounts.get("IllegalArgumentException")).intValue());
         assertEquals(2, ((Number) pluginIdCounts.get("face-detector")).intValue());
         assertEquals(2, ((Number) pluginRegistrationCounts.get("face-detector:1.0.0")).intValue());
+    }
+
+
+    @Test
+    void latest_shouldFilterByBackendAndPluginRegistration() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+
+        Map<String, Object> first = new HashMap<>();
+        first.put("trace_id", "trace-plugin-a");
+        first.put("backend_type", "rk3588_rknn");
+        first.put("plugin_dispatch", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector"
+        ));
+
+        Map<String, Object> second = new HashMap<>();
+        second.put("trace_id", "trace-plugin-b");
+        second.put("backend_type", "legacy");
+        second.put("plugin_dispatch", Map.of(
+                "registration_id", "helmet-detector:1.0.0",
+                "plugin_id", "helmet-detector"
+        ));
+
+        inferenceDeadLetterService.record(first);
+        inferenceDeadLetterService.record(second);
+
+        List<Map<String, Object>> latest = inferenceDeadLetterService.latest(10, false, false, "rk3588", null, "face-detector:1.0");
+
+        assertEquals(1, latest.size());
+        assertEquals("trace-plugin-a", latest.get(0).get("trace_id"));
     }
 
 }

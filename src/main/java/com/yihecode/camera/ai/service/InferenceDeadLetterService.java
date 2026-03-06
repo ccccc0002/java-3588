@@ -57,6 +57,15 @@ public class InferenceDeadLetterService {
     }
 
     public synchronized List<Map<String, Object>> latest(Integer limit, Boolean onlyRetryable, Boolean onlyExhausted) {
+        return latest(limit, onlyRetryable, onlyExhausted, null, null, null);
+    }
+
+    public synchronized List<Map<String, Object>> latest(Integer limit,
+                                                         Boolean onlyRetryable,
+                                                         Boolean onlyExhausted,
+                                                         String backendType,
+                                                         String pluginId,
+                                                         String pluginRegistrationId) {
         int effectiveLimit = normalizeListLimit(limit);
         boolean retryableOnly = onlyRetryable != null && onlyRetryable;
         boolean exhaustedOnly = onlyExhausted != null && onlyExhausted;
@@ -73,6 +82,15 @@ public class InferenceDeadLetterService {
                 continue;
             }
             if (exhaustedOnly && retryable) {
+                continue;
+            }
+            if (!matchesTextFilter(entry == null ? null : entry.get("backend_type"), backendType)) {
+                continue;
+            }
+            if (!matchesTextFilter(extractPluginField(entry, "plugin_id"), pluginId)) {
+                continue;
+            }
+            if (!matchesTextFilter(extractPluginField(entry, "registration_id"), pluginRegistrationId)) {
                 continue;
             }
             result.add(new LinkedHashMap<>(entry));
@@ -190,6 +208,18 @@ public class InferenceDeadLetterService {
             }
         }
         return null;
+    }
+
+    private boolean matchesTextFilter(Object value, String filter) {
+        String normalizedFilter = asCounterKey(filter);
+        if (normalizedFilter == null) {
+            return true;
+        }
+        String normalizedValue = asCounterKey(value);
+        if (normalizedValue == null) {
+            return false;
+        }
+        return normalizedValue.toLowerCase().contains(normalizedFilter.toLowerCase());
     }
 
     private String asCounterKey(Object value) {

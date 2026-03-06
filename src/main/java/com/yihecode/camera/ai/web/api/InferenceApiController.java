@@ -358,12 +358,22 @@ public class InferenceApiController {
     @ResponseBody
     public JsonResult deadLetterLatest(@RequestParam(value = "limit", required = false) Integer limit,
                                        @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
-                                       @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag) {
+                                       @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
+                                       @RequestParam(value = "backend_type", required = false) String backendType,
+                                       @RequestParam(value = "plugin_id", required = false) String pluginId,
+                                       @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
-            List<Map<String, Object>> latest = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
+            List<Map<String, Object>> latest = inferenceDeadLetterService.latest(
+                    limit,
+                    onlyRetryable,
+                    onlyExhausted,
+                    trimToNull(backendType),
+                    trimToNull(pluginId),
+                    trimToNull(pluginRegistrationId)
+            );
             List<Map<String, Object>> display = new ArrayList<>();
             for (Map<String, Object> item : latest) {
                 display.add(enrichDeadLetterReplayBudget(item));
@@ -1483,6 +1493,14 @@ public class InferenceApiController {
             return false;
         }
         return defaultValue;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.trim();
+        return text.isEmpty() ? null : text;
     }
 
     private Long toLong(Object value) {
