@@ -1174,6 +1174,80 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("remaining_count")).intValue());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldFailWhenStrictResumeEnabledWithoutExpectedTotal() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 401L);
+        candidates.add(c1);
+        when(inferenceDeadLetterService.latest(1, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 1, 0, 1, 1, null, 1, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals(null, data.get("expected_total_selected_count"));
+        assertEquals(1, ((Number) data.get("actual_total_selected_count")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldFailWhenStrictResumeCountMismatched() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+        body.put("expected_total_selected_count", 5);
+
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 411L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 412L);
+        candidates.add(c1);
+        candidates.add(c2);
+        when(inferenceDeadLetterService.latest(2, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals(5, ((Number) data.get("expected_total_selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("actual_total_selected_count")).intValue());
+        assertEquals(0, ((Number) data.get("effective_offset")).intValue());
+        assertEquals(2, ((Number) data.get("effective_limit")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldPassWhenStrictResumeCountMatched() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+        body.put("expected_total_selected_count", 2);
+
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 421L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 422L);
+        candidates.add(c1);
+        candidates.add(c2);
+        when(inferenceDeadLetterService.latest(2, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals(2, ((Number) data.get("expected_total_selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("actual_total_selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("dry_run_count")).intValue());
+    }
+
     private Map<String, Object> buildAcquireResult(boolean acquired, String reason, Map<String, Object> entry) {
         Map<String, Object> result = new HashMap<>();
         result.put("exists", entry != null);

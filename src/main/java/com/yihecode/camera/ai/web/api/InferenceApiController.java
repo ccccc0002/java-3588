@@ -490,12 +490,14 @@ public class InferenceApiController {
             Integer requestedOffset = firstInteger(payload.get("offset"), offset);
             Integer effectivePersistReportFlag = firstInteger(payload.get("persist_report"), persistReportFlag);
             Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
+            Integer expectedTotalSelectedCount = firstInteger(payload.get("expected_total_selected_count"), null);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
             Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
             boolean onlyExhausted = toBooleanFlag(firstNonNull(payload.get("only_exhausted"), onlyExhaustedFlag), false);
             boolean dryRun = toBooleanFlag(firstNonNull(payload.get("dry_run"), dryRunFlag), false);
             boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
+            boolean strictResume = toBooleanFlag(payload.get("strict_resume"), false);
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
             int effectiveLimit = normalizeDeadLetterReplayBatchLimit(requestedLimit, maxLimit);
             int effectiveOffset = normalizeReplayBatchOffset(requestedOffset);
@@ -523,6 +525,28 @@ public class InferenceApiController {
             }
             int nextOffset = appliedOffset + candidates.size();
             boolean hasMore = nextOffset < totalSelectedCount;
+            if (strictResume) {
+                if (expectedTotalSelectedCount == null) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("trace_id", traceId);
+                    data.put("strict_resume", true);
+                    data.put("expected_total_selected_count", null);
+                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("effective_limit", effectiveLimit);
+                    data.put("effective_offset", appliedOffset);
+                    return JsonResultUtils.fail("inference dead-letter replay batch failed: expected_total_selected_count required when strict_resume enabled", data);
+                }
+                if (!expectedTotalSelectedCount.equals(totalSelectedCount)) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("trace_id", traceId);
+                    data.put("strict_resume", true);
+                    data.put("expected_total_selected_count", expectedTotalSelectedCount);
+                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("effective_limit", effectiveLimit);
+                    data.put("effective_offset", appliedOffset);
+                    return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
+                }
+            }
 
             int successCount = 0;
             int failedCount = 0;
@@ -611,6 +635,9 @@ public class InferenceApiController {
             data.put("next_offset", nextOffset);
             data.put("has_more", hasMore);
             data.put("total_selected_count", totalSelectedCount);
+            data.put("strict_resume", strictResume);
+            data.put("expected_total_selected_count", expectedTotalSelectedCount);
+            data.put("actual_total_selected_count", totalSelectedCount);
             data.put("max_limit", maxLimit);
             data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
