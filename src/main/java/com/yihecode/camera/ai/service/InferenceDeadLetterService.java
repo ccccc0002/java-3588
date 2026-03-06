@@ -60,11 +60,41 @@ public class InferenceDeadLetterService {
 
     public synchronized Map<String, Object> stats() {
         Map<String, Object> data = new HashMap<>();
+        int replayedEntryCount = 0;
+        int replaySuccessEntryCount = 0;
+        int replayFailedEntryCount = 0;
+        int pendingReplayEntryCount = 0;
+        int exhaustedReplayEntryCount = 0;
+        int maxReplayAttempts = maxReplayAttempts();
+        for (Map<String, Object> entry : deadLetters) {
+            int replayCount = toInt(entry.get("replay_count"), 0);
+            boolean replayed = replayCount > 0;
+            if (!replayed) {
+                pendingReplayEntryCount++;
+                continue;
+            }
+            replayedEntryCount++;
+            boolean success = toBoolean(entry.get("last_replay_success"), false);
+            if (success) {
+                replaySuccessEntryCount++;
+            } else {
+                replayFailedEntryCount++;
+            }
+            if (replayCount >= maxReplayAttempts) {
+                exhaustedReplayEntryCount++;
+            }
+        }
+
         data.put("queue_size", deadLetters.size());
         data.put("max_size", getMaxSize());
         data.put("default_list_limit", DEFAULT_LIST_LIMIT);
         data.put("max_list_limit", MAX_LIST_LIMIT);
-        data.put("max_replay_attempts", maxReplayAttempts());
+        data.put("max_replay_attempts", maxReplayAttempts);
+        data.put("replayed_entry_count", replayedEntryCount);
+        data.put("replay_success_entry_count", replaySuccessEntryCount);
+        data.put("replay_failed_entry_count", replayFailedEntryCount);
+        data.put("pending_replay_entry_count", pendingReplayEntryCount);
+        data.put("exhausted_replay_entry_count", exhaustedReplayEntryCount);
         data.put("next_dead_letter_id", sequence + 1);
 
         Long oldestId = null;
@@ -194,6 +224,20 @@ public class InferenceDeadLetterService {
         } catch (Exception ignored) {
             return defaultValue;
         }
+    }
+
+    private boolean toBoolean(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        String text = String.valueOf(value).trim();
+        if ("1".equals(text) || "true".equalsIgnoreCase(text) || "yes".equalsIgnoreCase(text)) {
+            return true;
+        }
+        if ("0".equals(text) || "false".equalsIgnoreCase(text) || "no".equalsIgnoreCase(text)) {
+            return false;
+        }
+        return defaultValue;
     }
 
     private Long toLong(Object value) {

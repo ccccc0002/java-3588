@@ -314,6 +314,11 @@ class InferenceApiControllerTest {
         Map<String, Object> stats = new HashMap<>();
         stats.put("queue_size", 3);
         stats.put("max_size", 200);
+        stats.put("replayed_entry_count", 1);
+        stats.put("replay_success_entry_count", 1);
+        stats.put("replay_failed_entry_count", 0);
+        stats.put("pending_replay_entry_count", 2);
+        stats.put("exhausted_replay_entry_count", 0);
         when(inferenceDeadLetterService.stats()).thenReturn(stats);
 
         JsonResult result = inferenceApiController.deadLetterStats();
@@ -323,6 +328,8 @@ class InferenceApiControllerTest {
         Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
         assertEquals(3, ((Number) deadLetter.get("queue_size")).intValue());
         assertEquals(200, ((Number) deadLetter.get("max_size")).intValue());
+        assertEquals(1, ((Number) deadLetter.get("replayed_entry_count")).intValue());
+        assertEquals(2, ((Number) deadLetter.get("pending_replay_entry_count")).intValue());
     }
 
     @Test

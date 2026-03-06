@@ -116,4 +116,29 @@ class InferenceDeadLetterServiceTest {
         when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("100");
         assertEquals(20, inferenceDeadLetterService.maxReplayAttempts());
     }
+
+    @Test
+    void stats_shouldExposeReplayClassificationCounters() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("2");
+        Map<String, Object> e1 = inferenceDeadLetterService.record(new HashMap<>());
+        Map<String, Object> e2 = inferenceDeadLetterService.record(new HashMap<>());
+        inferenceDeadLetterService.record(new HashMap<>());
+        Long id1 = ((Number) e1.get("dead_letter_id")).longValue();
+        Long id2 = ((Number) e2.get("dead_letter_id")).longValue();
+
+        inferenceDeadLetterService.markReplay(id1, true, "trace-r1", "ok");
+        inferenceDeadLetterService.markReplay(id2, false, "trace-r2", "timeout");
+        inferenceDeadLetterService.markReplay(id2, false, "trace-r3", "timeout");
+
+        Map<String, Object> stats = inferenceDeadLetterService.stats();
+
+        assertEquals(3, ((Number) stats.get("queue_size")).intValue());
+        assertEquals(2, ((Number) stats.get("max_replay_attempts")).intValue());
+        assertEquals(2, ((Number) stats.get("replayed_entry_count")).intValue());
+        assertEquals(1, ((Number) stats.get("replay_success_entry_count")).intValue());
+        assertEquals(1, ((Number) stats.get("replay_failed_entry_count")).intValue());
+        assertEquals(1, ((Number) stats.get("pending_replay_entry_count")).intValue());
+        assertEquals(1, ((Number) stats.get("exhausted_replay_entry_count")).intValue());
+    }
 }
