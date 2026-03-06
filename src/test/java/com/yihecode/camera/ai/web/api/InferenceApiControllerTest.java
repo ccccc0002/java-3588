@@ -377,6 +377,7 @@ class InferenceApiControllerTest {
         assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
         assertEquals(true, data.get("truncated"));
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        assertEquals(500, ((Number) data.get("max_camera_ids_cap")).intValue());
     }
 
     @Test
@@ -618,6 +619,7 @@ class InferenceApiControllerTest {
         assertEquals(500L, ((Number) routes.get(499).get("camera_id")).longValue());
         assertEquals(true, data.get("truncated"));
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        assertEquals(500, ((Number) data.get("max_camera_ids_cap")).intValue());
         List<String> hitSources = (List<String>) data.get("hit_sources");
         assertEquals(2, hitSources.size());
         assertEquals("query_cameras", hitSources.get(0));
@@ -693,5 +695,49 @@ class InferenceApiControllerTest {
         assertEquals(false, data.get("truncated"));
         Map<String, Object> sourceStats = (Map<String, Object>) data.get("source_stats");
         assertEquals(0, sourceStats.size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldRespectLowerMaxCameraIdsFromQuery() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        JsonResult result = inferenceApiController.routeBatch(null, "1-20", null, null, null, 5);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(5, routes.size());
+        assertEquals(1L, ((Number) routes.get(0).get("camera_id")).longValue());
+        assertEquals(5L, ((Number) routes.get(4).get("camera_id")).longValue());
+        assertEquals(true, data.get("truncated"));
+        assertEquals("query_camera_ids", data.get("truncated_source"));
+        assertEquals(5, ((Number) data.get("max_camera_ids")).intValue());
+        assertEquals(500, ((Number) data.get("max_camera_ids_cap")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void routeBatch_shouldClampBodyMaxCameraIdsToCap() {
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(anyLong())).thenReturn("legacy");
+        when(inferenceRoutingService.overrideBackendForCamera(anyLong())).thenReturn(null);
+        when(inferenceRoutingService.overrideSourceForCamera(anyLong())).thenReturn(null);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_ids", "1-999");
+        body.put("max_camera_ids", 1000);
+
+        JsonResult result = inferenceApiController.routeBatch(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> routes = (List<Map<String, Object>>) data.get("route_list");
+        assertEquals(500, routes.size());
+        assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
+        assertEquals(500, ((Number) data.get("max_camera_ids_cap")).intValue());
     }
 }

@@ -212,23 +212,34 @@ public class InferenceApiController {
                                  @RequestParam(value = "camera_ids", required = false) String cameraIdsText,
                                  @RequestParam(value = "cameras", required = false) String camerasText,
                                  @RequestParam(value = "camera_range", required = false) String cameraRangeText,
-                                 @RequestParam(value = "range", required = false) String rangeText) {
-        return routeBatchInternal(body, cameraIdsText, camerasText, cameraRangeText, rangeText);
+                                 @RequestParam(value = "range", required = false) String rangeText,
+                                 @RequestParam(value = "max_camera_ids", required = false) Integer maxCameraIds) {
+        return routeBatchInternal(body, cameraIdsText, camerasText, cameraRangeText, rangeText, maxCameraIds);
     }
 
     JsonResult routeBatch(Map<String, Object> body, String cameraIdsText) {
-        return routeBatchInternal(body, cameraIdsText, null, null, null);
+        return routeBatchInternal(body, cameraIdsText, null, null, null, null);
+    }
+
+    JsonResult routeBatch(Map<String, Object> body,
+                          String cameraIdsText,
+                          String camerasText,
+                          String cameraRangeText,
+                          String rangeText) {
+        return routeBatchInternal(body, cameraIdsText, camerasText, cameraRangeText, rangeText, null);
     }
 
     private JsonResult routeBatchInternal(Map<String, Object> body,
                                           String cameraIdsText,
                                           String camerasText,
                                           String cameraRangeText,
-                                          String rangeText) {
+                                          String rangeText,
+                                          Integer maxCameraIds) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
-            CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText, camerasText, cameraRangeText, rangeText);
+            int effectiveMaxCameraIds = resolveMaxCameraIds(payload, maxCameraIds);
+            CameraIdResolveResult resolveResult = resolveCameraIds(payload, cameraIdsText, camerasText, cameraRangeText, rangeText, effectiveMaxCameraIds);
             List<Long> cameraIds = resolveResult.cameraIds;
             boolean defaultFallbackUsed = cameraIds.isEmpty();
             if (defaultFallbackUsed) {
@@ -260,7 +271,8 @@ public class InferenceApiController {
             data.put("resolved_camera_count", routeList.size());
             data.put("default_fallback_used", defaultFallbackUsed);
             data.put("truncated", resolveResult.truncated);
-            data.put("max_camera_ids", ROUTE_BATCH_MAX_CAMERA_IDS);
+            data.put("max_camera_ids", effectiveMaxCameraIds);
+            data.put("max_camera_ids_cap", ROUTE_BATCH_MAX_CAMERA_IDS);
             data.put("input_token_count", resolveResult.inputTokenCount);
             data.put("expanded_candidate_count", resolveResult.expandedCandidateCount);
             data.put("invalid_token_count", resolveResult.invalidTokenCount);
@@ -356,7 +368,8 @@ public class InferenceApiController {
                                                    String queryCameraIds,
                                                    String queryCameras,
                                                    String queryCameraRange,
-                                                   String queryRange) {
+                                                   String queryRange,
+                                                   int maxCameraIds) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
         CameraIdParseStats stats = new CameraIdParseStats();
         Object bodyCameraIds = payload == null ? null : payload.get("camera_ids");
@@ -364,27 +377,27 @@ public class InferenceApiController {
         Object bodyCameraRange = payload == null ? null : payload.get("camera_range");
         Object bodyRange = payload == null ? null : payload.get("range");
 
-        boolean truncated = addCameraIds(ordered, bodyCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_camera_ids");
+        boolean truncated = addCameraIds(ordered, bodyCameraIds, maxCameraIds, stats, "body_camera_ids");
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_cameras");
+            truncated = addCameraIds(ordered, bodyCameras, maxCameraIds, stats, "body_cameras");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_camera_range");
+            truncated = addCameraIds(ordered, bodyCameraRange, maxCameraIds, stats, "body_camera_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, bodyRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "body_range");
+            truncated = addCameraIds(ordered, bodyRange, maxCameraIds, stats, "body_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameraIds, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_camera_ids");
+            truncated = addCameraIds(ordered, queryCameraIds, maxCameraIds, stats, "query_camera_ids");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameras, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_cameras");
+            truncated = addCameraIds(ordered, queryCameras, maxCameraIds, stats, "query_cameras");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryCameraRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_camera_range");
+            truncated = addCameraIds(ordered, queryCameraRange, maxCameraIds, stats, "query_camera_range");
         }
         if (!truncated) {
-            truncated = addCameraIds(ordered, queryRange, ROUTE_BATCH_MAX_CAMERA_IDS, stats, "query_range");
+            truncated = addCameraIds(ordered, queryRange, maxCameraIds, stats, "query_range");
         }
         return new CameraIdResolveResult(
                 new ArrayList<>(ordered),
@@ -397,6 +410,31 @@ public class InferenceApiController {
                 stats.truncatedSource,
                 stats.toSourceStatsMap()
         );
+    }
+
+    private int resolveMaxCameraIds(Map<String, Object> payload, Integer queryMaxCameraIds) {
+        Long bodyMaxCameraIds = payload == null ? null : toLong(payload.get("max_camera_ids"));
+        if (bodyMaxCameraIds != null) {
+            return normalizeMaxCameraIds(bodyMaxCameraIds);
+        }
+        if (queryMaxCameraIds != null) {
+            return normalizeMaxCameraIds(queryMaxCameraIds.longValue());
+        }
+        return ROUTE_BATCH_MAX_CAMERA_IDS;
+    }
+
+    private int normalizeMaxCameraIds(Long rawMaxCameraIds) {
+        if (rawMaxCameraIds == null) {
+            return ROUTE_BATCH_MAX_CAMERA_IDS;
+        }
+        long value = rawMaxCameraIds;
+        if (value <= 0) {
+            return 1;
+        }
+        if (value > ROUTE_BATCH_MAX_CAMERA_IDS) {
+            return ROUTE_BATCH_MAX_CAMERA_IDS;
+        }
+        return (int) value;
     }
 
     private boolean addCameraIds(LinkedHashSet<Long> ordered,
