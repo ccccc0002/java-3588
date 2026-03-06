@@ -154,7 +154,9 @@ $deadLetterStatsTraceId = Get-PropValue -Obj $deadLetterStatsData -Name "trace_i
 $deadLetterStats = Get-PropValue -Obj $deadLetterStatsData -Name "dead_letter"
 $deadLetterQueueSize = Get-PropValue -Obj $deadLetterStats -Name "queue_size"
 $deadLetterMaxSize = Get-PropValue -Obj $deadLetterStats -Name "max_size"
-$checks += New-CheckResult -Api "/api/inference/dead-letter/stats" -Passed (($deadLetterStatsResp.code -eq 0) -and ($deadLetterStatsTraceId -ne $null) -and ($deadLetterStatsTraceId -ne "") -and ($deadLetterStats -ne $null) -and ($deadLetterQueueSize -ne $null) -and (([int]$deadLetterQueueSize) -ge 0) -and ($deadLetterMaxSize -ne $null) -and (([int]$deadLetterMaxSize) -ge 1)) -Detail ("code={0}; trace_id={1}; queue_size={2}; max_size={3}" -f $deadLetterStatsResp.code, $deadLetterStatsTraceId, $deadLetterQueueSize, $deadLetterMaxSize)
+$deadLetterDefaultListLimit = Get-PropValue -Obj $deadLetterStats -Name "default_list_limit"
+$deadLetterMaxListLimit = Get-PropValue -Obj $deadLetterStats -Name "max_list_limit"
+$checks += New-CheckResult -Api "/api/inference/dead-letter/stats" -Passed (($deadLetterStatsResp.code -eq 0) -and ($deadLetterStatsTraceId -ne $null) -and ($deadLetterStatsTraceId -ne "") -and ($deadLetterStats -ne $null) -and ($deadLetterQueueSize -ne $null) -and (([int]$deadLetterQueueSize) -ge 0) -and ($deadLetterMaxSize -ne $null) -and (([int]$deadLetterMaxSize) -ge 1) -and ($deadLetterDefaultListLimit -ne $null) -and (([int]$deadLetterDefaultListLimit) -ge 1) -and ($deadLetterMaxListLimit -ne $null) -and (([int]$deadLetterMaxListLimit) -ge ([int]$deadLetterDefaultListLimit))) -Detail ("code={0}; trace_id={1}; queue_size={2}; max_size={3}; default_list_limit={4}; max_list_limit={5}" -f $deadLetterStatsResp.code, $deadLetterStatsTraceId, $deadLetterQueueSize, $deadLetterMaxSize, $deadLetterDefaultListLimit, $deadLetterMaxListLimit)
 
 $deadLetterLatestResp = Invoke-ApiGet -Path "/api/inference/dead-letter/latest?limit=5"
 $deadLetterLatestData = Get-PropValue -Obj $deadLetterLatestResp -Name "data"
