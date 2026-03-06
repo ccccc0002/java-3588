@@ -89,8 +89,12 @@ public class InferenceDeadLetterService {
         int exhaustedReplayEntryCount = 0;
         int retryableEntryCount = 0;
         int nonRetryableEntryCount = 0;
+        int replayInProgressEntryCount = 0;
         int maxReplayAttempts = maxReplayAttempts();
         for (Map<String, Object> entry : deadLetters) {
+            if (toBoolean(entry.get("replay_in_progress"), false)) {
+                replayInProgressEntryCount++;
+            }
             int replayCount = toInt(entry.get("replay_count"), 0);
             boolean exhausted = replayCount >= maxReplayAttempts;
             if (exhausted) {
@@ -127,6 +131,7 @@ public class InferenceDeadLetterService {
         data.put("exhausted_replay_entry_count", exhaustedReplayEntryCount);
         data.put("retryable_entry_count", retryableEntryCount);
         data.put("non_retryable_entry_count", nonRetryableEntryCount);
+        data.put("replay_in_progress_entry_count", replayInProgressEntryCount);
         data.put("next_dead_letter_id", sequence + 1);
 
         Long oldestId = null;

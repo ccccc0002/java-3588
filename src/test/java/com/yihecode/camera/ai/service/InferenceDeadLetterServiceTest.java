@@ -173,6 +173,8 @@ class InferenceDeadLetterServiceTest {
         assertTrue((Boolean) firstAcquire.get("exists"));
         assertTrue((Boolean) firstAcquire.get("acquired"));
         assertEquals("ok", firstAcquire.get("reason"));
+        Map<String, Object> statsWhenLocked = inferenceDeadLetterService.stats();
+        assertEquals(1, ((Number) statsWhenLocked.get("replay_in_progress_entry_count")).intValue());
 
         Map<String, Object> secondAcquire = inferenceDeadLetterService.tryAcquireReplay(id, "trace-acquire-2", 3);
         assertTrue((Boolean) secondAcquire.get("exists"));
@@ -180,6 +182,8 @@ class InferenceDeadLetterServiceTest {
         assertEquals("in_progress", secondAcquire.get("reason"));
 
         inferenceDeadLetterService.releaseReplay(id, "trace-acquire-1");
+        Map<String, Object> statsAfterRelease = inferenceDeadLetterService.stats();
+        assertEquals(0, ((Number) statsAfterRelease.get("replay_in_progress_entry_count")).intValue());
         Map<String, Object> thirdAcquire = inferenceDeadLetterService.tryAcquireReplay(id, "trace-acquire-3", 3);
         assertTrue((Boolean) thirdAcquire.get("acquired"));
         assertEquals("ok", thirdAcquire.get("reason"));
@@ -222,5 +226,6 @@ class InferenceDeadLetterServiceTest {
         assertEquals(1, ((Number) stats.get("exhausted_replay_entry_count")).intValue());
         assertEquals(2, ((Number) stats.get("retryable_entry_count")).intValue());
         assertEquals(1, ((Number) stats.get("non_retryable_entry_count")).intValue());
+        assertEquals(0, ((Number) stats.get("replay_in_progress_entry_count")).intValue());
     }
 }
