@@ -146,6 +146,20 @@ $detailPlugin = Get-PropValue -Obj $detailData -Name "plugin"
 $detailRegistrationId = Get-PropValue -Obj $detailPlugin -Name "registration_id"
 $checks += New-CheckResult -Api "/api/plugin/detail" -Passed (($detailResp.code -eq 0) -and ($detailTraceId -ne $null) -and ($detailTraceId -ne "") -and ($detailFound -eq $true) -and ($detailRegistrationId -eq $registerId)) -Detail ("code={0}; trace_id={1}; found={2}; registration_id={3}" -f $detailResp.code, $detailTraceId, $detailFound, $detailRegistrationId)
 
+$refreshResp = Invoke-ApiPostJson -Path ("/api/plugin/refresh?registration_id=" + [uri]::EscapeDataString($registerId)) -BodyObj @{}
+$refreshData = Get-PropValue -Obj $refreshResp -Name "data"
+$refreshTraceId = Get-PropValue -Obj $refreshData -Name "trace_id"
+$refreshRefreshed = Get-PropValue -Obj $refreshData -Name "refreshed"
+$refreshPlugin = Get-PropValue -Obj $refreshData -Name "plugin"
+$refreshPluginStatus = Get-PropValue -Obj $refreshPlugin -Name "status"
+$checks += New-CheckResult -Api "/api/plugin/refresh" -Passed (($refreshResp.code -eq 0) -and ($refreshTraceId -ne $null) -and ($refreshTraceId -ne "") -and ($refreshRefreshed -eq $true) -and ($refreshPluginStatus -eq "ok")) -Detail ("code={0}; trace_id={1}; refreshed={2}; status={3}" -f $refreshResp.code, $refreshTraceId, $refreshRefreshed, $refreshPluginStatus)
+
+$unregisterResp = Invoke-ApiPostJson -Path ("/api/plugin/unregister?registration_id=" + [uri]::EscapeDataString($registerId)) -BodyObj @{}
+$unregisterData = Get-PropValue -Obj $unregisterResp -Name "data"
+$unregisterTraceId = Get-PropValue -Obj $unregisterData -Name "trace_id"
+$unregisterRemoved = Get-PropValue -Obj $unregisterData -Name "removed"
+$checks += New-CheckResult -Api "/api/plugin/unregister" -Passed (($unregisterResp.code -eq 0) -and ($unregisterTraceId -ne $null) -and ($unregisterTraceId -ne "") -and ($unregisterRemoved -eq $true)) -Detail ("code={0}; trace_id={1}; removed={2}" -f $unregisterResp.code, $unregisterTraceId, $unregisterRemoved)
+
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
 $failedCount = ($checks | Where-Object { -not $_.passed }).Count
@@ -155,3 +169,4 @@ if ($failedCount -gt 0) {
 }
 
 Write-Output "PASS: all plugin contract checks passed."
+

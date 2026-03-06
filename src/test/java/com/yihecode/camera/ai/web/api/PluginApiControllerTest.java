@@ -169,4 +169,39 @@ class PluginApiControllerTest {
         assertEquals("face-detector:1.0.0", ((Map<String, Object>) data.get("plugin")).get("registration_id"));
         verify(pluginRegistrationService).getRegistration(anyString(), anyString());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void refresh_shouldReturnUpdatedPluginRegistration() {
+        Map<String, Object> refreshed = new HashMap<>();
+        refreshed.put("trace_id", "trace-plugin-refresh-2");
+        refreshed.put("found", true);
+        refreshed.put("refreshed", true);
+        refreshed.put("plugin", Map.of("status", "ok"));
+        when(pluginRegistrationService.refreshRegistration(anyString(), anyString())).thenReturn(refreshed);
+
+        JsonResult result = pluginApiController.refresh("face-detector:1.0.0");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(Boolean.TRUE, data.get("refreshed"));
+        assertEquals("ok", ((Map<String, Object>) data.get("plugin")).get("status"));
+        verify(pluginRegistrationService).refreshRegistration(anyString(), anyString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void unregister_shouldReturnRemovedState() {
+        Map<String, Object> removed = new HashMap<>();
+        removed.put("trace_id", "trace-plugin-delete-2");
+        removed.put("removed", true);
+        when(pluginRegistrationService.unregisterRegistration(anyString(), anyString())).thenReturn(removed);
+
+        JsonResult result = pluginApiController.unregister("face-detector:1.0.0");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(Boolean.TRUE, data.get("removed"));
+        verify(pluginRegistrationService).unregisterRegistration(anyString(), anyString());
+    }
 }

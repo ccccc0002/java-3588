@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,5 +50,17 @@ class InMemoryPluginRegistryServiceTest {
         assertEquals(2, records.size());
         assertEquals("b:1.0.0", records.get(0).getRegistrationId());
         assertEquals("a:1.0.0", records.get(1).getRegistrationId());
+    }
+
+    @Test
+    void delete_shouldRemoveRecord() {
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+        pluginRegistryService.save(record);
+
+        boolean removed = pluginRegistryService.delete("face-detector:1.0.0");
+
+        assertTrue(removed);
+        assertFalse(pluginRegistryService.findByRegistrationId("face-detector:1.0.0").isPresent());
     }
 }

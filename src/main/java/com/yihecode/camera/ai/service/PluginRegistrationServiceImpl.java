@@ -98,6 +98,48 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         return data;
     }
 
+    @Override
+    public Map<String, Object> refreshRegistration(String traceId, String registrationId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("trace_id", traceId);
+        data.put("registration_id", registrationId);
+        Optional<PluginRegistryRecord> optional = pluginRegistryService.findByRegistrationId(registrationId);
+        if (!optional.isPresent()) {
+            data.put("found", false);
+            data.put("refreshed", false);
+            data.put("plugin", null);
+            return data;
+        }
+
+        PluginRegistryRecord record = optional.get();
+        data.put("found", true);
+        if (StrUtil.isBlank(record.getHealthUrl())) {
+            data.put("refreshed", false);
+            data.put("plugin", toMap(record));
+            return data;
+        }
+
+        Map<String, Object> health = pluginHealthProbeService.probe(traceId, record.getHealthUrl());
+        record.setHealthy((Boolean) health.get("healthy"));
+        record.setStatus(String.valueOf(health.get("status")));
+        record.setTraceId(traceId);
+        record.setUpdatedAtMs(System.currentTimeMillis());
+        pluginRegistryService.save(record);
+        data.put("refreshed", true);
+        data.put("health", health);
+        data.put("plugin", toMap(record));
+        return data;
+    }
+
+    @Override
+    public Map<String, Object> unregisterRegistration(String traceId, String registrationId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("trace_id", traceId);
+        data.put("registration_id", registrationId);
+        data.put("removed", pluginRegistryService.delete(registrationId));
+        return data;
+    }
+
     private String buildRegistrationId(PluginManifest manifest) {
         if (manifest == null) {
             return null;

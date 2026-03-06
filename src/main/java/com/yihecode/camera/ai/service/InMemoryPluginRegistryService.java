@@ -49,6 +49,16 @@ public class InMemoryPluginRegistryService implements PluginRegistryService {
         }
     }
 
+    @Override
+    public boolean delete(String registrationId) {
+        if (StrUtil.isBlank(registrationId)) {
+            return false;
+        }
+        synchronized (lock) {
+            return registry.remove(registrationId.trim()) != null;
+        }
+    }
+
     private PluginRegistryRecord copy(PluginRegistryRecord source) {
         PluginRegistryRecord target = new PluginRegistryRecord();
         target.setRegistrationId(source.getRegistrationId());

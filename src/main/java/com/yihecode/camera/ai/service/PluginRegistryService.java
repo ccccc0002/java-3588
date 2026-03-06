@@ -10,4 +10,6 @@ public interface PluginRegistryService {
     Optional<PluginRegistryRecord> findByRegistrationId(String registrationId);
 
     List<PluginRegistryRecord> list();
+
+    boolean delete(String registrationId);
 }

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -120,5 +121,38 @@ class PluginRegistrationServiceImplTest {
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
         assertEquals(1, plugins.size());
         assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void refreshRegistration_shouldUpdateStoredHealthStatus() {
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+        record.setHealthUrl("http://plugin-a:19090/health");
+        record.setStatus("accepted");
+        when(pluginRegistryService.findByRegistrationId("face-detector:1.0.0")).thenReturn(Optional.of(record));
+        Map<String, Object> health = new HashMap<>();
+        health.put("healthy", true);
+        health.put("status", "ok");
+        when(pluginHealthProbeService.probe("trace-plugin-refresh-1", "http://plugin-a:19090/health")).thenReturn(health);
+
+        Map<String, Object> data = pluginRegistrationService.refreshRegistration("trace-plugin-refresh-1", "face-detector:1.0.0");
+
+        assertEquals(Boolean.TRUE, data.get("found"));
+        assertEquals(Boolean.TRUE, data.get("refreshed"));
+        Map<String, Object> plugin = (Map<String, Object>) data.get("plugin");
+        assertEquals("ok", plugin.get("status"));
+        verify(pluginRegistryService).save(any());
+    }
+
+    @Test
+    void unregisterRegistration_shouldDeleteStoredRecord() {
+        when(pluginRegistryService.delete("face-detector:1.0.0")).thenReturn(true);
+
+        Map<String, Object> data = pluginRegistrationService.unregisterRegistration("trace-plugin-delete-1", "face-detector:1.0.0");
+
+        assertEquals(Boolean.TRUE, data.get("removed"));
+        assertEquals("trace-plugin-delete-1", data.get("trace_id"));
+        verify(pluginRegistryService).delete("face-detector:1.0.0");
     }
 }

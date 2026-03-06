@@ -101,6 +101,30 @@ public class PluginApiController {
         return JsonResultUtils.success(data);
     }
 
+    @RequestMapping(value = {"/refresh"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult refresh(@RequestParam(value = "registration_id", required = false) String registrationId) {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.refreshRegistration(traceId, trimToNull(registrationId)));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
+    @RequestMapping(value = {"/unregister"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult unregister(@RequestParam(value = "registration_id", required = false) String registrationId) {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.unregisterRegistration(traceId, trimToNull(registrationId)));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
     private PluginManifest toManifest(Map<String, Object> body) {
         PluginManifest manifest = new PluginManifest();
         if (body == null || body.isEmpty()) {
