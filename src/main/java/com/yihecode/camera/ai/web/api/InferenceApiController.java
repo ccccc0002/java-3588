@@ -472,7 +472,8 @@ public class InferenceApiController {
 
     @RequestMapping(value = {"/dead-letter/replay/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
-    public JsonResult deadLetterReplayBatch(@RequestParam(value = "limit", required = false) Integer limit,
+    public JsonResult deadLetterReplayBatch(@RequestBody(required = false) Map<String, Object> body,
+                                            @RequestParam(value = "limit", required = false) Integer limit,
                                             @RequestParam(value = "persist_report", required = false) Integer persistReportFlag,
                                             @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag,
                                             @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
@@ -483,6 +484,9 @@ public class InferenceApiController {
                                             @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag) {
         String traceId = nextTraceId();
         try {
+            Map<String, Object> payload = body == null ? new HashMap<>() : body;
+            Object bodyDeadLetterIds = payload.get("dead_letter_ids");
+            Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
             boolean dryRun = toBooleanFlag(dryRunFlag, false);
@@ -490,7 +494,7 @@ public class InferenceApiController {
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
             int effectiveLimit = normalizeDeadLetterReplayBatchLimit(limit, maxLimit);
             boolean truncated = limit != null && limit > 0 && limit > effectiveLimit;
-            List<Long> selectedIds = resolveDeadLetterIds(deadLetterIdsText, idsText, effectiveLimit);
+            List<Long> selectedIds = resolveDeadLetterIds(effectiveLimit, bodyDeadLetterIds, bodyIds, deadLetterIdsText, idsText);
             boolean explicitIdsMode = !selectedIds.isEmpty();
             List<Map<String, Object>> candidates;
             if (explicitIdsMode) {
@@ -608,33 +612,57 @@ public class InferenceApiController {
         }
     }
 
-    private List<Long> resolveDeadLetterIds(String deadLetterIdsText, String idsText, int maxSize) {
+    private List<Long> resolveDeadLetterIds(int maxSize, Object... idSources) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
-        addDeadLetterIdsTokenized(ordered, deadLetterIdsText, maxSize);
-        addDeadLetterIdsTokenized(ordered, idsText, maxSize);
+        if (idSources != null) {
+            for (Object source : idSources) {
+                addDeadLetterIds(ordered, source, maxSize);
+            }
+        }
         return new ArrayList<>(ordered);
     }
 
-    private void addDeadLetterIdsTokenized(LinkedHashSet<Long> ordered, String idsText, int maxSize) {
-        if (ordered == null || StrUtil.isBlank(idsText) || ordered.size() >= maxSize) {
+    private void addDeadLetterIds(LinkedHashSet<Long> ordered, Object value, int maxSize) {
+        if (ordered == null || value == null || ordered.size() >= maxSize) {
             return;
         }
-        String[] parts = idsText.split(",");
-        for (String part : parts) {
-            if (ordered.size() >= maxSize) {
+        if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            for (Object item : list) {
+                if (ordered.size() >= maxSize) {
+                    return;
+                }
+                addDeadLetterIds(ordered, item, maxSize);
+            }
+            return;
+        }
+        if (value instanceof String) {
+            String idsText = String.valueOf(value);
+            if (StrUtil.isBlank(idsText)) {
                 return;
             }
-            if (part == null) {
-                continue;
+            String[] parts = idsText.split(",");
+            for (String part : parts) {
+                if (ordered.size() >= maxSize) {
+                    return;
+                }
+                if (part == null) {
+                    continue;
+                }
+                String token = part.trim();
+                if (token.isEmpty()) {
+                    continue;
+                }
+                Long id = toLong(token);
+                if (id == null) {
+                    continue;
+                }
+                ordered.add(id);
             }
-            String token = part.trim();
-            if (token.isEmpty()) {
-                continue;
-            }
-            Long id = toLong(token);
-            if (id == null) {
-                continue;
-            }
+            return;
+        }
+        Long id = toLong(value);
+        if (id != null) {
             ordered.add(id);
         }
     }
