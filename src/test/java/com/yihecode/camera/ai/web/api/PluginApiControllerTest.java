@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -252,6 +253,31 @@ class PluginApiControllerTest {
         pluginApiController.list("detector", "rk3588", "healthy", true, true, "inference", 5, 20);
 
         verify(pluginRegistrationService).listRegistrations(anyString(), eq("detector"), eq("rk3588"), eq("healthy"), eq(true), eq(true), eq("inference"), eq(5), eq(20));
+    }
+
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void refreshBatch_shouldForwardBodyAndReturnSummary() {
+        Map<String, Object> refreshed = new HashMap<>();
+        refreshed.put("trace_id", "trace-plugin-refresh-batch-api");
+        refreshed.put("selected_count", 1);
+        refreshed.put("refreshed_count", 1);
+        refreshed.put("plugins", Arrays.asList(Map.of("registration_id", "face-detector:1.0.0", "refreshed", true)));
+        when(pluginRegistrationService.refreshRegistrations(anyString(), any(), anyBoolean(), anyInt())).thenReturn(refreshed);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("registration_ids", Arrays.asList("face-detector:1.0.0"));
+        body.put("only_unhealthy", true);
+        body.put("limit", 20);
+
+        JsonResult result = pluginApiController.refreshBatch(body, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(1, ((Number) data.get("selected_count")).intValue());
+        assertEquals(1, ((Number) data.get("refreshed_count")).intValue());
+        verify(pluginRegistrationService).refreshRegistrations(anyString(), eq(Arrays.asList("face-detector:1.0.0")), eq(true), eq(20));
     }
 
 }

@@ -166,6 +166,76 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
 
 
     @Override
+    public Map<String, Object> refreshRegistrations(String traceId,
+                                                    List<String> registrationIds,
+                                                    boolean onlyUnhealthy,
+                                                    Integer limit) {
+        int effectiveLimit = resolveLimit(limit);
+        List<String> normalizedIds = normalizeRegistrationIds(registrationIds);
+        List<Map<String, Object>> plugins = new ArrayList<>();
+        int refreshedCount = 0;
+        int skippedCount = 0;
+        int selectedCount = 0;
+
+        for (PluginRegistryRecord record : pluginRegistryService.list()) {
+            if (record == null) {
+                continue;
+            }
+            if (!normalizedIds.isEmpty() && !normalizedIds.contains(record.getRegistrationId())) {
+                continue;
+            }
+            if (onlyUnhealthy && Boolean.TRUE.equals(record.getHealthy())) {
+                continue;
+            }
+            if (plugins.size() >= effectiveLimit) {
+                break;
+            }
+            selectedCount++;
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("registration_id", record.getRegistrationId());
+            item.put("plugin_id", record.getPluginId());
+            item.put("before_status", normalizeStatus(record.getStatus(), record.getHealthy()));
+            item.put("before_healthy", record.getHealthy());
+
+            if (StrUtil.isBlank(record.getHealthUrl())) {
+                record.setStatus(normalizeStatus(record.getStatus(), record.getHealthy()));
+                item.put("refreshed", false);
+                item.put("skip_reason", "health_url_missing");
+                item.put("plugin", toMap(record));
+                skippedCount++;
+                plugins.add(item);
+                continue;
+            }
+
+            Map<String, Object> health = pluginHealthProbeService.probe(traceId, record.getHealthUrl());
+            record.setHealthy((Boolean) health.get("healthy"));
+            record.setStatus(normalizeStatus(String.valueOf(health.get("status")), record.getHealthy()));
+            record.setTraceId(traceId);
+            record.setUpdatedAtMs(System.currentTimeMillis());
+            pluginRegistryService.save(record);
+
+            item.put("refreshed", true);
+            item.put("health", health);
+            item.put("plugin", toMap(record));
+            refreshedCount++;
+            plugins.add(item);
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("trace_id", traceId);
+        data.put("registration_ids", normalizedIds);
+        data.put("only_unhealthy", onlyUnhealthy);
+        data.put("limit", effectiveLimit);
+        data.put("selected_count", selectedCount);
+        data.put("refreshed_count", refreshedCount);
+        data.put("skipped_count", skippedCount);
+        data.put("plugins", plugins);
+        return data;
+    }
+
+
+    @Override
     public Map<String, Object> stats(String traceId) {
         Map<String, Object> data = new LinkedHashMap<>();
         Map<String, Object> statusCounts = new LinkedHashMap<>();
@@ -234,6 +304,24 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
             return DEFAULT_LIST_LIMIT;
         }
         return Math.min(limit, MAX_LIST_LIMIT);
+    }
+
+
+    private List<String> normalizeRegistrationIds(List<String> registrationIds) {
+        List<String> normalized = new ArrayList<>();
+        if (registrationIds == null || registrationIds.isEmpty()) {
+            return normalized;
+        }
+        for (String registrationId : registrationIds) {
+            if (StrUtil.isBlank(registrationId)) {
+                continue;
+            }
+            String trimmed = registrationId.trim();
+            if (!normalized.contains(trimmed)) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized;
     }
 
 

@@ -22,6 +22,11 @@ public interface PluginRegistrationService {
 
     Map<String, Object> refreshRegistration(String traceId, String registrationId);
 
+    Map<String, Object> refreshRegistrations(String traceId,
+                                             java.util.List<String> registrationIds,
+                                             boolean onlyUnhealthy,
+                                             Integer limit);
+
     Map<String, Object> stats(String traceId);
 
     Map<String, Object> unregisterRegistration(String traceId, String registrationId);

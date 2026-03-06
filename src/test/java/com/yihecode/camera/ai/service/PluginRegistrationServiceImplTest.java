@@ -287,4 +287,80 @@ class PluginRegistrationServiceImplTest {
         assertEquals("inference", data.get("capability_filter"));
     }
 
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void refreshRegistrations_shouldRefreshSelectedEntriesAndSummarize() {
+        PluginRegistryRecord first = new PluginRegistryRecord();
+        first.setRegistrationId("face-detector:1.0.0");
+        first.setPluginId("face-detector");
+        first.setHealthUrl("http://plugin-a:19090/health");
+        first.setHealthy(false);
+        first.setStatus("unreachable");
+
+        PluginRegistryRecord second = new PluginRegistryRecord();
+        second.setRegistrationId("helmet-detector:1.0.0");
+        second.setPluginId("helmet-detector");
+        second.setHealthUrl("http://plugin-b:19090/health");
+        second.setHealthy(false);
+        second.setStatus("unreachable");
+
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second));
+        when(pluginHealthProbeService.probe("trace-plugin-refresh-batch-1", "http://plugin-a:19090/health"))
+                .thenReturn(new HashMap<>(Map.of("healthy", true, "status", "ok")));
+
+        Map<String, Object> data = pluginRegistrationService.refreshRegistrations(
+                "trace-plugin-refresh-batch-1",
+                Arrays.asList("face-detector:1.0.0"),
+                false,
+                10
+        );
+
+        assertEquals(1, ((Number) data.get("selected_count")).intValue());
+        assertEquals(1, ((Number) data.get("refreshed_count")).intValue());
+        assertEquals(0, ((Number) data.get("skipped_count")).intValue());
+        List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
+        assertEquals(1, plugins.size());
+        assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+        assertEquals(true, plugins.get(0).get("refreshed"));
+        verify(pluginRegistryService).save(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void refreshRegistrations_shouldSupportOnlyUnhealthyFilter() {
+        PluginRegistryRecord first = new PluginRegistryRecord();
+        first.setRegistrationId("face-detector:1.0.0");
+        first.setPluginId("face-detector");
+        first.setHealthUrl("http://plugin-a:19090/health");
+        first.setHealthy(true);
+        first.setStatus("healthy");
+
+        PluginRegistryRecord second = new PluginRegistryRecord();
+        second.setRegistrationId("helmet-detector:1.0.0");
+        second.setPluginId("helmet-detector");
+        second.setHealthUrl("http://plugin-b:19090/health");
+        second.setHealthy(false);
+        second.setStatus("unreachable");
+
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second));
+        when(pluginHealthProbeService.probe("trace-plugin-refresh-batch-2", "http://plugin-b:19090/health"))
+                .thenReturn(new HashMap<>(Map.of("healthy", true, "status", "ok")));
+
+        Map<String, Object> data = pluginRegistrationService.refreshRegistrations(
+                "trace-plugin-refresh-batch-2",
+                null,
+                true,
+                10
+        );
+
+        assertEquals(1, ((Number) data.get("selected_count")).intValue());
+        assertEquals(1, ((Number) data.get("refreshed_count")).intValue());
+        assertEquals(true, data.get("only_unhealthy"));
+        List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
+        assertEquals(1, plugins.size());
+        assertEquals("helmet-detector:1.0.0", plugins.get(0).get("registration_id"));
+        verify(pluginHealthProbeService, never()).probe("trace-plugin-refresh-batch-2", "http://plugin-a:19090/health");
+    }
+
 }

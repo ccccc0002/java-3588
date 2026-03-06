@@ -141,6 +141,27 @@ public class PluginApiController {
         return JsonResultUtils.success(data);
     }
 
+
+    @RequestMapping(value = {"/refresh/batch"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult refreshBatch(@RequestBody(required = false) Map<String, Object> body,
+                                   @RequestParam(value = "only_unhealthy", required = false) Boolean onlyUnhealthy,
+                                   @RequestParam(value = "limit", required = false) Integer limit) {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        List<String> registrationIds = normalizeStringList(body == null ? null : body.get("registration_ids"));
+        boolean effectiveOnlyUnhealthy = toBooleanFlag(body == null ? null : body.get("only_unhealthy"), Boolean.TRUE.equals(onlyUnhealthy));
+        Integer effectiveLimit = resolveInteger(body == null ? null : body.get("limit"), limit);
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.refreshRegistrations(traceId,
+                registrationIds,
+                effectiveOnlyUnhealthy,
+                effectiveLimit));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
     @RequestMapping(value = {"/unregister"}, method = {RequestMethod.POST})
     @ResponseBody
     public JsonResult unregister(@RequestParam(value = "registration_id", required = false) String registrationId) {
@@ -210,5 +231,53 @@ public class PluginApiController {
             }
         }
         return new ArrayList<>(normalized);
+    }
+
+    private List<String> normalizeStringList(Object value) {
+        if (!(value instanceof List<?>)) {
+            return Collections.emptyList();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (Object item : (List<?>) value) {
+            if (item == null) {
+                continue;
+            }
+            String text = item.toString();
+            if (StrUtil.isNotBlank(text)) {
+                normalized.add(text.trim());
+            }
+        }
+        return new ArrayList<>(normalized);
+    }
+
+    private boolean toBooleanFlag(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        String text = value.toString().trim();
+        if ("1".equals(text) || "true".equalsIgnoreCase(text) || "yes".equalsIgnoreCase(text)) {
+            return true;
+        }
+        if ("0".equals(text) || "false".equalsIgnoreCase(text) || "no".equalsIgnoreCase(text)) {
+            return false;
+        }
+        return defaultValue;
+    }
+
+    private Integer resolveInteger(Object bodyValue, Integer queryValue) {
+        if (bodyValue instanceof Number) {
+            return ((Number) bodyValue).intValue();
+        }
+        if (bodyValue instanceof String && StrUtil.isNotBlank((String) bodyValue)) {
+            try {
+                return Integer.parseInt(((String) bodyValue).trim());
+            } catch (Exception ignored) {
+                return queryValue;
+            }
+        }
+        return queryValue;
     }
 }
