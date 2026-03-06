@@ -10,8 +10,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -155,6 +157,32 @@ class InferenceDeadLetterServiceTest {
         boolean removed = inferenceDeadLetterService.removeById(id);
         assertEquals(true, removed);
         assertEquals(null, inferenceDeadLetterService.findById(id));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void tryAcquireAndReleaseReplay_shouldLockAndUnlockEntry() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        Map<String, Object> event = new HashMap<>();
+        event.put("trace_id", "trace-lock");
+        event.put("replay_count", 1);
+        Map<String, Object> recorded = inferenceDeadLetterService.record(event);
+        Long id = ((Number) recorded.get("dead_letter_id")).longValue();
+
+        Map<String, Object> firstAcquire = inferenceDeadLetterService.tryAcquireReplay(id, "trace-acquire-1", 3);
+        assertTrue((Boolean) firstAcquire.get("exists"));
+        assertTrue((Boolean) firstAcquire.get("acquired"));
+        assertEquals("ok", firstAcquire.get("reason"));
+
+        Map<String, Object> secondAcquire = inferenceDeadLetterService.tryAcquireReplay(id, "trace-acquire-2", 3);
+        assertTrue((Boolean) secondAcquire.get("exists"));
+        assertFalse((Boolean) secondAcquire.get("acquired"));
+        assertEquals("in_progress", secondAcquire.get("reason"));
+
+        inferenceDeadLetterService.releaseReplay(id, "trace-acquire-1");
+        Map<String, Object> thirdAcquire = inferenceDeadLetterService.tryAcquireReplay(id, "trace-acquire-3", 3);
+        assertTrue((Boolean) thirdAcquire.get("acquired"));
+        assertEquals("ok", thirdAcquire.get("reason"));
     }
 
     @Test

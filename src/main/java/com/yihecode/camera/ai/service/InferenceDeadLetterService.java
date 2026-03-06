@@ -209,6 +209,72 @@ public class InferenceDeadLetterService {
         return null;
     }
 
+    public synchronized Map<String, Object> tryAcquireReplay(Long deadLetterId,
+                                                             String replayTraceId,
+                                                             int maxReplayAttempts) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("dead_letter_id", deadLetterId);
+        data.put("exists", false);
+        data.put("acquired", false);
+        data.put("reason", "not_found");
+        if (deadLetterId == null) {
+            return data;
+        }
+
+        for (Map<String, Object> entry : deadLetters) {
+            Long id = toLong(entry.get("dead_letter_id"));
+            if (id == null || !deadLetterId.equals(id)) {
+                continue;
+            }
+            data.put("exists", true);
+            data.put("entry", new LinkedHashMap<>(entry));
+
+            boolean replayInProgress = toBoolean(entry.get("replay_in_progress"), false);
+            if (replayInProgress) {
+                data.put("acquired", false);
+                data.put("reason", "in_progress");
+                return data;
+            }
+
+            int replayCount = toInt(entry.get("replay_count"), 0);
+            if (replayCount >= maxReplayAttempts) {
+                data.put("acquired", false);
+                data.put("reason", "replay_exhausted");
+                return data;
+            }
+
+            entry.put("replay_in_progress", true);
+            entry.put("replay_lock_trace_id", replayTraceId);
+            entry.put("replay_lock_at_ms", System.currentTimeMillis());
+
+            data.put("acquired", true);
+            data.put("reason", "ok");
+            data.put("entry", new LinkedHashMap<>(entry));
+            return data;
+        }
+        return data;
+    }
+
+    public synchronized void releaseReplay(Long deadLetterId, String replayTraceId) {
+        if (deadLetterId == null) {
+            return;
+        }
+        for (Map<String, Object> entry : deadLetters) {
+            Long id = toLong(entry.get("dead_letter_id"));
+            if (id == null || !deadLetterId.equals(id)) {
+                continue;
+            }
+            String lockTraceId = entry.get("replay_lock_trace_id") == null ? null : String.valueOf(entry.get("replay_lock_trace_id"));
+            if (StrUtil.isNotBlank(lockTraceId) && StrUtil.isNotBlank(replayTraceId) && !lockTraceId.equals(replayTraceId)) {
+                return;
+            }
+            entry.put("replay_in_progress", false);
+            entry.remove("replay_lock_trace_id");
+            entry.remove("replay_lock_at_ms");
+            return;
+        }
+    }
+
     private int getMaxSize() {
         String value = configService.getByValTag("infer_dead_letter_max_size");
         if (StrUtil.isBlank(value)) {

@@ -366,26 +366,42 @@ public class InferenceApiController {
                                        @RequestParam(value = "persist_report", required = false) Integer persistReportFlag,
                                        @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag) {
         String traceId = nextTraceId();
+        boolean replayLockAcquired = false;
         try {
-            Map<String, Object> entry = inferenceDeadLetterService.findById(deadLetterId);
-            if (entry == null) {
+            int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
+            Map<String, Object> acquireResult = inferenceDeadLetterService.tryAcquireReplay(deadLetterId, traceId, maxReplayAttempts);
+            boolean exists = toBooleanFlag(acquireResult.get("exists"), false);
+            boolean acquired = toBooleanFlag(acquireResult.get("acquired"), false);
+            String acquireReason = firstString(acquireResult.get("reason"), "unknown", "unknown");
+            Map<String, Object> entry = toMap(acquireResult.get("entry"));
+            if (!exists || entry.isEmpty()) {
                 Map<String, Object> data = new HashMap<>();
                 data.put("trace_id", traceId);
                 data.put("dead_letter_id", deadLetterId);
                 return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found", data);
             }
-
-            int replayCount = toInt(entry.get("replay_count"), 0);
-            int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
-            if (replayCount >= maxReplayAttempts) {
+            if (!acquired) {
                 Map<String, Object> data = new HashMap<>();
                 data.put("trace_id", traceId);
                 data.put("dead_letter_id", deadLetterId);
-                data.put("replay_count", replayCount);
-                data.put("max_replay_attempts", maxReplayAttempts);
-                data.put("replay_exhausted", true);
-                return JsonResultUtils.fail("inference dead-letter replay failed: replay attempts exhausted", data);
+                data.put("replay_in_progress", "in_progress".equals(acquireReason));
+                if ("replay_exhausted".equals(acquireReason)) {
+                    int replayCount = toInt(entry.get("replay_count"), 0);
+                    data.put("replay_count", replayCount);
+                    data.put("max_replay_attempts", maxReplayAttempts);
+                    data.put("replay_exhausted", true);
+                    return JsonResultUtils.fail("inference dead-letter replay failed: replay attempts exhausted", data);
+                }
+                if ("in_progress".equals(acquireReason)) {
+                    data.put("replay_lock_trace_id", entry.get("replay_lock_trace_id"));
+                    data.put("replay_lock_at_ms", entry.get("replay_lock_at_ms"));
+                    return JsonResultUtils.fail("inference dead-letter replay failed: replay already in progress", data);
+                }
+                return JsonResultUtils.fail("inference dead-letter replay failed: dead letter unavailable", data);
             }
+            replayLockAcquired = true;
+
+            int replayCount = toInt(entry.get("replay_count"), 0);
 
             Map<String, Object> payload = extractReplayPayload(entry);
             payload.put("trace_id", traceId);
@@ -432,12 +448,18 @@ public class InferenceApiController {
             data.put("replay_budget", replayBudget);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
-            inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
+            if (replayLockAcquired) {
+                inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
+            }
             log.error("inference dead-letter replay api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("dead_letter_id", deadLetterId);
             return JsonResultUtils.fail("inference dead-letter replay api failed: " + e.getMessage(), data);
+        } finally {
+            if (replayLockAcquired) {
+                inferenceDeadLetterService.releaseReplay(deadLetterId, traceId);
+            }
         }
     }
 
