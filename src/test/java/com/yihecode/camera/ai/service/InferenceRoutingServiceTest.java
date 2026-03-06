@@ -45,7 +45,6 @@ class InferenceRoutingServiceTest {
 
     @Test
     void health_shouldFillTraceIdAndBackend_whenUpstreamMissingFields() {
-        when(configService.getByValTag("infer_backend_type")).thenReturn("legacy");
         Map<String, Object> upstream = new HashMap<>();
         upstream.put("status", "ok");
         when(legacyInferenceClient.health("trace-1")).thenReturn(upstream);
@@ -371,4 +370,31 @@ class InferenceRoutingServiceTest {
         verify(rk3588InferenceClient).resetCircuit("trace-cr-1");
         verifyNoInteractions(legacyInferenceClient);
     }
+    @Test
+    void backendTypeForCamera_shouldPreferRequestedBackendHint_whenSupported() {
+        String backend = inferenceRoutingService.backendTypeForCamera(901L, "rk3588_rknn");
+
+        assertEquals("rk3588_rknn", backend);
+    }
+
+    @Test
+    void infer_shouldUseRequestedBackendHint_whenProvided() {
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-plugin-hint");
+        request.setCameraId(902L);
+
+        InferenceResult result = new InferenceResult();
+        result.setTraceId("trace-plugin-hint");
+        result.setCameraId(902L);
+        result.setLatencyMs(11L);
+        result.setBackendType("rk3588_rknn");
+        when(rk3588InferenceClient.infer(request)).thenReturn(result);
+
+        InferenceResult routed = inferenceRoutingService.infer(request, "rk3588_rknn");
+
+        assertEquals("rk3588_rknn", routed.getBackendType());
+        verify(rk3588InferenceClient).infer(request);
+        verify(legacyInferenceClient, never()).infer(request);
+    }
 }
+

@@ -20,13 +20,18 @@ public class InferenceRequest {
 
     private List<Map<String, Object>> roi;
 
+    private Map<String, Object> pluginRoute;
+
     public Map<String, Object> toPayload() {
         Map<String, Object> payload = new HashMap<>();
         payload.put("trace_id", traceId);
         payload.put("camera_id", cameraId);
         payload.put("model_id", modelId);
-        payload.put("frame", frameMeta == null ? new HashMap<>() : frameMeta);
-        payload.put("roi", roi == null ? new ArrayList<>() : roi);
+        payload.put("frame", frameMeta == null ? new HashMap<>() : new HashMap<>(frameMeta));
+        payload.put("roi", roi == null ? new ArrayList<>() : new ArrayList<>(roi));
+        if (pluginRoute != null && !pluginRoute.isEmpty()) {
+            payload.put("plugin_route", new HashMap<>(pluginRoute));
+        }
         return payload;
     }
 }

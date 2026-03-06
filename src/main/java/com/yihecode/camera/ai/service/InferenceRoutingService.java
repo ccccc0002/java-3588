@@ -44,6 +44,14 @@ public class InferenceRoutingService {
         return currentBackendType();
     }
 
+    public String backendTypeForCamera(Long cameraId, String backendHint) {
+        String normalizedHint = normalizeBackendStrict(backendHint);
+        if (StrUtil.isNotBlank(normalizedHint)) {
+            return normalizedHint;
+        }
+        return backendTypeForCamera(cameraId);
+    }
+
     public String overrideBackendForCamera(Long cameraId) {
         String overrideConfig = StrUtil.trim(configService.getByValTag("infer_backend_camera_overrides"));
         return resolveOverrideDecision(overrideConfig, cameraId).backend;
@@ -110,8 +118,12 @@ public class InferenceRoutingService {
     }
 
     public InferenceResult infer(InferenceRequest request) {
+        return infer(request, null);
+    }
+
+    public InferenceResult infer(InferenceRequest request, String backendHint) {
         Long cameraId = request == null ? null : request.getCameraId();
-        String backend = backendTypeForCamera(cameraId);
+        String backend = backendTypeForCamera(cameraId, backendHint);
         InferenceClient client = resolveClient(backend);
 
         InferenceResult result = client.infer(request);

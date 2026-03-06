@@ -5,6 +5,7 @@ import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
 import com.yihecode.camera.ai.service.InferenceRoutingService;
+import com.yihecode.camera.ai.service.PluginRouteResolverService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.vo.InferenceResult;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,9 @@ class InferenceApiControllerTest {
 
     @Mock
     private ConfigService configService;
+
+    @Mock
+    private PluginRouteResolverService pluginRouteResolverService;
 
     @InjectMocks
     private InferenceApiController inferenceApiController;
@@ -1882,4 +1887,97 @@ class InferenceApiControllerTest {
         assertEquals(500, ((Number) data.get("max_camera_ids")).intValue());
         assertEquals(500, ((Number) data.get("max_camera_ids_cap")).intValue());
     }
+    @Test
+    @SuppressWarnings("unchecked")
+    void dispatch_shouldAttachPluginRouteAndUseBackendHint_whenPluginSelected() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("trace_id", "trace-plugin-dispatch");
+        body.put("camera_id", 120L);
+        body.put("model_id", 220L);
+        body.put("plugin_id", "face-detector");
+        body.put("plugin_capabilities", Arrays.asList("inference"));
+        Map<String, Object> frameMeta = new HashMap<>();
+        frameMeta.put("timestamp_ms", 1000L);
+        body.put("frame_meta", frameMeta);
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("reason", "matched");
+        pluginRoute.put("source", "registry_search");
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of("registration_id", "face-detector:1.0.0", "runtime", "rk3588_rknn"));
+
+        Map<String, Object> idempotentData = new HashMap<>();
+        idempotentData.put("enabled", true);
+        idempotentData.put("duplicate", false);
+        idempotentData.put("status", "fresh");
+        idempotentData.put("trace_id", "trace-plugin-dispatch");
+        idempotentData.put("camera_id", 120L);
+        idempotentData.put("timestamp_ms", 1000L);
+
+        InferenceResult infer = new InferenceResult();
+        infer.setTraceId("trace-plugin-dispatch");
+        infer.setCameraId(120L);
+        infer.setLatencyMs(7L);
+        infer.setBackendType("rk3588_rknn");
+        infer.setAttempt(1);
+        infer.setDetections(new ArrayList<>());
+
+        when(pluginRouteResolverService.hasSelector(body)).thenReturn(true);
+        when(pluginRouteResolverService.resolve(body)).thenReturn(pluginRoute);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(120L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+        when(inferenceIdempotencyService.checkAndMark("trace-plugin-dispatch", 120L, 1000L)).thenReturn(idempotentData);
+        when(inferenceRoutingService.infer(any(), eq("rk3588_rknn"))).thenReturn(infer);
+        when(inferenceReportBridgeService.persistAndBroadcast(eq(120L), eq(220L), eq(infer), eq("trace-plugin-dispatch")))
+                .thenReturn(Map.of("status", "ok", "persisted", true, "broadcasted", true));
+
+        JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        Map<String, Object> returnedPluginRoute = (Map<String, Object>) data.get("plugin_route");
+        assertEquals(true, returnedPluginRoute.get("matched"));
+        assertEquals("rk3588_rknn", returnedPluginRoute.get("backend_hint"));
+        Map<String, Object> request = (Map<String, Object>) data.get("request");
+        Map<String, Object> requestPluginRoute = (Map<String, Object>) request.get("plugin_route");
+        assertEquals("face-detector:1.0.0", ((Map<String, Object>) requestPluginRoute.get("plugin")).get("registration_id"));
+
+        verify(inferenceRoutingService).infer(any(), eq("rk3588_rknn"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void route_shouldAttachPluginRouteAndUseBackendHint_whenSelectorProvided() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_id", 121L);
+        body.put("plugin_registration_id", "face-detector:1.0.0");
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("reason", "matched");
+        pluginRoute.put("source", "registration_id");
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of("registration_id", "face-detector:1.0.0", "runtime", "rk3588_rknn"));
+
+        when(pluginRouteResolverService.hasSelector(body)).thenReturn(true);
+        when(pluginRouteResolverService.resolve(body)).thenReturn(pluginRoute);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(121L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+
+        JsonResult result = inferenceApiController.route(body, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        Map<String, Object> returnedPluginRoute = (Map<String, Object>) data.get("plugin_route");
+        assertEquals("registration_id", returnedPluginRoute.get("source"));
+        assertEquals("face-detector:1.0.0", ((Map<String, Object>) returnedPluginRoute.get("plugin")).get("registration_id"));
+    }
 }
+

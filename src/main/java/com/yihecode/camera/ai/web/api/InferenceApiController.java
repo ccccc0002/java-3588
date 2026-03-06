@@ -6,6 +6,7 @@ import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
 import com.yihecode.camera.ai.service.InferenceRoutingService;
+import com.yihecode.camera.ai.service.PluginRouteResolverService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.vo.InferenceRequest;
@@ -55,6 +56,9 @@ public class InferenceApiController {
     @Autowired
     private ConfigService configService;
 
+    @Autowired(required = false)
+    private PluginRouteResolverService pluginRouteResolverService;
+
     @RequestMapping(value = {"/health"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult health() {
@@ -82,10 +86,18 @@ public class InferenceApiController {
                            @RequestParam(value = "source", required = false) String source) {
         String requestTraceId = nextTraceId();
         try {
-            InferenceRequest request = buildTestRequest(requestTraceId, body, cameraId, modelId, source);
+            Map<String, Object> payload = body == null ? new HashMap<>() : body;
+            InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            Map<String, Object> pluginRoute = resolvePluginRoute(payload);
+            applyPluginRoute(request, pluginRoute);
+            String pluginBackendHint = extractPluginBackendHint(pluginRoute);
             String traceId = request.getTraceId();
-            InferenceResult result = inferenceRoutingService.infer(request);
-            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            InferenceResult result = StrUtil.isNotBlank(pluginBackendHint)
+                    ? inferenceRoutingService.infer(request, pluginBackendHint)
+                    : inferenceRoutingService.infer(request);
+            String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
+                    ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
+                    : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
 
             Map<String, Object> data = new HashMap<>();
@@ -93,6 +105,9 @@ public class InferenceApiController {
             data.put("backend_type", backendType);
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
+            if (shouldAttachPluginRoute(pluginRoute)) {
+                data.put("plugin_route", pluginRoute);
+            }
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference test api failed, trace_id={}", requestTraceId, e);
@@ -115,8 +130,13 @@ public class InferenceApiController {
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            Map<String, Object> pluginRoute = resolvePluginRoute(payload);
+            applyPluginRoute(request, pluginRoute);
+            String pluginBackendHint = extractPluginBackendHint(pluginRoute);
             String traceId = request.getTraceId();
-            String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
+                    ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
+                    : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
             Long finalAlgorithmId = firstLong(toLong(payload.get("algorithm_id")), algorithmId, request.getModelId());
             boolean persistReport = toBooleanFlag(payload.get("persist_report"), persistReportFlag == null || persistReportFlag != 0);
             Long frameTimestampMs = extractFrameTimestampMs(request.getFrameMeta());
@@ -134,7 +154,9 @@ public class InferenceApiController {
                 result.setBackendType(routedBackend);
                 result.setAttempt(0);
             } else {
-                result = inferenceRoutingService.infer(request);
+                result = StrUtil.isNotBlank(pluginBackendHint)
+                        ? inferenceRoutingService.infer(request, pluginBackendHint)
+                        : inferenceRoutingService.infer(request);
             }
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
 
@@ -159,6 +181,9 @@ public class InferenceApiController {
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
             data.put("algorithm_id", finalAlgorithmId);
+            if (shouldAttachPluginRoute(pluginRoute)) {
+                data.put("plugin_route", pluginRoute);
+            }
             data.put("idempotent", idempotentData);
             data.put("report", reportData);
             return JsonResultUtils.success(data);
@@ -184,7 +209,11 @@ public class InferenceApiController {
             String globalBackend = inferenceRoutingService.currentBackendType();
             String overrideBackend = inferenceRoutingService.overrideBackendForCamera(finalCameraId);
             String overrideSource = inferenceRoutingService.overrideSourceForCamera(finalCameraId);
-            String routedBackend = inferenceRoutingService.backendTypeForCamera(finalCameraId);
+            Map<String, Object> pluginRoute = resolvePluginRoute(payload);
+            String pluginBackendHint = extractPluginBackendHint(pluginRoute);
+            String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
+                    ? inferenceRoutingService.backendTypeForCamera(finalCameraId, pluginBackendHint)
+                    : inferenceRoutingService.backendTypeForCamera(finalCameraId);
 
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
@@ -195,6 +224,9 @@ public class InferenceApiController {
             if (StrUtil.isNotBlank(overrideBackend)) {
                 data.put("override_backend_type", overrideBackend);
                 data.put("override_source", overrideSource);
+            }
+            if (shouldAttachPluginRoute(pluginRoute)) {
+                data.put("plugin_route", pluginRoute);
             }
             return JsonResultUtils.success(data);
         } catch (Exception e) {
@@ -920,6 +952,32 @@ public class InferenceApiController {
         return request;
     }
 
+
+    private Map<String, Object> resolvePluginRoute(Map<String, Object> payload) {
+        if (pluginRouteResolverService == null || !pluginRouteResolverService.hasSelector(payload)) {
+            return null;
+        }
+        Map<String, Object> resolved = pluginRouteResolverService.resolve(payload);
+        return resolved == null ? null : new LinkedHashMap<>(resolved);
+    }
+
+    private void applyPluginRoute(InferenceRequest request, Map<String, Object> pluginRoute) {
+        if (request == null || !shouldAttachPluginRoute(pluginRoute)) {
+            return;
+        }
+        request.setPluginRoute(new LinkedHashMap<>(pluginRoute));
+    }
+
+    private boolean shouldAttachPluginRoute(Map<String, Object> pluginRoute) {
+        return pluginRoute != null && toBooleanFlag(pluginRoute.get("requested"), false);
+    }
+
+    private String extractPluginBackendHint(Map<String, Object> pluginRoute) {
+        if (!shouldAttachPluginRoute(pluginRoute)) {
+            return null;
+        }
+        return firstString(pluginRoute.get("backend_hint"), null, null);
+    }
     private Map<String, Object> buildIdempotentData(boolean persistReport, String traceId, Long cameraId, Long timestampMs) {
         if (!persistReport) {
             Map<String, Object> data = new HashMap<>();

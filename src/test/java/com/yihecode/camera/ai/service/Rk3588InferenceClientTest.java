@@ -325,4 +325,35 @@ class Rk3588InferenceClientTest {
         assertEquals(Boolean.FALSE, status.get("circuit_open"));
         assertEquals(0L, ((Number) status.get("circuit_open_until_ms")).longValue());
     }
+    @Test
+    void infer_shouldIncludePluginRouteInPayload_whenRequestContainsPluginRoute() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-plugin-payload\",\"camera_id\":605,\"latency_ms\":4,\"detections\":[]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-plugin-payload");
+        request.setCameraId(605L);
+        request.setModelId(1005L);
+        request.setFrameMeta(new HashMap<>());
+        request.setPluginRoute(Map.of(
+                "matched", true,
+                "backend_hint", "rk3588_rknn",
+                "plugin", Map.of("registration_id", "face-detector:1.0.0", "runtime", "rk3588_rknn")
+        ));
+
+        InferenceResult result = rk3588InferenceClient.infer(request);
+
+        assertEquals("trace-plugin-payload", result.getTraceId());
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), payloadCaptor.capture());
+        JSONObject payload = JSON.parseObject(payloadCaptor.getValue());
+        JSONObject pluginRoute = payload.getJSONObject("plugin_route");
+        assertNotNull(pluginRoute);
+        assertEquals("rk3588_rknn", pluginRoute.getString("backend_hint"));
+        assertEquals("face-detector:1.0.0", pluginRoute.getJSONObject("plugin").getString("registration_id"));
+    }
 }
+
