@@ -21,12 +21,18 @@ public class Rk3588InferenceClient implements InferenceClient {
 
     private static final int DEFAULT_TIMEOUT_MS = 3000;
     private static final int DEFAULT_RETRY_COUNT = 1;
+    private static final int DEFAULT_CIRCUIT_FAIL_THRESHOLD = 3;
+    private static final int DEFAULT_CIRCUIT_OPEN_SECONDS = 0;
 
     @Autowired
     private ConfigService configService;
 
     @Autowired
     private InferenceHttpGateway inferenceHttpGateway;
+
+    private final Object circuitLock = new Object();
+    private volatile long circuitOpenUntilMs = 0L;
+    private volatile int consecutiveFailureCount = 0;
 
     @Override
     public String getBackendType() {
@@ -48,6 +54,14 @@ public class Rk3588InferenceClient implements InferenceClient {
         if (StrUtil.isBlank(baseUrl)) {
             data.put("status", "misconfigured");
             data.put("error", "infer_service_url is blank");
+            return data;
+        }
+        CircuitSnapshot healthCircuit = getCircuitSnapshot();
+        if (healthCircuit.open) {
+            data.put("status", "down");
+            data.put("error", buildCircuitOpenError(healthCircuit));
+            data.put("circuit_open", true);
+            data.put("circuit_open_until_ms", healthCircuit.openUntilMs);
             return data;
         }
 
@@ -72,6 +86,8 @@ public class Rk3588InferenceClient implements InferenceClient {
                     data.put("status", "ok");
                     data.put("http_status", status);
                     data.put("attempt", attempt);
+                    data.put("circuit_open", false);
+                    clearCircuitOnSuccess();
                     return data;
                 }
 
@@ -83,8 +99,14 @@ public class Rk3588InferenceClient implements InferenceClient {
             }
         }
 
+        markCircuitFailure();
+        CircuitSnapshot failCircuit = getCircuitSnapshot();
         data.put("status", "down");
         data.put("error", lastError);
+        data.put("circuit_open", failCircuit.open);
+        if (failCircuit.open) {
+            data.put("circuit_open_until_ms", failCircuit.openUntilMs);
+        }
         return data;
     }
 
@@ -97,6 +119,10 @@ public class Rk3588InferenceClient implements InferenceClient {
         String baseUrl = getServiceBaseUrl();
         if (StrUtil.isBlank(baseUrl)) {
             throw new IllegalStateException("infer_service_url is blank");
+        }
+        CircuitSnapshot inferCircuit = getCircuitSnapshot();
+        if (inferCircuit.open) {
+            throw new IllegalStateException(buildCircuitOpenError(inferCircuit));
         }
 
         String url = baseUrl + "/v1/infer";
@@ -112,6 +138,7 @@ public class Rk3588InferenceClient implements InferenceClient {
                 String body = response.getBody();
 
                 if (status == 200) {
+                    clearCircuitOnSuccess();
                     return parseInferResponse(body, request, attempt);
                 }
 
@@ -123,6 +150,7 @@ public class Rk3588InferenceClient implements InferenceClient {
             }
         }
 
+        markCircuitFailure();
         throw new IllegalStateException("rk3588 inference failed: " + lastError);
     }
 
@@ -255,6 +283,65 @@ public class Rk3588InferenceClient implements InferenceClient {
         return Math.max(1, value);
     }
 
+    private int getCircuitFailThreshold() {
+        return toPositiveInt(configService.getByValTag("infer_circuit_fail_threshold"), DEFAULT_CIRCUIT_FAIL_THRESHOLD);
+    }
+
+    private int getCircuitOpenSeconds() {
+        return toPositiveInt(configService.getByValTag("infer_circuit_open_seconds"), DEFAULT_CIRCUIT_OPEN_SECONDS);
+    }
+
+    private CircuitSnapshot getCircuitSnapshot() {
+        long now = currentTimeMs();
+        long openUntil = circuitOpenUntilMs;
+        if (openUntil > now) {
+            return new CircuitSnapshot(true, openUntil);
+        }
+        if (openUntil > 0) {
+            synchronized (circuitLock) {
+                if (circuitOpenUntilMs <= currentTimeMs()) {
+                    circuitOpenUntilMs = 0L;
+                }
+            }
+        }
+        return new CircuitSnapshot(false, 0L);
+    }
+
+    private void clearCircuitOnSuccess() {
+        synchronized (circuitLock) {
+            consecutiveFailureCount = 0;
+            circuitOpenUntilMs = 0L;
+        }
+    }
+
+    private void markCircuitFailure() {
+        int threshold = Math.max(1, getCircuitFailThreshold());
+        int openSeconds = Math.max(0, getCircuitOpenSeconds());
+        if (openSeconds <= 0) {
+            return;
+        }
+
+        long now = currentTimeMs();
+        synchronized (circuitLock) {
+            if (circuitOpenUntilMs > now) {
+                return;
+            }
+            consecutiveFailureCount++;
+            if (consecutiveFailureCount >= threshold) {
+                circuitOpenUntilMs = now + openSeconds * 1000L;
+                consecutiveFailureCount = 0;
+            }
+        }
+    }
+
+    private String buildCircuitOpenError(CircuitSnapshot snapshot) {
+        return "rk3588 inference circuit breaker open until " + snapshot.openUntilMs;
+    }
+
+    private long currentTimeMs() {
+        return System.currentTimeMillis();
+    }
+
     private int toPositiveInt(String value, int defaultValue) {
         if (StrUtil.isBlank(value)) {
             return defaultValue;
@@ -276,5 +363,15 @@ public class Rk3588InferenceClient implements InferenceClient {
             return first;
         }
         return fallback;
+    }
+
+    private static class CircuitSnapshot {
+        private final boolean open;
+        private final long openUntilMs;
+
+        private CircuitSnapshot(boolean open, long openUntilMs) {
+            this.open = open;
+            this.openUntilMs = openUntilMs;
+        }
     }
 }

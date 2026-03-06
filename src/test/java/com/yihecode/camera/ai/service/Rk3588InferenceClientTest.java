@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -219,5 +220,57 @@ class Rk3588InferenceClientTest {
         assertNotNull(result.getDetections());
         assertEquals(1, result.getDetections().size());
         assertEquals("forklift", result.getDetections().get(0).get("label"));
+    }
+
+    @Test
+    void infer_shouldOpenCircuitAfterFailures_andShortCircuitNextRequest() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_fail_threshold")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_open_seconds")).thenReturn("60");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(500, "{\"error\":\"busy\"}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-circuit-open");
+        request.setCameraId(601L);
+        request.setModelId(1001L);
+        request.setFrameMeta(new HashMap<>());
+
+        IllegalStateException first = assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
+        assertTrue(first.getMessage().contains("rk3588 inference failed"));
+
+        IllegalStateException second = assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
+        assertTrue(second.getMessage().contains("circuit breaker open"));
+
+        verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString());
+        verifyNoMoreInteractions(inferenceHttpGateway);
+    }
+
+    @Test
+    void health_shouldReportCircuitOpen_withoutCallingHealthEndpoint() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_fail_threshold")).thenReturn("1");
+        when(configService.getByValTag("infer_circuit_open_seconds")).thenReturn("60");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(500, "{\"error\":\"busy\"}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-health-circuit");
+        request.setCameraId(602L);
+        request.setModelId(1002L);
+        request.setFrameMeta(new HashMap<>());
+        assertThrows(IllegalStateException.class, () -> rk3588InferenceClient.infer(request));
+
+        Map<String, Object> health = rk3588InferenceClient.health("trace-health-circuit");
+
+        assertEquals("down", health.get("status"));
+        assertEquals(Boolean.TRUE, health.get("circuit_open"));
+        assertTrue(String.valueOf(health.get("error")).contains("circuit breaker open"));
+        verify(inferenceHttpGateway).postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString());
+        verifyNoMoreInteractions(inferenceHttpGateway);
     }
 }
