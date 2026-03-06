@@ -325,6 +325,37 @@ $deadLetterReplayBatchBodyIdsResults = Get-PropValue -Obj $deadLetterReplayBatch
 $deadLetterReplayBatchBodyIdsValid = ($deadLetterReplayBatchBodyIdsResp.code -eq 0) -and ($deadLetterReplayBatchBodyIdsTraceId -ne $null) -and ($deadLetterReplayBatchBodyIdsTraceId -ne "") -and ($deadLetterReplayBatchBodyIdsSource -eq "explicit_ids") -and ($deadLetterReplayBatchBodyIdsResults -is [System.Collections.IList]) -and ($deadLetterReplayBatchBodyIdsProcessed -ne $null) -and ($deadLetterReplayBatchBodyIdsDryRunCount -ne $null) -and ($deadLetterReplayBatchBodyIdsSuccessIds -is [System.Collections.IList]) -and ($deadLetterReplayBatchBodyIdsFailedIds -is [System.Collections.IList]) -and ($deadLetterReplayBatchBodyIdsDryRunIds -is [System.Collections.IList]) -and ($deadLetterReplayBatchBodyIdsRemainingCount -ne $null) -and (([int]$deadLetterReplayBatchBodyIdsProcessed) -eq 2) -and (([int]$deadLetterReplayBatchBodyIdsDryRunCount) -eq 2) -and ($deadLetterReplayBatchBodyIdsResults.Count -eq 2) -and ($deadLetterReplayBatchBodyIdsSuccessIds.Count -eq 0) -and ($deadLetterReplayBatchBodyIdsFailedIds.Count -eq 0) -and ($deadLetterReplayBatchBodyIdsDryRunIds.Count -eq 2) -and (([int]$deadLetterReplayBatchBodyIdsRemainingCount) -eq 0)
 $checks += New-CheckResult -Api "/api/inference/dead-letter/replay/batch(body-ids,dry-run)" -Passed $deadLetterReplayBatchBodyIdsValid -Detail ("code={0}; trace_id={1}; source={2}; processed={3}; dry_run_count={4}; remaining_count={5}; success_ids={6}; failed_ids={7}; dry_run_ids={8}; list_size={9}" -f $deadLetterReplayBatchBodyIdsResp.code, $deadLetterReplayBatchBodyIdsTraceId, $deadLetterReplayBatchBodyIdsSource, $deadLetterReplayBatchBodyIdsProcessed, $deadLetterReplayBatchBodyIdsDryRunCount, $deadLetterReplayBatchBodyIdsRemainingCount, $deadLetterReplayBatchBodyIdsSuccessIds.Count, $deadLetterReplayBatchBodyIdsFailedIds.Count, $deadLetterReplayBatchBodyIdsDryRunIds.Count, ($(if ($deadLetterReplayBatchBodyIdsResults -is [System.Collections.IList]) { $deadLetterReplayBatchBodyIdsResults.Count } else { -1 })))
 
+$deadLetterReplayBatchBodyLimitReq = @{
+    limit = 1
+    dry_run = 1
+    dead_letter_ids = @(96, 95)
+}
+$deadLetterReplayBatchBodyLimitResp = Invoke-ApiPostJson -Path "/api/inference/dead-letter/replay/batch?limit=5" -BodyObj $deadLetterReplayBatchBodyLimitReq
+$deadLetterReplayBatchBodyLimitData = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitResp -Name "data"
+$deadLetterReplayBatchBodyLimitTraceId = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitData -Name "trace_id"
+$deadLetterReplayBatchBodyLimitRequested = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitData -Name "requested_limit"
+$deadLetterReplayBatchBodyLimitEffective = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitData -Name "effective_limit"
+$deadLetterReplayBatchBodyLimitProcessed = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitData -Name "processed_count"
+$deadLetterReplayBatchBodyLimitDryRunCount = Get-PropValue -Obj $deadLetterReplayBatchBodyLimitData -Name "dry_run_count"
+$deadLetterReplayBatchBodyLimitValid = ($deadLetterReplayBatchBodyLimitResp.code -eq 0) -and ($deadLetterReplayBatchBodyLimitTraceId -ne $null) -and ($deadLetterReplayBatchBodyLimitTraceId -ne "") -and ($deadLetterReplayBatchBodyLimitRequested -ne $null) -and (([int]$deadLetterReplayBatchBodyLimitRequested) -eq 1) -and ($deadLetterReplayBatchBodyLimitEffective -ne $null) -and (([int]$deadLetterReplayBatchBodyLimitEffective) -eq 1) -and ($deadLetterReplayBatchBodyLimitProcessed -ne $null) -and (([int]$deadLetterReplayBatchBodyLimitProcessed) -eq 1) -and ($deadLetterReplayBatchBodyLimitDryRunCount -ne $null) -and (([int]$deadLetterReplayBatchBodyLimitDryRunCount) -eq 1)
+$checks += New-CheckResult -Api "/api/inference/dead-letter/replay/batch(body-limit-priority)" -Passed $deadLetterReplayBatchBodyLimitValid -Detail ("code={0}; trace_id={1}; requested_limit={2}; effective_limit={3}; processed={4}; dry_run_count={5}" -f $deadLetterReplayBatchBodyLimitResp.code, $deadLetterReplayBatchBodyLimitTraceId, $deadLetterReplayBatchBodyLimitRequested, $deadLetterReplayBatchBodyLimitEffective, $deadLetterReplayBatchBodyLimitProcessed, $deadLetterReplayBatchBodyLimitDryRunCount)
+
+$deadLetterReplayBatchBodyStopReq = @{
+    stop_on_error = 1
+    dead_letter_ids = @(-1, -2)
+}
+$deadLetterReplayBatchBodyStopResp = Invoke-ApiPostJson -Path "/api/inference/dead-letter/replay/batch" -BodyObj $deadLetterReplayBatchBodyStopReq
+$deadLetterReplayBatchBodyStopData = Get-PropValue -Obj $deadLetterReplayBatchBodyStopResp -Name "data"
+$deadLetterReplayBatchBodyStopTraceId = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "trace_id"
+$deadLetterReplayBatchBodyStopEnabled = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "stop_on_error"
+$deadLetterReplayBatchBodyStopStopped = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "stopped_on_error"
+$deadLetterReplayBatchBodyStopSelected = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "selected_count"
+$deadLetterReplayBatchBodyStopProcessed = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "processed_count"
+$deadLetterReplayBatchBodyStopFailed = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "failed_count"
+$deadLetterReplayBatchBodyStopRemaining = Get-PropValue -Obj $deadLetterReplayBatchBodyStopData -Name "remaining_count"
+$deadLetterReplayBatchBodyStopValid = ($deadLetterReplayBatchBodyStopResp.code -eq 0) -and ($deadLetterReplayBatchBodyStopTraceId -ne $null) -and ($deadLetterReplayBatchBodyStopTraceId -ne "") -and ($deadLetterReplayBatchBodyStopEnabled -is [bool]) -and ([bool]$deadLetterReplayBatchBodyStopEnabled) -and ($deadLetterReplayBatchBodyStopStopped -is [bool]) -and ([bool]$deadLetterReplayBatchBodyStopStopped) -and ($deadLetterReplayBatchBodyStopSelected -ne $null) -and (([int]$deadLetterReplayBatchBodyStopSelected) -eq 2) -and ($deadLetterReplayBatchBodyStopProcessed -ne $null) -and (([int]$deadLetterReplayBatchBodyStopProcessed) -eq 1) -and ($deadLetterReplayBatchBodyStopFailed -ne $null) -and (([int]$deadLetterReplayBatchBodyStopFailed) -eq 1) -and ($deadLetterReplayBatchBodyStopRemaining -ne $null) -and (([int]$deadLetterReplayBatchBodyStopRemaining) -eq 1)
+$checks += New-CheckResult -Api "/api/inference/dead-letter/replay/batch(body-stop-on-error)" -Passed $deadLetterReplayBatchBodyStopValid -Detail ("code={0}; trace_id={1}; stop_on_error={2}; stopped_on_error={3}; selected={4}; processed={5}; failed={6}; remaining={7}" -f $deadLetterReplayBatchBodyStopResp.code, $deadLetterReplayBatchBodyStopTraceId, $deadLetterReplayBatchBodyStopEnabled, $deadLetterReplayBatchBodyStopStopped, $deadLetterReplayBatchBodyStopSelected, $deadLetterReplayBatchBodyStopProcessed, $deadLetterReplayBatchBodyStopFailed, $deadLetterReplayBatchBodyStopRemaining)
+
 $testReq = @{
     camera_id = $CameraId
     model_id = $ModelId

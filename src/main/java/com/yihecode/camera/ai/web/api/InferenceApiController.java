@@ -485,15 +485,18 @@ public class InferenceApiController {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
+            Integer requestedLimit = firstInteger(payload.get("limit"), limit);
+            Integer effectivePersistReportFlag = firstInteger(payload.get("persist_report"), persistReportFlag);
+            Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
             Object bodyIds = payload.get("ids");
-            boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
-            boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
-            boolean dryRun = toBooleanFlag(dryRunFlag, false);
-            boolean stopOnError = toBooleanFlag(stopOnErrorFlag, false);
+            boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
+            boolean onlyExhausted = toBooleanFlag(firstNonNull(payload.get("only_exhausted"), onlyExhaustedFlag), false);
+            boolean dryRun = toBooleanFlag(firstNonNull(payload.get("dry_run"), dryRunFlag), false);
+            boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
-            int effectiveLimit = normalizeDeadLetterReplayBatchLimit(limit, maxLimit);
-            boolean truncated = limit != null && limit > 0 && limit > effectiveLimit;
+            int effectiveLimit = normalizeDeadLetterReplayBatchLimit(requestedLimit, maxLimit);
+            boolean truncated = requestedLimit != null && requestedLimit > 0 && requestedLimit > effectiveLimit;
             List<Long> selectedIds = resolveDeadLetterIds(effectiveLimit, bodyDeadLetterIds, bodyIds, deadLetterIdsText, idsText);
             boolean explicitIdsMode = !selectedIds.isEmpty();
             List<Map<String, Object>> candidates;
@@ -551,7 +554,7 @@ public class InferenceApiController {
                     continue;
                 }
 
-                JsonResult replayResp = deadLetterReplay(deadLetterId, persistReportFlag, ackOnSuccessFlag);
+                JsonResult replayResp = deadLetterReplay(deadLetterId, effectivePersistReportFlag, effectiveAckOnSuccessFlag);
                 Map<String, Object> replayData = toMap(replayResp.getData());
                 Map<String, Object> item = new HashMap<>();
                 item.put("dead_letter_id", deadLetterId);
@@ -588,7 +591,7 @@ public class InferenceApiController {
 
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("requested_limit", limit);
+            data.put("requested_limit", requestedLimit);
             data.put("effective_limit", effectiveLimit);
             data.put("max_limit", maxLimit);
             data.put("truncated", truncated);
@@ -1237,6 +1240,35 @@ public class InferenceApiController {
             return second;
         }
         return fallback;
+    }
+
+    private Integer firstInteger(Object first, Integer second) {
+        Integer firstValue = toInteger(first);
+        if (firstValue != null) {
+            return firstValue;
+        }
+        return second;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value ? 1 : 0;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Object firstNonNull(Object first, Object second) {
+        if (first != null) {
+            return first;
+        }
+        return second;
     }
 
     private String firstString(Object first, String second, String fallback) {
