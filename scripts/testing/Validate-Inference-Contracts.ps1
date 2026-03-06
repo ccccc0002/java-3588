@@ -183,6 +183,7 @@ $routeBatchGlobalBackend = Get-PropValue -Obj $routeBatchData -Name "global_back
 $routeBatchList = Get-PropValue -Obj $routeBatchData -Name "route_list"
 $routeBatchTruncated = Get-PropValue -Obj $routeBatchData -Name "truncated"
 $routeBatchMaxCameraIds = Get-PropValue -Obj $routeBatchData -Name "max_camera_ids"
+$routeBatchDefaultFallbackUsed = Get-PropValue -Obj $routeBatchData -Name "default_fallback_used"
 $routeBatchResolvedCameraCount = Get-PropValue -Obj $routeBatchData -Name "resolved_camera_count"
 $routeBatchInputTokenCount = Get-PropValue -Obj $routeBatchData -Name "input_token_count"
 $routeBatchInvalidTokenCount = Get-PropValue -Obj $routeBatchData -Name "invalid_token_count"
@@ -193,7 +194,7 @@ if ($routeBatchList -is [System.Collections.IList] -and $routeBatchList.Count -g
 }
 $routeBatchFirstCameraId = Get-PropValue -Obj $routeBatchFirst -Name "camera_id"
 $routeBatchFirstBackend = Get-PropValue -Obj $routeBatchFirst -Name "backend_type"
-$checks += New-CheckResult -Api "/api/inference/route/batch" -Passed (($routeBatchResp.code -eq 0) -and ($routeBatchTraceId -ne $null) -and ($routeBatchTraceId -ne "") -and ($routeBatchGlobalBackend -ne $null) -and ($routeBatchGlobalBackend -ne "") -and ($routeBatchList -is [System.Collections.IList]) -and ($routeBatchList.Count -gt 0) -and ($routeBatchFirstCameraId -ne $null) -and (([long]$routeBatchFirstCameraId) -eq $CameraId) -and ($routeBatchFirstBackend -ne $null) -and ($routeBatchFirstBackend -ne "") -and ($routeBatchTruncated -is [bool]) -and (([int]$routeBatchMaxCameraIds) -eq 500) -and ($routeBatchResolvedCameraCount -ne $null) -and (([int]$routeBatchResolvedCameraCount) -eq $routeBatchList.Count) -and ($routeBatchInputTokenCount -ne $null) -and (([int]$routeBatchInputTokenCount) -ge 0) -and ($routeBatchInvalidTokenCount -ne $null) -and (([int]$routeBatchInvalidTokenCount) -ge 0) -and ($routeBatchDuplicateFilteredCount -ne $null) -and (([int]$routeBatchDuplicateFilteredCount) -ge 0) -and (Is-ExpectedBackend -ActualBackend $routeBatchFirstBackend)) -Detail ("code={0}; trace_id={1}; global_backend_type={2}; first_camera_id={3}; first_backend_type={4}; truncated={5}; max_camera_ids={6}; resolved_camera_count={7}; input_token_count={8}; invalid_token_count={9}; duplicate_filtered_count={10}; expected_backend={11}" -f $routeBatchResp.code, $routeBatchTraceId, $routeBatchGlobalBackend, $routeBatchFirstCameraId, $routeBatchFirstBackend, $routeBatchTruncated, $routeBatchMaxCameraIds, $routeBatchResolvedCameraCount, $routeBatchInputTokenCount, $routeBatchInvalidTokenCount, $routeBatchDuplicateFilteredCount, $ExpectedBackendType)
+$checks += New-CheckResult -Api "/api/inference/route/batch" -Passed (($routeBatchResp.code -eq 0) -and ($routeBatchTraceId -ne $null) -and ($routeBatchTraceId -ne "") -and ($routeBatchGlobalBackend -ne $null) -and ($routeBatchGlobalBackend -ne "") -and ($routeBatchList -is [System.Collections.IList]) -and ($routeBatchList.Count -gt 0) -and ($routeBatchFirstCameraId -ne $null) -and (([long]$routeBatchFirstCameraId) -eq $CameraId) -and ($routeBatchFirstBackend -ne $null) -and ($routeBatchFirstBackend -ne "") -and ($routeBatchTruncated -is [bool]) -and (([int]$routeBatchMaxCameraIds) -eq 500) -and ($routeBatchDefaultFallbackUsed -is [bool]) -and ($routeBatchDefaultFallbackUsed -eq $false) -and ($routeBatchResolvedCameraCount -ne $null) -and (([int]$routeBatchResolvedCameraCount) -eq $routeBatchList.Count) -and ($routeBatchInputTokenCount -ne $null) -and (([int]$routeBatchInputTokenCount) -ge 0) -and ($routeBatchInvalidTokenCount -ne $null) -and (([int]$routeBatchInvalidTokenCount) -ge 0) -and ($routeBatchDuplicateFilteredCount -ne $null) -and (([int]$routeBatchDuplicateFilteredCount) -ge 0) -and (Is-ExpectedBackend -ActualBackend $routeBatchFirstBackend)) -Detail ("code={0}; trace_id={1}; global_backend_type={2}; first_camera_id={3}; first_backend_type={4}; truncated={5}; max_camera_ids={6}; default_fallback_used={7}; resolved_camera_count={8}; input_token_count={9}; invalid_token_count={10}; duplicate_filtered_count={11}; expected_backend={12}" -f $routeBatchResp.code, $routeBatchTraceId, $routeBatchGlobalBackend, $routeBatchFirstCameraId, $routeBatchFirstBackend, $routeBatchTruncated, $routeBatchMaxCameraIds, $routeBatchDefaultFallbackUsed, $routeBatchResolvedCameraCount, $routeBatchInputTokenCount, $routeBatchInvalidTokenCount, $routeBatchDuplicateFilteredCount, $ExpectedBackendType)
 
 $nextCameraId = $CameraId + 1
 $routeBatchRangeReq = @{
@@ -268,6 +269,18 @@ if ($routeBatchQueryRangeList -is [System.Collections.IList] -and $routeBatchQue
 $routeBatchQueryRangeFirstCameraId = Get-PropValue -Obj $routeBatchQueryRangeFirst -Name "camera_id"
 $routeBatchQueryRangeSecondCameraId = Get-PropValue -Obj $routeBatchQueryRangeSecond -Name "camera_id"
 $checks += New-CheckResult -Api "/api/inference/route/batch(query-camera_range-alias)" -Passed (($routeBatchQueryRangeResp.code -eq 0) -and ($routeBatchQueryRangeTraceId -ne $null) -and ($routeBatchQueryRangeTraceId -ne "") -and ($routeBatchQueryRangeList -is [System.Collections.IList]) -and ($routeBatchQueryRangeList.Count -ge 2) -and (([long]$routeBatchQueryRangeFirstCameraId) -eq $nextCameraId) -and (([long]$routeBatchQueryRangeSecondCameraId) -eq $CameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchQueryRangeResp.code, $routeBatchQueryRangeTraceId, $routeBatchQueryRangeFirstCameraId, $routeBatchQueryRangeSecondCameraId, $nextCameraId, $CameraId)
+
+$routeBatchFallbackResp = Invoke-ApiGet -Path "/api/inference/route/batch?camera_ids=,,"
+$routeBatchFallbackData = Get-PropValue -Obj $routeBatchFallbackResp -Name "data"
+$routeBatchFallbackTraceId = Get-PropValue -Obj $routeBatchFallbackData -Name "trace_id"
+$routeBatchFallbackList = Get-PropValue -Obj $routeBatchFallbackData -Name "route_list"
+$routeBatchFallbackDefaultUsed = Get-PropValue -Obj $routeBatchFallbackData -Name "default_fallback_used"
+$routeBatchFallbackFirst = $null
+if ($routeBatchFallbackList -is [System.Collections.IList] -and $routeBatchFallbackList.Count -gt 0) {
+    $routeBatchFallbackFirst = $routeBatchFallbackList[0]
+}
+$routeBatchFallbackFirstCameraId = Get-PropValue -Obj $routeBatchFallbackFirst -Name "camera_id"
+$checks += New-CheckResult -Api "/api/inference/route/batch(default-fallback)" -Passed (($routeBatchFallbackResp.code -eq 0) -and ($routeBatchFallbackTraceId -ne $null) -and ($routeBatchFallbackTraceId -ne "") -and ($routeBatchFallbackList -is [System.Collections.IList]) -and ($routeBatchFallbackList.Count -ge 1) -and (([long]$routeBatchFallbackFirstCameraId) -eq 1) -and ($routeBatchFallbackDefaultUsed -is [bool]) -and ($routeBatchFallbackDefaultUsed -eq $true)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; default_fallback_used={3}; expected_first={4}" -f $routeBatchFallbackResp.code, $routeBatchFallbackTraceId, $routeBatchFallbackFirstCameraId, $routeBatchFallbackDefaultUsed, 1)
 
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
