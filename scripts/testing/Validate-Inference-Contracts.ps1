@@ -183,13 +183,17 @@ $routeBatchGlobalBackend = Get-PropValue -Obj $routeBatchData -Name "global_back
 $routeBatchList = Get-PropValue -Obj $routeBatchData -Name "route_list"
 $routeBatchTruncated = Get-PropValue -Obj $routeBatchData -Name "truncated"
 $routeBatchMaxCameraIds = Get-PropValue -Obj $routeBatchData -Name "max_camera_ids"
+$routeBatchResolvedCameraCount = Get-PropValue -Obj $routeBatchData -Name "resolved_camera_count"
+$routeBatchInputTokenCount = Get-PropValue -Obj $routeBatchData -Name "input_token_count"
+$routeBatchInvalidTokenCount = Get-PropValue -Obj $routeBatchData -Name "invalid_token_count"
+$routeBatchDuplicateFilteredCount = Get-PropValue -Obj $routeBatchData -Name "duplicate_filtered_count"
 $routeBatchFirst = $null
 if ($routeBatchList -is [System.Collections.IList] -and $routeBatchList.Count -gt 0) {
     $routeBatchFirst = $routeBatchList[0]
 }
 $routeBatchFirstCameraId = Get-PropValue -Obj $routeBatchFirst -Name "camera_id"
 $routeBatchFirstBackend = Get-PropValue -Obj $routeBatchFirst -Name "backend_type"
-$checks += New-CheckResult -Api "/api/inference/route/batch" -Passed (($routeBatchResp.code -eq 0) -and ($routeBatchTraceId -ne $null) -and ($routeBatchTraceId -ne "") -and ($routeBatchGlobalBackend -ne $null) -and ($routeBatchGlobalBackend -ne "") -and ($routeBatchList -is [System.Collections.IList]) -and ($routeBatchList.Count -gt 0) -and ($routeBatchFirstCameraId -ne $null) -and (([long]$routeBatchFirstCameraId) -eq $CameraId) -and ($routeBatchFirstBackend -ne $null) -and ($routeBatchFirstBackend -ne "") -and ($routeBatchTruncated -is [bool]) -and (([int]$routeBatchMaxCameraIds) -eq 500) -and (Is-ExpectedBackend -ActualBackend $routeBatchFirstBackend)) -Detail ("code={0}; trace_id={1}; global_backend_type={2}; first_camera_id={3}; first_backend_type={4}; truncated={5}; max_camera_ids={6}; expected_backend={7}" -f $routeBatchResp.code, $routeBatchTraceId, $routeBatchGlobalBackend, $routeBatchFirstCameraId, $routeBatchFirstBackend, $routeBatchTruncated, $routeBatchMaxCameraIds, $ExpectedBackendType)
+$checks += New-CheckResult -Api "/api/inference/route/batch" -Passed (($routeBatchResp.code -eq 0) -and ($routeBatchTraceId -ne $null) -and ($routeBatchTraceId -ne "") -and ($routeBatchGlobalBackend -ne $null) -and ($routeBatchGlobalBackend -ne "") -and ($routeBatchList -is [System.Collections.IList]) -and ($routeBatchList.Count -gt 0) -and ($routeBatchFirstCameraId -ne $null) -and (([long]$routeBatchFirstCameraId) -eq $CameraId) -and ($routeBatchFirstBackend -ne $null) -and ($routeBatchFirstBackend -ne "") -and ($routeBatchTruncated -is [bool]) -and (([int]$routeBatchMaxCameraIds) -eq 500) -and ($routeBatchResolvedCameraCount -ne $null) -and (([int]$routeBatchResolvedCameraCount) -eq $routeBatchList.Count) -and ($routeBatchInputTokenCount -ne $null) -and (([int]$routeBatchInputTokenCount) -ge 0) -and ($routeBatchInvalidTokenCount -ne $null) -and (([int]$routeBatchInvalidTokenCount) -ge 0) -and ($routeBatchDuplicateFilteredCount -ne $null) -and (([int]$routeBatchDuplicateFilteredCount) -ge 0) -and (Is-ExpectedBackend -ActualBackend $routeBatchFirstBackend)) -Detail ("code={0}; trace_id={1}; global_backend_type={2}; first_camera_id={3}; first_backend_type={4}; truncated={5}; max_camera_ids={6}; resolved_camera_count={7}; input_token_count={8}; invalid_token_count={9}; duplicate_filtered_count={10}; expected_backend={11}" -f $routeBatchResp.code, $routeBatchTraceId, $routeBatchGlobalBackend, $routeBatchFirstCameraId, $routeBatchFirstBackend, $routeBatchTruncated, $routeBatchMaxCameraIds, $routeBatchResolvedCameraCount, $routeBatchInputTokenCount, $routeBatchInvalidTokenCount, $routeBatchDuplicateFilteredCount, $ExpectedBackendType)
 
 $nextCameraId = $CameraId + 1
 $routeBatchRangeReq = @{
@@ -201,6 +205,7 @@ $routeBatchRangeTraceId = Get-PropValue -Obj $routeBatchRangeData -Name "trace_i
 $routeBatchRangeList = Get-PropValue -Obj $routeBatchRangeData -Name "route_list"
 $routeBatchRangeTruncated = Get-PropValue -Obj $routeBatchRangeData -Name "truncated"
 $routeBatchRangeMaxCameraIds = Get-PropValue -Obj $routeBatchRangeData -Name "max_camera_ids"
+$routeBatchRangeResolvedCameraCount = Get-PropValue -Obj $routeBatchRangeData -Name "resolved_camera_count"
 $routeBatchRangeFirst = $null
 $routeBatchRangeSecond = $null
 if ($routeBatchRangeList -is [System.Collections.IList] -and $routeBatchRangeList.Count -gt 0) {
@@ -211,7 +216,7 @@ if ($routeBatchRangeList -is [System.Collections.IList] -and $routeBatchRangeLis
 }
 $routeBatchRangeFirstCameraId = Get-PropValue -Obj $routeBatchRangeFirst -Name "camera_id"
 $routeBatchRangeSecondCameraId = Get-PropValue -Obj $routeBatchRangeSecond -Name "camera_id"
-$checks += New-CheckResult -Api "/api/inference/route/batch(range)" -Passed (($routeBatchRangeResp.code -eq 0) -and ($routeBatchRangeTraceId -ne $null) -and ($routeBatchRangeTraceId -ne "") -and ($routeBatchRangeList -is [System.Collections.IList]) -and ($routeBatchRangeList.Count -ge 2) -and ($routeBatchRangeFirstCameraId -ne $null) -and ($routeBatchRangeSecondCameraId -ne $null) -and (([long]$routeBatchRangeFirstCameraId) -eq $CameraId) -and (([long]$routeBatchRangeSecondCameraId) -eq $nextCameraId) -and ($routeBatchRangeTruncated -is [bool]) -and (([int]$routeBatchRangeMaxCameraIds) -eq 500)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; truncated={4}; max_camera_ids={5}; expected_first={6}; expected_second={7}" -f $routeBatchRangeResp.code, $routeBatchRangeTraceId, $routeBatchRangeFirstCameraId, $routeBatchRangeSecondCameraId, $routeBatchRangeTruncated, $routeBatchRangeMaxCameraIds, $CameraId, $nextCameraId)
+$checks += New-CheckResult -Api "/api/inference/route/batch(range)" -Passed (($routeBatchRangeResp.code -eq 0) -and ($routeBatchRangeTraceId -ne $null) -and ($routeBatchRangeTraceId -ne "") -and ($routeBatchRangeList -is [System.Collections.IList]) -and ($routeBatchRangeList.Count -ge 2) -and ($routeBatchRangeFirstCameraId -ne $null) -and ($routeBatchRangeSecondCameraId -ne $null) -and (([long]$routeBatchRangeFirstCameraId) -eq $CameraId) -and (([long]$routeBatchRangeSecondCameraId) -eq $nextCameraId) -and ($routeBatchRangeTruncated -is [bool]) -and (([int]$routeBatchRangeMaxCameraIds) -eq 500) -and ($routeBatchRangeResolvedCameraCount -ne $null) -and (([int]$routeBatchRangeResolvedCameraCount) -eq $routeBatchRangeList.Count)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; truncated={4}; max_camera_ids={5}; resolved_camera_count={6}; expected_first={7}; expected_second={8}" -f $routeBatchRangeResp.code, $routeBatchRangeTraceId, $routeBatchRangeFirstCameraId, $routeBatchRangeSecondCameraId, $routeBatchRangeTruncated, $routeBatchRangeMaxCameraIds, $routeBatchRangeResolvedCameraCount, $CameraId, $nextCameraId)
 
 $routeBatchAliasReq = @{
     cameras = @($CameraId, $nextCameraId)
