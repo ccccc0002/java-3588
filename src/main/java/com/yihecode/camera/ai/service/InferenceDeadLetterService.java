@@ -59,6 +59,8 @@ public class InferenceDeadLetterService {
         Map<String, Object> data = new HashMap<>();
         data.put("queue_size", deadLetters.size());
         data.put("max_size", getMaxSize());
+        data.put("default_list_limit", DEFAULT_LIST_LIMIT);
+        data.put("max_list_limit", MAX_LIST_LIMIT);
         data.put("next_dead_letter_id", sequence + 1);
 
         Long oldestId = null;

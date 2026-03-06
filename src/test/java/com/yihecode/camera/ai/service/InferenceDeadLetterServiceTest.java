@@ -46,6 +46,8 @@ class InferenceDeadLetterServiceTest {
 
         Map<String, Object> stats = inferenceDeadLetterService.stats();
         assertEquals(2, ((Number) stats.get("queue_size")).intValue());
+        assertEquals(20, ((Number) stats.get("default_list_limit")).intValue());
+        assertEquals(200, ((Number) stats.get("max_list_limit")).intValue());
         List<Map<String, Object>> latest = inferenceDeadLetterService.latest(10);
         assertEquals(2, latest.size());
         assertEquals("trace-3", latest.get(0).get("trace_id"));
