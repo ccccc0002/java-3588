@@ -7,6 +7,7 @@ import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
 import com.yihecode.camera.ai.service.InferenceRoutingService;
 import com.yihecode.camera.ai.service.PluginRouteResolverService;
+import com.yihecode.camera.ai.service.PluginInferenceDispatchService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.vo.InferenceRequest;
@@ -59,6 +60,9 @@ public class InferenceApiController {
     @Autowired(required = false)
     private PluginRouteResolverService pluginRouteResolverService;
 
+    @Autowired(required = false)
+    private PluginInferenceDispatchService pluginInferenceDispatchService;
+
     @RequestMapping(value = {"/health"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult health() {
@@ -91,14 +95,19 @@ public class InferenceApiController {
             Map<String, Object> pluginRoute = resolvePluginRoute(payload);
             applyPluginRoute(request, pluginRoute);
             String pluginBackendHint = extractPluginBackendHint(pluginRoute);
+            boolean pluginDispatchable = isPluginDispatchable(pluginRoute);
             String traceId = request.getTraceId();
-            InferenceResult result = StrUtil.isNotBlank(pluginBackendHint)
+            InferenceResult result = pluginDispatchable
+                    ? pluginInferenceDispatchService.infer(request, pluginRoute)
+                    : (StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.infer(request, pluginBackendHint)
-                    : inferenceRoutingService.infer(request);
+                    : inferenceRoutingService.infer(request));
             String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
                     : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
+            Map<String, Object> pluginDispatch = buildPluginDispatchData(pluginRoute, pluginDispatchable,
+                    shouldAttachPluginRoute(pluginRoute) && !pluginDispatchable ? "plugin_not_dispatchable" : null);
 
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
@@ -107,6 +116,7 @@ public class InferenceApiController {
             data.put("result", result.toMap());
             if (shouldAttachPluginRoute(pluginRoute)) {
                 data.put("plugin_route", pluginRoute);
+                data.put("plugin_dispatch", pluginDispatch);
             }
             return JsonResultUtils.success(data);
         } catch (Exception e) {
@@ -133,6 +143,7 @@ public class InferenceApiController {
             Map<String, Object> pluginRoute = resolvePluginRoute(payload);
             applyPluginRoute(request, pluginRoute);
             String pluginBackendHint = extractPluginBackendHint(pluginRoute);
+            boolean pluginDispatchable = isPluginDispatchable(pluginRoute);
             String traceId = request.getTraceId();
             String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
@@ -153,12 +164,16 @@ public class InferenceApiController {
                 result.setDetections(new ArrayList<>());
                 result.setBackendType(routedBackend);
                 result.setAttempt(0);
+            } else if (pluginDispatchable) {
+                result = pluginInferenceDispatchService.infer(request, pluginRoute);
             } else {
                 result = StrUtil.isNotBlank(pluginBackendHint)
                         ? inferenceRoutingService.infer(request, pluginBackendHint)
                         : inferenceRoutingService.infer(request);
             }
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
+            Map<String, Object> pluginDispatch = buildPluginDispatchData(pluginRoute, pluginDispatchable,
+                    shouldAttachPluginRoute(pluginRoute) && !pluginDispatchable && !duplicate ? "plugin_not_dispatchable" : null);
 
             Map<String, Object> reportData = new HashMap<>();
             reportData.put("trace_id", traceId);
@@ -183,6 +198,7 @@ public class InferenceApiController {
             data.put("algorithm_id", finalAlgorithmId);
             if (shouldAttachPluginRoute(pluginRoute)) {
                 data.put("plugin_route", pluginRoute);
+                data.put("plugin_dispatch", pluginDispatch);
             }
             data.put("idempotent", idempotentData);
             data.put("report", reportData);
@@ -978,6 +994,31 @@ public class InferenceApiController {
         }
         return firstString(pluginRoute.get("backend_hint"), null, null);
     }
+
+    private boolean isPluginDispatchable(Map<String, Object> pluginRoute) {
+        return pluginInferenceDispatchService != null && shouldAttachPluginRoute(pluginRoute)
+                && pluginInferenceDispatchService.isDispatchable(pluginRoute);
+    }
+
+    private Map<String, Object> buildPluginDispatchData(Map<String, Object> pluginRoute,
+                                                        boolean dispatched,
+                                                        String fallbackReason) {
+        if (!shouldAttachPluginRoute(pluginRoute)) {
+            return null;
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        Map<String, Object> plugin = toMap(pluginRoute.get("plugin"));
+        data.put("requested", true);
+        data.put("dispatched", dispatched);
+        data.put("fallback", !dispatched);
+        data.put("fallback_reason", fallbackReason);
+        data.put("registration_id", plugin.get("registration_id"));
+        data.put("plugin_id", plugin.get("plugin_id"));
+        data.put("runtime", firstString(plugin.get("runtime"), extractPluginBackendHint(pluginRoute), null));
+        data.put("health_url", plugin.get("health_url"));
+        return data;
+    }
+
     private Map<String, Object> buildIdempotentData(boolean persistReport, String traceId, Long cameraId, Long timestampMs) {
         if (!persistReport) {
             Map<String, Object> data = new HashMap<>();
