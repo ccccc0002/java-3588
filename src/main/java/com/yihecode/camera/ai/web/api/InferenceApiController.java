@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web.api;
 
 import cn.hutool.core.util.StrUtil;
+import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
@@ -33,6 +34,9 @@ import java.util.UUID;
 public class InferenceApiController {
 
     private static final int ROUTE_BATCH_MAX_CAMERA_IDS = 500;
+    private static final String DEAD_LETTER_REPLAY_BATCH_MAX_LIMIT_CONFIG_KEY = "infer_dead_letter_replay_batch_max_limit";
+    private static final int DEAD_LETTER_REPLAY_BATCH_DEFAULT_LIMIT = 200;
+    private static final int DEAD_LETTER_REPLAY_BATCH_HARD_CAP = 2000;
 
     @Autowired
     private InferenceRoutingService inferenceRoutingService;
@@ -45,6 +49,9 @@ public class InferenceApiController {
 
     @Autowired
     private InferenceDeadLetterService inferenceDeadLetterService;
+
+    @Autowired
+    private ConfigService configService;
 
     @RequestMapping(value = {"/health"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
@@ -478,7 +485,10 @@ public class InferenceApiController {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
             boolean dryRun = toBooleanFlag(dryRunFlag, false);
-            List<Long> selectedIds = resolveDeadLetterIds(deadLetterIdsText, idsText, limit);
+            int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
+            int effectiveLimit = normalizeDeadLetterReplayBatchLimit(limit, maxLimit);
+            boolean truncated = limit != null && limit > 0 && limit > effectiveLimit;
+            List<Long> selectedIds = resolveDeadLetterIds(deadLetterIdsText, idsText, effectiveLimit);
             boolean explicitIdsMode = !selectedIds.isEmpty();
             List<Map<String, Object>> candidates;
             if (explicitIdsMode) {
@@ -489,7 +499,7 @@ public class InferenceApiController {
                     candidates.add(item);
                 }
             } else {
-                candidates = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
+                candidates = inferenceDeadLetterService.latest(effectiveLimit, onlyRetryable, onlyExhausted);
             }
 
             int successCount = 0;
@@ -553,6 +563,9 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("requested_limit", limit);
+            data.put("effective_limit", effectiveLimit);
+            data.put("max_limit", maxLimit);
+            data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
             data.put("only_exhausted", onlyExhausted);
             data.put("dry_run", dryRun);
@@ -575,8 +588,7 @@ public class InferenceApiController {
         }
     }
 
-    private List<Long> resolveDeadLetterIds(String deadLetterIdsText, String idsText, Integer limit) {
-        int maxSize = limit != null && limit > 0 ? limit : 200;
+    private List<Long> resolveDeadLetterIds(String deadLetterIdsText, String idsText, int maxSize) {
         LinkedHashSet<Long> ordered = new LinkedHashSet<>();
         addDeadLetterIdsTokenized(ordered, deadLetterIdsText, maxSize);
         addDeadLetterIdsTokenized(ordered, idsText, maxSize);
@@ -605,6 +617,23 @@ public class InferenceApiController {
             }
             ordered.add(id);
         }
+    }
+
+    private int resolveDeadLetterReplayBatchMaxLimit() {
+        return toPositiveIntWithinRange(
+                configService == null ? null : configService.getByValTag(DEAD_LETTER_REPLAY_BATCH_MAX_LIMIT_CONFIG_KEY),
+                DEAD_LETTER_REPLAY_BATCH_DEFAULT_LIMIT,
+                DEAD_LETTER_REPLAY_BATCH_HARD_CAP
+        );
+    }
+
+    private int normalizeDeadLetterReplayBatchLimit(Integer requestedLimit, int maxLimit) {
+        int effectiveMax = Math.max(1, maxLimit);
+        int defaultLimit = Math.min(DEAD_LETTER_REPLAY_BATCH_DEFAULT_LIMIT, effectiveMax);
+        if (requestedLimit == null || requestedLimit <= 0) {
+            return defaultLimit;
+        }
+        return Math.min(requestedLimit, effectiveMax);
     }
 
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
@@ -1123,6 +1152,21 @@ public class InferenceApiController {
         try {
             return Integer.parseInt(String.valueOf(value));
         } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private int toPositiveIntWithinRange(String value, int defaultValue, int maxValue) {
+        if (StrUtil.isBlank(value)) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            if (parsed <= 0) {
+                return defaultValue;
+            }
+            return Math.min(parsed, maxValue);
+        } catch (Exception ignored) {
             return defaultValue;
         }
     }

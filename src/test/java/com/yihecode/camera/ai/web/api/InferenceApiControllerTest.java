@@ -1,5 +1,6 @@
 package com.yihecode.camera.ai.web.api;
 
+import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
@@ -46,6 +47,9 @@ class InferenceApiControllerTest {
 
     @Mock
     private InferenceDeadLetterService inferenceDeadLetterService;
+
+    @Mock
+    private ConfigService configService;
 
     @InjectMocks
     private InferenceApiController inferenceApiController;
@@ -834,6 +838,58 @@ class InferenceApiControllerTest {
 
         verify(inferenceDeadLetterService, never()).latest(anyInt(), anyBoolean(), anyBoolean());
         verify(inferenceRoutingService, never()).infer(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldClampLimitToConfiguredMax_whenLatestSelection() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 61L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 62L);
+        candidates.add(c1);
+        candidates.add(c2);
+
+        when(configService.getByValTag("infer_dead_letter_replay_batch_max_limit")).thenReturn("2");
+        when(inferenceDeadLetterService.latest(2, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, 1, 1, null, 1, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(5, ((Number) data.get("requested_limit")).intValue());
+        assertEquals(2, ((Number) data.get("effective_limit")).intValue());
+        assertEquals(2, ((Number) data.get("max_limit")).intValue());
+        assertEquals(true, data.get("truncated"));
+        assertEquals(2, ((Number) data.get("selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("processed_count")).intValue());
+
+        verify(inferenceDeadLetterService).latest(2, true, false);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldClampExplicitIdsByConfiguredMax() {
+        when(configService.getByValTag("infer_dead_letter_replay_batch_max_limit")).thenReturn("2");
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, 1, 1, null, 1, "71,72,73", null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("explicit_ids", data.get("selection_source"));
+        assertEquals(2, ((Number) data.get("effective_limit")).intValue());
+        assertEquals(2, ((Number) data.get("max_limit")).intValue());
+        assertEquals(true, data.get("truncated"));
+        assertEquals(2, ((Number) data.get("selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("processed_count")).intValue());
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        assertEquals(2, results.size());
+        assertEquals(71L, ((Number) results.get(0).get("dead_letter_id")).longValue());
+        assertEquals(72L, ((Number) results.get(1).get("dead_letter_id")).longValue());
+
+        verify(inferenceDeadLetterService, never()).latest(anyInt(), anyBoolean(), anyBoolean());
     }
 
     private Map<String, Object> buildAcquireResult(boolean acquired, String reason, Map<String, Object> entry) {
