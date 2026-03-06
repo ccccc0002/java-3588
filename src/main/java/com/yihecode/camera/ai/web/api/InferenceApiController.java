@@ -469,11 +469,13 @@ public class InferenceApiController {
                                             @RequestParam(value = "persist_report", required = false) Integer persistReportFlag,
                                             @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag,
                                             @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
-                                            @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag) {
+                                            @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
+                                            @RequestParam(value = "dry_run", required = false) Integer dryRunFlag) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
+            boolean dryRun = toBooleanFlag(dryRunFlag, false);
             List<Map<String, Object>> candidates = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
 
             int successCount = 0;
@@ -481,6 +483,7 @@ public class InferenceApiController {
             int failedReplayInProgressCount = 0;
             int failedReplayExhaustedCount = 0;
             int failedOtherCount = 0;
+            int dryRunCount = 0;
             List<Map<String, Object>> results = new ArrayList<>();
             for (Map<String, Object> candidate : candidates) {
                 Long deadLetterId = toLong(candidate.get("dead_letter_id"));
@@ -492,6 +495,17 @@ public class InferenceApiController {
                     results.add(invalid);
                     failedCount++;
                     failedOtherCount++;
+                    continue;
+                }
+
+                if (dryRun) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("dead_letter_id", deadLetterId);
+                    item.put("code", 0);
+                    item.put("msg", "dry_run");
+                    item.put("planned", true);
+                    results.add(item);
+                    dryRunCount++;
                     continue;
                 }
 
@@ -527,6 +541,7 @@ public class InferenceApiController {
             data.put("requested_limit", limit);
             data.put("only_retryable", onlyRetryable);
             data.put("only_exhausted", onlyExhausted);
+            data.put("dry_run", dryRun);
             data.put("selected_count", candidates.size());
             data.put("processed_count", results.size());
             data.put("success_count", successCount);
@@ -534,6 +549,7 @@ public class InferenceApiController {
             data.put("failed_replay_in_progress_count", failedReplayInProgressCount);
             data.put("failed_replay_exhausted_count", failedReplayExhaustedCount);
             data.put("failed_other_count", failedOtherCount);
+            data.put("dry_run_count", dryRunCount);
             data.put("results", results);
             return JsonResultUtils.success(data);
         } catch (Exception e) {

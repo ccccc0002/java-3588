@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -699,7 +701,7 @@ class InferenceApiControllerTest {
         when(inferenceDeadLetterService.markReplay(eq(22L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta2);
         when(inferenceDeadLetterService.removeById(anyLong())).thenReturn(true);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, 1, 1, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, 1, 1, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -710,6 +712,7 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("failed_replay_in_progress_count")).intValue());
         assertEquals(0, ((Number) data.get("failed_replay_exhausted_count")).intValue());
         assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
+        assertEquals(0, ((Number) data.get("dry_run_count")).intValue());
         List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
         assertEquals(2, results.size());
         assertEquals(0, ((Number) results.get(0).get("code")).intValue());
@@ -764,7 +767,7 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.infer(any())).thenReturn(infer);
         when(inferenceDeadLetterService.markReplay(eq(31L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
 
-        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, null, 1, null);
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, null, 1, null, null);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -774,10 +777,43 @@ class InferenceApiControllerTest {
         assertEquals(1, ((Number) data.get("failed_replay_in_progress_count")).intValue());
         assertEquals(0, ((Number) data.get("failed_replay_exhausted_count")).intValue());
         assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
+        assertEquals(0, ((Number) data.get("dry_run_count")).intValue());
         List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
         assertEquals(2, results.size());
         assertEquals(true, results.get(1).get("replay_in_progress"));
         verify(inferenceDeadLetterService, times(1)).releaseReplay(anyLong(), anyString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldSupportDryRunWithoutExecutingReplay() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 41L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 42L);
+        candidates.add(c1);
+        candidates.add(c2);
+        when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(5, 0, 1, 1, null, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("dry_run"));
+        assertEquals(2, ((Number) data.get("processed_count")).intValue());
+        assertEquals(2, ((Number) data.get("dry_run_count")).intValue());
+        assertEquals(0, ((Number) data.get("success_count")).intValue());
+        assertEquals(0, ((Number) data.get("failed_count")).intValue());
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        assertEquals(2, results.size());
+        assertEquals("dry_run", results.get(0).get("msg"));
+        assertEquals("dry_run", results.get(1).get("msg"));
+
+        verify(inferenceDeadLetterService, never()).tryAcquireReplay(anyLong(), anyString(), anyInt());
+        verify(inferenceRoutingService, never()).infer(any());
+        verify(inferenceDeadLetterService, never()).markReplay(anyLong(), anyBoolean(), anyString(), anyString());
+        verify(inferenceDeadLetterService, never()).releaseReplay(anyLong(), anyString());
     }
 
     private Map<String, Object> buildAcquireResult(boolean acquired, String reason, Map<String, Object> entry) {
