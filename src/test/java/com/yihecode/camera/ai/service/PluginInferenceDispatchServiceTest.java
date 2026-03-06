@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -131,5 +132,34 @@ class PluginInferenceDispatchServiceTest {
 
         assertEquals("trace-plugin-explicit", result.getTraceId());
         verify(inferenceHttpGateway).postJson(eq("http://plugin-c:29090/custom-infer"), eq(3000), anyString());
+    }
+    @Test
+    void infer_shouldRetryWhenFirstAttemptThrows_thenSucceed() {
+        when(configService.getByValTag("plugin_infer_retry_count")).thenReturn("2");
+        when(configService.getByValTag("plugin_infer_timeout_ms")).thenReturn("3000");
+        when(inferenceHttpGateway.postJson(eq("http://plugin-d:19090/v1/infer"), eq(3000), anyString()))
+                .thenThrow(new IllegalStateException("timeout"))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-plugin-retry\",\"camera_id\":704,\"latency_ms\":9,\"detections\":[]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-plugin-retry");
+        request.setCameraId(704L);
+        request.setModelId(804L);
+        request.setFrameMeta(new HashMap<>());
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("plugin", Map.of(
+                "health_url", "http://plugin-d:19090/health",
+                "runtime", "rk3588_rknn"
+        ));
+
+        InferenceResult result = pluginInferenceDispatchService.infer(request, pluginRoute);
+
+        assertEquals("trace-plugin-retry", result.getTraceId());
+        assertEquals(2, result.getAttempt());
+        verify(inferenceHttpGateway, times(2)).postJson(eq("http://plugin-d:19090/v1/infer"), eq(3000), anyString());
     }
 }

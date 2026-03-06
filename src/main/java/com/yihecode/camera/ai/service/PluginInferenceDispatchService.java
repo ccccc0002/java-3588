@@ -18,6 +18,7 @@ import java.util.Map;
 public class PluginInferenceDispatchService {
 
     private static final int DEFAULT_TIMEOUT_MS = 3000;
+    private static final int DEFAULT_RETRY_COUNT = 1;
 
     @Autowired(required = false)
     private ConfigService configService;
@@ -40,27 +41,33 @@ public class PluginInferenceDispatchService {
             throw new IllegalStateException("plugin route is not dispatchable");
         }
         String inferUrl = resolveInferUrl(pluginRoute);
-        InferenceHttpResponse response = inferenceHttpGateway.postJson(inferUrl, getTimeoutMs(), JSON.toJSONString(request.toPayload()));
-        if (response == null) {
-            throw new IllegalStateException("plugin inference response is null");
-        }
-        if (response.getStatus() != 200) {
-            throw new IllegalStateException("plugin inference non-200 response: " + response.getStatus());
-        }
-        JSONObject obj = safeParseObject(response.getBody());
-        if (obj == null) {
-            throw new IllegalStateException("invalid plugin inference response body");
-        }
+        int timeoutMs = getTimeoutMs();
+        int retryCount = getRetryCount();
+        String payload = JSON.toJSONString(request.toPayload());
+        String lastError = "";
 
-        InferenceResult result = new InferenceResult();
-        result.setTraceId(firstNonBlank(obj.getString("trace_id"), request == null ? null : request.getTraceId()));
-        result.setCameraId(firstLong(obj.getLong("camera_id"), request == null ? null : request.getCameraId()));
-        result.setLatencyMs(firstLong(obj.getLong("latency_ms"), 0L));
-        result.setDetections(toDetectionList(obj.get("detections")));
-        result.setBackendType(resolveRuntime(pluginRoute));
-        result.setAttempt(1);
-        result.setRawBody(response.getBody());
-        return result;
+        for (int attempt = 1; attempt <= retryCount; attempt++) {
+            try {
+                InferenceHttpResponse response = inferenceHttpGateway.postJson(inferUrl, timeoutMs, payload);
+                if (response == null) {
+                    lastError = "plugin inference response is null";
+                    continue;
+                }
+                if (response.getStatus() != 200) {
+                    lastError = "plugin inference non-200 response: " + response.getStatus();
+                    continue;
+                }
+                JSONObject obj = safeParseObject(response.getBody());
+                if (obj == null) {
+                    lastError = "invalid plugin inference response body";
+                    continue;
+                }
+                return toInferenceResult(obj, request, pluginRoute, response.getBody(), attempt);
+            } catch (Exception e) {
+                lastError = e.getMessage();
+            }
+        }
+        throw new IllegalStateException(StrUtil.isBlank(lastError) ? "plugin inference failed" : lastError);
     }
 
     public String resolveInferUrl(Map<String, Object> pluginRoute) {
@@ -83,6 +90,22 @@ public class PluginInferenceDispatchService {
         return StrUtil.removeSuffix(normalized, "/") + "/v1/infer";
     }
 
+    private InferenceResult toInferenceResult(JSONObject obj,
+                                              InferenceRequest request,
+                                              Map<String, Object> pluginRoute,
+                                              String rawBody,
+                                              int attempt) {
+        InferenceResult result = new InferenceResult();
+        result.setTraceId(firstNonBlank(obj.getString("trace_id"), request == null ? null : request.getTraceId()));
+        result.setCameraId(firstLong(obj.getLong("camera_id"), request == null ? null : request.getCameraId()));
+        result.setLatencyMs(firstLong(obj.getLong("latency_ms"), 0L));
+        result.setDetections(toDetectionList(obj.get("detections")));
+        result.setBackendType(resolveRuntime(pluginRoute));
+        result.setAttempt(attempt);
+        result.setRawBody(rawBody);
+        return result;
+    }
+
     private String resolveRuntime(Map<String, Object> pluginRoute) {
         Map<String, Object> plugin = toMap(pluginRoute == null ? null : pluginRoute.get("plugin"));
         return firstNonBlank(asString(plugin.get("runtime")), asString(pluginRoute == null ? null : pluginRoute.get("backend_hint")));
@@ -93,6 +116,13 @@ public class PluginInferenceDispatchService {
             return DEFAULT_TIMEOUT_MS;
         }
         return toPositiveInt(configService.getByValTag("plugin_infer_timeout_ms"), DEFAULT_TIMEOUT_MS);
+    }
+
+    private int getRetryCount() {
+        if (configService == null) {
+            return DEFAULT_RETRY_COUNT;
+        }
+        return Math.max(1, toPositiveInt(configService.getByValTag("plugin_infer_retry_count"), DEFAULT_RETRY_COUNT));
     }
 
     private int toPositiveInt(String value, int defaultValue) {
