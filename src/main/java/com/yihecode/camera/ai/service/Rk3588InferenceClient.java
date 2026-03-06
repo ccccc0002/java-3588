@@ -42,10 +42,14 @@ public class Rk3588InferenceClient implements InferenceClient {
     @Override
     public Map<String, Object> health(String traceId) {
         String baseUrl = getServiceBaseUrl();
+        int timeoutMs = getTimeoutMs();
+        int retryCount = getRetryCount();
         Map<String, Object> data = new HashMap<>();
         data.put("trace_id", traceId);
         data.put("backend", getBackendType());
         data.put("service_url", baseUrl);
+        data.put("timeout_ms", timeoutMs);
+        data.put("retry_count", retryCount);
         Map<String, Object> decodeHints = buildDecodeHints();
         if (!decodeHints.isEmpty()) {
             data.put("decode_hints", decodeHints);
@@ -66,8 +70,6 @@ public class Rk3588InferenceClient implements InferenceClient {
         }
 
         String url = baseUrl + "/health";
-        int timeoutMs = getTimeoutMs();
-        int retryCount = getRetryCount();
         String lastError = "";
 
         for (int attempt = 1; attempt <= retryCount; attempt++) {

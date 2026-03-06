@@ -71,6 +71,8 @@ class Rk3588InferenceClientTest {
         assertEquals("ok", data.get("status"));
         assertEquals(200, data.get("http_status"));
         assertEquals(2, data.get("attempt"));
+        assertEquals(1200, ((Number) data.get("timeout_ms")).intValue());
+        assertEquals(2, ((Number) data.get("retry_count")).intValue());
         assertEquals("rk-a", data.get("node"));
         assertEquals(Boolean.TRUE, data.get("ready"));
     }
