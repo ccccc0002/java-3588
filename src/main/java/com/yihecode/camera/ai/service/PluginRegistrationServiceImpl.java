@@ -160,6 +160,62 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
         return data;
     }
 
+
+    @Override
+    public Map<String, Object> stats(String traceId) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        Map<String, Object> statusCounts = new LinkedHashMap<>();
+        Map<String, Object> runtimeCounts = new LinkedHashMap<>();
+        Map<String, Object> capabilityCounts = new LinkedHashMap<>();
+        int healthyCount = 0;
+        int unhealthyCount = 0;
+        int unknownHealthCount = 0;
+        int dispatchReadyCount = 0;
+        Long latestUpdatedAtMs = null;
+        Long oldestUpdatedAtMs = null;
+
+        List<PluginRegistryRecord> records = pluginRegistryService.list();
+        for (PluginRegistryRecord record : records) {
+            if (record == null) {
+                continue;
+            }
+            String normalizedStatus = normalizeStatus(record.getStatus(), record.getHealthy());
+            incrementCount(statusCounts, normalizedStatus);
+            incrementCount(runtimeCounts, normalizeCounterKey(record.getRuntime()));
+            for (String capability : normalizeCapabilityList(record.getCapabilities())) {
+                incrementCount(capabilityCounts, capability);
+            }
+            if (Boolean.TRUE.equals(record.getHealthy())) {
+                healthyCount++;
+            } else if (Boolean.FALSE.equals(record.getHealthy())) {
+                unhealthyCount++;
+            } else {
+                unknownHealthCount++;
+            }
+            if (isDispatchReady(record, normalizedStatus)) {
+                dispatchReadyCount++;
+            }
+            Long updatedAtMs = record.getUpdatedAtMs();
+            if (updatedAtMs != null && updatedAtMs > 0) {
+                latestUpdatedAtMs = latestUpdatedAtMs == null ? updatedAtMs : Math.max(latestUpdatedAtMs, updatedAtMs);
+                oldestUpdatedAtMs = oldestUpdatedAtMs == null ? updatedAtMs : Math.min(oldestUpdatedAtMs, updatedAtMs);
+            }
+        }
+
+        data.put("trace_id", traceId);
+        data.put("total", records.size());
+        data.put("healthy_count", healthyCount);
+        data.put("unhealthy_count", unhealthyCount);
+        data.put("unknown_health_count", unknownHealthCount);
+        data.put("dispatch_ready_count", dispatchReadyCount);
+        data.put("status_counts", statusCounts);
+        data.put("runtime_counts", runtimeCounts);
+        data.put("capability_counts", capabilityCounts);
+        data.put("latest_updated_at_ms", latestUpdatedAtMs);
+        data.put("oldest_updated_at_ms", oldestUpdatedAtMs);
+        return data;
+    }
+
     @Override
     public Map<String, Object> unregisterRegistration(String traceId, String registrationId) {
         Map<String, Object> data = new LinkedHashMap<>();
@@ -174,6 +230,46 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
             return DEFAULT_LIST_LIMIT;
         }
         return Math.min(limit, MAX_LIST_LIMIT);
+    }
+
+
+    private boolean isDispatchReady(PluginRegistryRecord record, String normalizedStatus) {
+        if (record == null || !Boolean.TRUE.equals(record.getHealthy())) {
+            return false;
+        }
+        if (!containsCapability(record.getCapabilities(), "inference")) {
+            return false;
+        }
+        if ("disabled".equals(normalizedStatus)) {
+            return false;
+        }
+        return StrUtil.isNotBlank(record.getInferUrl()) || StrUtil.isNotBlank(record.getHealthUrl());
+    }
+
+    private boolean containsCapability(List<String> capabilities, String expected) {
+        if (capabilities == null || capabilities.isEmpty() || StrUtil.isBlank(expected)) {
+            return false;
+        }
+        for (String capability : capabilities) {
+            if (StrUtil.equalsIgnoreCase(StrUtil.trim(capability), expected.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void incrementCount(Map<String, Object> counts, String key) {
+        String normalizedKey = normalizeCounterKey(key);
+        int next = 1;
+        Object current = counts.get(normalizedKey);
+        if (current instanceof Number) {
+            next = ((Number) current).intValue() + 1;
+        }
+        counts.put(normalizedKey, next);
+    }
+
+    private String normalizeCounterKey(String key) {
+        return StrUtil.isBlank(key) ? "unknown" : key.trim();
     }
 
     private boolean matchesFilters(Map<String, Object> mapped,
@@ -204,6 +300,24 @@ public class PluginRegistrationServiceImpl implements PluginRegistrationService 
             return false;
         }
         return actual.toLowerCase(Locale.ROOT).contains(expectedPart.trim().toLowerCase(Locale.ROOT));
+    }
+
+
+    private List<String> normalizeCapabilityList(List<String> capabilities) {
+        List<String> normalized = new ArrayList<>();
+        if (capabilities == null || capabilities.isEmpty()) {
+            return normalized;
+        }
+        for (String capability : capabilities) {
+            if (StrUtil.isBlank(capability)) {
+                continue;
+            }
+            String trimmed = capability.trim();
+            if (!normalized.contains(trimmed)) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized;
     }
 
     private String buildRegistrationId(PluginManifest manifest) {

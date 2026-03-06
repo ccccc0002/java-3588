@@ -221,4 +221,26 @@ class PluginApiControllerTest {
         assertEquals(Boolean.TRUE, data.get("removed"));
         verify(pluginRegistrationService).unregisterRegistration(anyString(), anyString());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void stats_shouldReturnAggregatedPluginState() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("trace_id", "trace-plugin-stats-2");
+        stats.put("total", 3);
+        stats.put("healthy_count", 1);
+        stats.put("dispatch_ready_count", 1);
+        stats.put("status_counts", Map.of("healthy", 1, "unreachable", 1, "registered", 1));
+        when(pluginRegistrationService.stats(anyString())).thenReturn(stats);
+
+        JsonResult result = pluginApiController.stats();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(3, ((Number) data.get("total")).intValue());
+        assertEquals(1, ((Number) data.get("dispatch_ready_count")).intValue());
+        assertEquals(1, ((Number) ((Map<String, Object>) data.get("status_counts")).get("healthy")).intValue());
+        verify(pluginRegistrationService).stats(anyString());
+    }
+
 }

@@ -185,4 +185,65 @@ class PluginRegistrationServiceImplTest {
         assertEquals("trace-plugin-delete-1", data.get("trace_id"));
         verify(pluginRegistryService).delete("face-detector:1.0.0");
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void stats_shouldAggregateRegistryState() {
+        PluginRegistryRecord first = new PluginRegistryRecord();
+        first.setRegistrationId("face-detector:1.0.0");
+        first.setPluginId("face-detector");
+        first.setRuntime("rk3588_rknn");
+        first.setCapabilities(Arrays.asList("inference", "alert"));
+        first.setInferUrl("http://plugin-a:19090/v1/infer");
+        first.setHealthUrl("http://plugin-a:19090/health");
+        first.setHealthy(true);
+        first.setStatus("healthy");
+        first.setUpdatedAtMs(1000L);
+
+        PluginRegistryRecord second = new PluginRegistryRecord();
+        second.setRegistrationId("helmet-detector:1.1.0");
+        second.setPluginId("helmet-detector");
+        second.setRuntime("rk3588_rknn");
+        second.setCapabilities(Arrays.asList("inference"));
+        second.setHealthUrl("http://plugin-b:19090/health");
+        second.setHealthy(false);
+        second.setStatus("unreachable");
+        second.setUpdatedAtMs(2000L);
+
+        PluginRegistryRecord third = new PluginRegistryRecord();
+        third.setRegistrationId("stream-proxy:2.0.0");
+        third.setPluginId("stream-proxy");
+        third.setRuntime("http_proxy");
+        third.setCapabilities(Arrays.asList("stream"));
+        third.setStatus("registered");
+        third.setUpdatedAtMs(500L);
+
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second, third));
+
+        Map<String, Object> data = pluginRegistrationService.stats("trace-plugin-stats-1");
+
+        assertEquals("trace-plugin-stats-1", data.get("trace_id"));
+        assertEquals(3, ((Number) data.get("total")).intValue());
+        assertEquals(1, ((Number) data.get("healthy_count")).intValue());
+        assertEquals(1, ((Number) data.get("unhealthy_count")).intValue());
+        assertEquals(1, ((Number) data.get("unknown_health_count")).intValue());
+        assertEquals(1, ((Number) data.get("dispatch_ready_count")).intValue());
+        assertEquals(2000L, ((Number) data.get("latest_updated_at_ms")).longValue());
+        assertEquals(500L, ((Number) data.get("oldest_updated_at_ms")).longValue());
+
+        Map<String, Object> statusCounts = (Map<String, Object>) data.get("status_counts");
+        assertEquals(1, ((Number) statusCounts.get("healthy")).intValue());
+        assertEquals(1, ((Number) statusCounts.get("unreachable")).intValue());
+        assertEquals(1, ((Number) statusCounts.get("registered")).intValue());
+
+        Map<String, Object> runtimeCounts = (Map<String, Object>) data.get("runtime_counts");
+        assertEquals(2, ((Number) runtimeCounts.get("rk3588_rknn")).intValue());
+        assertEquals(1, ((Number) runtimeCounts.get("http_proxy")).intValue());
+
+        Map<String, Object> capabilityCounts = (Map<String, Object>) data.get("capability_counts");
+        assertEquals(2, ((Number) capabilityCounts.get("inference")).intValue());
+        assertEquals(1, ((Number) capabilityCounts.get("alert")).intValue());
+        assertEquals(1, ((Number) capabilityCounts.get("stream")).intValue());
+    }
+
 }

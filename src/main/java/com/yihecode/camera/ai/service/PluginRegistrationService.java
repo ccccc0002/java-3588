@@ -20,5 +20,7 @@ public interface PluginRegistrationService {
 
     Map<String, Object> refreshRegistration(String traceId, String registrationId);
 
+    Map<String, Object> stats(String traceId);
+
     Map<String, Object> unregisterRegistration(String traceId, String registrationId);
 }

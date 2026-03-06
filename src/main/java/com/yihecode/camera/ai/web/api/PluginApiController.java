@@ -112,6 +112,19 @@ public class PluginApiController {
         return JsonResultUtils.success(data);
     }
 
+
+    @RequestMapping(value = {"/stats"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult stats() {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.stats(traceId));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
     @RequestMapping(value = {"/refresh"}, method = {RequestMethod.POST})
     @ResponseBody
     public JsonResult refresh(@RequestParam(value = "registration_id", required = false) String registrationId) {
