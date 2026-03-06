@@ -248,6 +248,22 @@ $routeBatchQueryAliasFirstCameraId = Get-PropValue -Obj $routeBatchQueryAliasFir
 $routeBatchQueryAliasSecondCameraId = Get-PropValue -Obj $routeBatchQueryAliasSecond -Name "camera_id"
 $checks += New-CheckResult -Api "/api/inference/route/batch(query-cameras-alias)" -Passed (($routeBatchQueryAliasResp.code -eq 0) -and ($routeBatchQueryAliasTraceId -ne $null) -and ($routeBatchQueryAliasTraceId -ne "") -and ($routeBatchQueryAliasList -is [System.Collections.IList]) -and ($routeBatchQueryAliasList.Count -ge 2) -and (([long]$routeBatchQueryAliasFirstCameraId) -eq $CameraId) -and (([long]$routeBatchQueryAliasSecondCameraId) -eq $nextCameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchQueryAliasResp.code, $routeBatchQueryAliasTraceId, $routeBatchQueryAliasFirstCameraId, $routeBatchQueryAliasSecondCameraId, $CameraId, $nextCameraId)
 
+$routeBatchQueryRangeResp = Invoke-ApiGet -Path ("/api/inference/route/batch?camera_range={1}-{0}" -f $CameraId, $nextCameraId)
+$routeBatchQueryRangeData = Get-PropValue -Obj $routeBatchQueryRangeResp -Name "data"
+$routeBatchQueryRangeTraceId = Get-PropValue -Obj $routeBatchQueryRangeData -Name "trace_id"
+$routeBatchQueryRangeList = Get-PropValue -Obj $routeBatchQueryRangeData -Name "route_list"
+$routeBatchQueryRangeFirst = $null
+$routeBatchQueryRangeSecond = $null
+if ($routeBatchQueryRangeList -is [System.Collections.IList] -and $routeBatchQueryRangeList.Count -gt 0) {
+    $routeBatchQueryRangeFirst = $routeBatchQueryRangeList[0]
+}
+if ($routeBatchQueryRangeList -is [System.Collections.IList] -and $routeBatchQueryRangeList.Count -gt 1) {
+    $routeBatchQueryRangeSecond = $routeBatchQueryRangeList[1]
+}
+$routeBatchQueryRangeFirstCameraId = Get-PropValue -Obj $routeBatchQueryRangeFirst -Name "camera_id"
+$routeBatchQueryRangeSecondCameraId = Get-PropValue -Obj $routeBatchQueryRangeSecond -Name "camera_id"
+$checks += New-CheckResult -Api "/api/inference/route/batch(query-camera_range-alias)" -Passed (($routeBatchQueryRangeResp.code -eq 0) -and ($routeBatchQueryRangeTraceId -ne $null) -and ($routeBatchQueryRangeTraceId -ne "") -and ($routeBatchQueryRangeList -is [System.Collections.IList]) -and ($routeBatchQueryRangeList.Count -ge 2) -and (([long]$routeBatchQueryRangeFirstCameraId) -eq $nextCameraId) -and (([long]$routeBatchQueryRangeSecondCameraId) -eq $CameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchQueryRangeResp.code, $routeBatchQueryRangeTraceId, $routeBatchQueryRangeFirstCameraId, $routeBatchQueryRangeSecondCameraId, $nextCameraId, $CameraId)
+
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
 $failedCount = ($checks | Where-Object { -not $_.passed }).Count
