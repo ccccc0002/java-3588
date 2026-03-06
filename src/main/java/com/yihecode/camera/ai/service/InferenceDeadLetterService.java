@@ -49,11 +49,21 @@ public class InferenceDeadLetterService {
     }
 
     public synchronized List<Map<String, Object>> latest(Integer limit) {
+        return latest(limit, false);
+    }
+
+    public synchronized List<Map<String, Object>> latest(Integer limit, Boolean onlyRetryable) {
         int effectiveLimit = normalizeListLimit(limit);
+        boolean retryableOnly = onlyRetryable != null && onlyRetryable;
+        int maxReplayAttempts = retryableOnly ? maxReplayAttempts() : 0;
         List<Map<String, Object>> result = new ArrayList<>();
         List<Map<String, Object>> snapshot = new ArrayList<>(deadLetters);
         for (int i = snapshot.size() - 1; i >= 0 && result.size() < effectiveLimit; i--) {
-            result.add(new LinkedHashMap<>(snapshot.get(i)));
+            Map<String, Object> entry = snapshot.get(i);
+            if (retryableOnly && !isRetryable(entry, maxReplayAttempts)) {
+                continue;
+            }
+            result.add(new LinkedHashMap<>(entry));
         }
         return result;
     }
@@ -224,6 +234,11 @@ public class InferenceDeadLetterService {
         } catch (Exception ignored) {
             return defaultValue;
         }
+    }
+
+    private boolean isRetryable(Map<String, Object> entry, int maxReplayAttempts) {
+        int replayCount = toInt(entry == null ? null : entry.get("replay_count"), 0);
+        return replayCount < maxReplayAttempts;
     }
 
     private boolean toBoolean(Object value, boolean defaultValue) {

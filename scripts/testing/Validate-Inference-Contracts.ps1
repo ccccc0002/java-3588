@@ -184,6 +184,27 @@ if ($deadLetterLatest -is [System.Collections.IList] -and $deadLetterLatest.Coun
 }
 $checks += New-CheckResult -Api "/api/inference/dead-letter/latest" -Passed (($deadLetterLatestResp.code -eq 0) -and ($deadLetterLatestTraceId -ne $null) -and ($deadLetterLatestTraceId -ne "") -and ($deadLetterLatest -is [System.Collections.IList]) -and ($deadLetterLatest.Count -le 5) -and $deadLetterLatestBudgetCheckPassed) -Detail ("code={0}; trace_id={1}; list_size={2}; budget_check={3}; budget_detail={4}" -f $deadLetterLatestResp.code, $deadLetterLatestTraceId, ($(if ($deadLetterLatest -is [System.Collections.IList]) { $deadLetterLatest.Count } else { -1 })), $deadLetterLatestBudgetCheckPassed, $deadLetterLatestBudgetDetail)
 
+$deadLetterLatestRetryableResp = Invoke-ApiGet -Path "/api/inference/dead-letter/latest?limit=5&only_retryable=1"
+$deadLetterLatestRetryableData = Get-PropValue -Obj $deadLetterLatestRetryableResp -Name "data"
+$deadLetterLatestRetryableTraceId = Get-PropValue -Obj $deadLetterLatestRetryableData -Name "trace_id"
+$deadLetterLatestRetryable = Get-PropValue -Obj $deadLetterLatestRetryableData -Name "dead_letter"
+$deadLetterLatestRetryableCheckPassed = $true
+$deadLetterLatestRetryableDetail = "empty-list-skip"
+if ($deadLetterLatestRetryable -is [System.Collections.IList] -and $deadLetterLatestRetryable.Count -gt 0) {
+    $deadLetterLatestRetryableViolations = 0
+    foreach ($deadLetterLatestRetryableItem in $deadLetterLatestRetryable) {
+        $deadLetterLatestRetryableItemRemaining = Get-PropValue -Obj $deadLetterLatestRetryableItem -Name "remaining_replay_attempts"
+        $deadLetterLatestRetryableItemExhausted = Get-PropValue -Obj $deadLetterLatestRetryableItem -Name "replay_exhausted"
+        $deadLetterLatestRetryableItemValid = ($deadLetterLatestRetryableItemRemaining -ne $null) -and (([int]$deadLetterLatestRetryableItemRemaining) -gt 0) -and ($deadLetterLatestRetryableItemExhausted -is [bool]) -and (-not [bool]$deadLetterLatestRetryableItemExhausted)
+        if (-not $deadLetterLatestRetryableItemValid) {
+            $deadLetterLatestRetryableViolations += 1
+        }
+    }
+    $deadLetterLatestRetryableCheckPassed = $deadLetterLatestRetryableViolations -eq 0
+    $deadLetterLatestRetryableDetail = ("violations={0}; list_size={1}" -f $deadLetterLatestRetryableViolations, $deadLetterLatestRetryable.Count)
+}
+$checks += New-CheckResult -Api "/api/inference/dead-letter/latest(only_retryable=1)" -Passed (($deadLetterLatestRetryableResp.code -eq 0) -and ($deadLetterLatestRetryableTraceId -ne $null) -and ($deadLetterLatestRetryableTraceId -ne "") -and ($deadLetterLatestRetryable -is [System.Collections.IList]) -and ($deadLetterLatestRetryable.Count -le 5) -and $deadLetterLatestRetryableCheckPassed) -Detail ("code={0}; trace_id={1}; list_size={2}; retryable_check={3}; retryable_detail={4}" -f $deadLetterLatestRetryableResp.code, $deadLetterLatestRetryableTraceId, ($(if ($deadLetterLatestRetryable -is [System.Collections.IList]) { $deadLetterLatestRetryable.Count } else { -1 })), $deadLetterLatestRetryableCheckPassed, $deadLetterLatestRetryableDetail)
+
 $deadLetterGetNotFoundResp = Invoke-ApiGet -Path "/api/inference/dead-letter/get?dead_letter_id=-1"
 $deadLetterGetNotFoundData = Get-PropValue -Obj $deadLetterGetNotFoundResp -Name "data"
 $deadLetterGetNotFoundTraceId = Get-PropValue -Obj $deadLetterGetNotFoundData -Name "trace_id"

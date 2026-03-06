@@ -70,6 +70,32 @@ class InferenceDeadLetterServiceTest {
     }
 
     @Test
+    void latest_shouldFilterOnlyRetryableWhenRequested() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("3");
+
+        Map<String, Object> first = new HashMap<>();
+        first.put("trace_id", "trace-a");
+        first.put("replay_count", 3);
+        Map<String, Object> second = new HashMap<>();
+        second.put("trace_id", "trace-b");
+        second.put("replay_count", 2);
+        Map<String, Object> third = new HashMap<>();
+        third.put("trace_id", "trace-c");
+        third.put("replay_count", 0);
+
+        inferenceDeadLetterService.record(first);
+        inferenceDeadLetterService.record(second);
+        inferenceDeadLetterService.record(third);
+
+        List<Map<String, Object>> latestRetryable = inferenceDeadLetterService.latest(10, true);
+
+        assertEquals(2, latestRetryable.size());
+        assertEquals("trace-c", latestRetryable.get(0).get("trace_id"));
+        assertEquals("trace-b", latestRetryable.get(1).get("trace_id"));
+    }
+
+    @Test
     void clear_shouldRemoveAllEntries() {
         lenient().when(configService.getByValTag(anyString())).thenReturn(null);
         Map<String, Object> event = new HashMap<>();
