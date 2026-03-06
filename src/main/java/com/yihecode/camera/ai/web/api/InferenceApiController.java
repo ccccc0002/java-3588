@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web.api;
 
 import cn.hutool.core.util.StrUtil;
+import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
 import com.yihecode.camera.ai.service.InferenceRoutingService;
@@ -40,6 +41,9 @@ public class InferenceApiController {
 
     @Autowired
     private InferenceIdempotencyService inferenceIdempotencyService;
+
+    @Autowired
+    private InferenceDeadLetterService inferenceDeadLetterService;
 
     @RequestMapping(value = {"/health"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
@@ -153,6 +157,8 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", requestTraceId);
             data.put("backend_type", inferenceRoutingService.currentBackendType());
+            Map<String, Object> deadLetter = recordDispatchDeadLetter(requestTraceId, body, cameraId, modelId, algorithmId, persistReportFlag, e);
+            data.put("dead_letter", deadLetter);
             return JsonResultUtils.fail("inference dispatch api failed: " + e.getMessage(), data);
         }
     }
@@ -241,6 +247,57 @@ public class InferenceApiController {
             data.put("trace_id", traceId);
             data.put("backend_type", inferenceRoutingService.currentBackendType());
             return JsonResultUtils.fail("inference circuit reset api failed: " + e.getMessage(), data);
+        }
+    }
+
+    @RequestMapping(value = {"/dead-letter/stats"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterStats() {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter", inferenceDeadLetterService.stats());
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter stats api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference dead-letter stats api failed: " + e.getMessage(), data);
+        }
+    }
+
+    @RequestMapping(value = {"/dead-letter/latest"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterLatest(@RequestParam(value = "limit", required = false) Integer limit) {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter", inferenceDeadLetterService.latest(limit));
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter latest api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference dead-letter latest api failed: " + e.getMessage(), data);
+        }
+    }
+
+    @RequestMapping(value = {"/dead-letter/clear"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterClear() {
+        String traceId = nextTraceId();
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter", inferenceDeadLetterService.clear());
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter clear api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference dead-letter clear api failed: " + e.getMessage(), data);
         }
     }
 
@@ -373,6 +430,37 @@ public class InferenceApiController {
             return data;
         }
         return inferenceIdempotencyService.checkAndMark(traceId, cameraId, timestampMs);
+    }
+
+    private Map<String, Object> recordDispatchDeadLetter(String requestTraceId,
+                                                         Map<String, Object> body,
+                                                         Long cameraId,
+                                                         Long modelId,
+                                                         Long algorithmId,
+                                                         Integer persistReportFlag,
+                                                         Exception exception) {
+        Map<String, Object> payload = body == null ? new HashMap<>() : body;
+        Map<String, Object> event = new HashMap<>();
+        String traceId = firstString(payload.get("trace_id"), requestTraceId, requestTraceId);
+        event.put("status", "dispatch_exception");
+        event.put("trace_id", traceId);
+        event.put("request_trace_id", requestTraceId);
+        event.put("camera_id", firstLong(toLong(payload.get("camera_id")), cameraId, null));
+        event.put("model_id", firstLong(toLong(payload.get("model_id")), modelId, null));
+        event.put("algorithm_id", firstLong(toLong(payload.get("algorithm_id")), algorithmId, null));
+        event.put("persist_report", toBooleanFlag(payload.get("persist_report"), persistReportFlag == null || persistReportFlag != 0));
+        event.put("backend_type", inferenceRoutingService.currentBackendType());
+        event.put("error_type", exception == null ? null : exception.getClass().getSimpleName());
+        event.put("error_message", exception == null ? "" : exception.getMessage());
+        event.put("created_at_ms", System.currentTimeMillis());
+        try {
+            return inferenceDeadLetterService.record(event);
+        } catch (Exception deadLetterEx) {
+            Map<String, Object> fallback = new HashMap<>(event);
+            fallback.put("dead_letter_recorded", false);
+            fallback.put("dead_letter_error", deadLetterEx.getMessage());
+            return fallback;
+        }
     }
 
     private Long extractFrameTimestampMs(Map<String, Object> frameMeta) {

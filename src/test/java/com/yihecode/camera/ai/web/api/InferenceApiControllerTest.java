@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web.api;
 
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
+import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceReportBridgeService;
 import com.yihecode.camera.ai.service.InferenceRoutingService;
 import com.yihecode.camera.ai.utils.JsonResult;
@@ -23,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +40,9 @@ class InferenceApiControllerTest {
 
     @Mock
     private InferenceIdempotencyService inferenceIdempotencyService;
+
+    @Mock
+    private InferenceDeadLetterService inferenceDeadLetterService;
 
     @InjectMocks
     private InferenceApiController inferenceApiController;
@@ -178,6 +183,31 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void dispatch_shouldRecordDeadLetter_whenInferThrows() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("trace_id", "trace-dead-1");
+        body.put("camera_id", 103L);
+        body.put("model_id", 203L);
+        body.put("persist_report", 0);
+
+        when(inferenceRoutingService.currentBackendType()).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.infer(any())).thenThrow(new IllegalStateException("mock infer error"));
+        when(inferenceDeadLetterService.record(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        assertEquals("dispatch_exception", deadLetter.get("status"));
+        assertEquals("trace-dead-1", deadLetter.get("trace_id"));
+        assertEquals(103L, ((Number) deadLetter.get("camera_id")).longValue());
+        verify(inferenceDeadLetterService, atLeastOnce()).record(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void route_shouldReturnResolvedBackendForCamera() {
         when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
         when(inferenceRoutingService.backendTypeForCamera(100L)).thenReturn("rk3588_rknn");
@@ -276,6 +306,58 @@ class InferenceApiControllerTest {
         assertEquals("rk3588_rknn", data.get("backend_type"));
         Map<String, Object> circuit = (Map<String, Object>) data.get("circuit");
         assertEquals(true, circuit.get("reset"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterStats_shouldReturnServiceData() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("queue_size", 3);
+        stats.put("max_size", 200);
+        when(inferenceDeadLetterService.stats()).thenReturn(stats);
+
+        JsonResult result = inferenceApiController.deadLetterStats();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        assertEquals(3, ((Number) deadLetter.get("queue_size")).intValue());
+        assertEquals(200, ((Number) deadLetter.get("max_size")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterLatest_shouldReturnServiceData() {
+        List<Map<String, Object>> latest = new ArrayList<>();
+        Map<String, Object> item = new HashMap<>();
+        item.put("trace_id", "trace-dl-latest");
+        latest.add(item);
+        when(inferenceDeadLetterService.latest(5)).thenReturn(latest);
+
+        JsonResult result = inferenceApiController.deadLetterLatest(5);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
+        assertEquals(1, deadLetter.size());
+        assertEquals("trace-dl-latest", deadLetter.get(0).get("trace_id"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterClear_shouldReturnServiceData() {
+        Map<String, Object> clear = new HashMap<>();
+        clear.put("removed_count", 2);
+        clear.put("queue_size", 0);
+        when(inferenceDeadLetterService.clear()).thenReturn(clear);
+
+        JsonResult result = inferenceApiController.deadLetterClear();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        assertEquals(2, ((Number) deadLetter.get("removed_count")).intValue());
+        assertEquals(0, ((Number) deadLetter.get("queue_size")).intValue());
     }
 
     @Test
