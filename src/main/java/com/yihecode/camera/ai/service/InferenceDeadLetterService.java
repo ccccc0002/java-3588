@@ -20,6 +20,8 @@ public class InferenceDeadLetterService {
     private static final int MAX_MAX_SIZE = 2000;
     private static final int DEFAULT_LIST_LIMIT = 20;
     private static final int MAX_LIST_LIMIT = 200;
+    private static final int DEFAULT_REPLAY_MAX_ATTEMPTS = 3;
+    private static final int MAX_REPLAY_MAX_ATTEMPTS = 20;
 
     private final Deque<Map<String, Object>> deadLetters = new ArrayDeque<>();
     private long sequence = 0L;
@@ -62,6 +64,7 @@ public class InferenceDeadLetterService {
         data.put("max_size", getMaxSize());
         data.put("default_list_limit", DEFAULT_LIST_LIMIT);
         data.put("max_list_limit", MAX_LIST_LIMIT);
+        data.put("max_replay_attempts", maxReplayAttempts());
         data.put("next_dead_letter_id", sequence + 1);
 
         Long oldestId = null;
@@ -73,6 +76,14 @@ public class InferenceDeadLetterService {
         data.put("oldest_dead_letter_id", oldestId);
         data.put("newest_dead_letter_id", newestId);
         return data;
+    }
+
+    public int maxReplayAttempts() {
+        return toPositiveIntWithinRange(
+                configService.getByValTag("infer_dead_letter_replay_max_attempts"),
+                DEFAULT_REPLAY_MAX_ATTEMPTS,
+                MAX_REPLAY_MAX_ATTEMPTS
+        );
     }
 
     public synchronized Map<String, Object> clear() {
@@ -157,6 +168,21 @@ public class InferenceDeadLetterService {
             return DEFAULT_LIST_LIMIT;
         }
         return Math.min(limit, MAX_LIST_LIMIT);
+    }
+
+    private int toPositiveIntWithinRange(String value, int defaultValue, int maxValue) {
+        if (StrUtil.isBlank(value)) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            if (parsed <= 0) {
+                return defaultValue;
+            }
+            return Math.min(parsed, maxValue);
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
     }
 
     private int toInt(Object value, int defaultValue) {

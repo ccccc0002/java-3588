@@ -317,8 +317,24 @@ public class InferenceApiController {
                 return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found", data);
             }
 
+            int replayCount = toInt(entry.get("replay_count"), 0);
+            int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
+            if (replayCount >= maxReplayAttempts) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("trace_id", traceId);
+                data.put("dead_letter_id", deadLetterId);
+                data.put("replay_count", replayCount);
+                data.put("max_replay_attempts", maxReplayAttempts);
+                return JsonResultUtils.fail("inference dead-letter replay failed: replay attempts exhausted", data);
+            }
+
             Map<String, Object> payload = extractReplayPayload(entry);
             payload.put("trace_id", traceId);
+            Map<String, Object> frame = toMap(payload.get("frame"));
+            frame.put("replay_source", "dead_letter_replay");
+            frame.put("replay_dead_letter_id", deadLetterId);
+            frame.put("replay_count", replayCount + 1);
+            payload.put("frame", frame);
             InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
             String routedBackend = inferenceRoutingService.backendTypeForCamera(request.getCameraId());
             InferenceResult result = inferenceRoutingService.infer(request);
@@ -560,6 +576,13 @@ public class InferenceApiController {
         fallback.put("frame", new HashMap<>());
         fallback.put("roi", Collections.emptyList());
         return fallback;
+    }
+
+    private Map<String, Object> toMap(Object value) {
+        if (value instanceof Map) {
+            return new HashMap<>((Map<? extends String, ?>) value);
+        }
+        return new HashMap<>();
     }
 
     private Long extractFrameTimestampMs(Map<String, Object> frameMeta) {
@@ -840,6 +863,17 @@ public class InferenceApiController {
             return Long.parseLong(String.valueOf(value));
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private int toInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (Exception e) {
+            return defaultValue;
         }
     }
 

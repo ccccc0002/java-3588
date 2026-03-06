@@ -104,4 +104,16 @@ class InferenceDeadLetterServiceTest {
         assertEquals(true, removed);
         assertEquals(null, inferenceDeadLetterService.findById(id));
     }
+
+    @Test
+    void maxReplayAttempts_shouldUseConfigAndClampInvalidValues() {
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("5");
+        assertEquals(5, inferenceDeadLetterService.maxReplayAttempts());
+
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("-1");
+        assertEquals(3, inferenceDeadLetterService.maxReplayAttempts());
+
+        when(configService.getByValTag("infer_dead_letter_replay_max_attempts")).thenReturn("100");
+        assertEquals(20, inferenceDeadLetterService.maxReplayAttempts());
+    }
 }
