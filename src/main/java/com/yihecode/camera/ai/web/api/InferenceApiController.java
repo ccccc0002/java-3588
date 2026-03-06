@@ -482,7 +482,9 @@ public class InferenceApiController {
                                             @RequestParam(value = "dead_letter_ids", required = false) String deadLetterIdsText,
                                             @RequestParam(value = "ids", required = false) String idsText,
                                             @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag,
-                                            @RequestParam(value = "offset", required = false) Integer offset) {
+                                            @RequestParam(value = "offset", required = false) Integer offset,
+                                            @RequestParam(value = "strict_resume", required = false) Integer strictResumeFlag,
+                                            @RequestParam(value = "expected_total_selected_count", required = false) Integer expectedTotalSelectedCountFlag) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
@@ -490,14 +492,14 @@ public class InferenceApiController {
             Integer requestedOffset = firstInteger(payload.get("offset"), offset);
             Integer effectivePersistReportFlag = firstInteger(payload.get("persist_report"), persistReportFlag);
             Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
-            Integer expectedTotalSelectedCount = firstInteger(payload.get("expected_total_selected_count"), null);
+            Integer expectedTotalSelectedCount = firstInteger(payload.get("expected_total_selected_count"), expectedTotalSelectedCountFlag);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
             Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
             boolean onlyExhausted = toBooleanFlag(firstNonNull(payload.get("only_exhausted"), onlyExhaustedFlag), false);
             boolean dryRun = toBooleanFlag(firstNonNull(payload.get("dry_run"), dryRunFlag), false);
             boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
-            boolean strictResume = toBooleanFlag(payload.get("strict_resume"), false);
+            boolean strictResume = toBooleanFlag(firstNonNull(payload.get("strict_resume"), strictResumeFlag), false);
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
             int effectiveLimit = normalizeDeadLetterReplayBatchLimit(requestedLimit, maxLimit);
             int effectiveOffset = normalizeReplayBatchOffset(requestedOffset);
