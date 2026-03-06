@@ -152,15 +152,17 @@ public class InferenceApiController {
                                @RequestParam(value = "source", required = false) String source,
                                @RequestParam(value = "persist_report", required = false) Integer persistReportFlag) {
         String requestTraceId = nextTraceId();
+        Map<String, Object> resolvedPluginRoute = new HashMap<>();
+        String pluginDispatchError = null;
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
             InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
             Map<String, Object> pluginRoute = resolvePluginRoute(payload);
+            resolvedPluginRoute = pluginRoute;
             applyPluginRoute(request, pluginRoute);
             String pluginBackendHint = extractPluginBackendHint(pluginRoute);
             boolean pluginDispatchable = isPluginDispatchable(pluginRoute);
             boolean pluginDispatched = false;
-            String pluginDispatchError = null;
             String traceId = request.getTraceId();
             String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
@@ -235,7 +237,7 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", requestTraceId);
             data.put("backend_type", inferenceRoutingService.currentBackendType());
-            Map<String, Object> deadLetter = recordDispatchDeadLetter(requestTraceId, body, cameraId, modelId, algorithmId, persistReportFlag, e);
+            Map<String, Object> deadLetter = recordDispatchDeadLetter(requestTraceId, body, cameraId, modelId, algorithmId, persistReportFlag, resolvedPluginRoute, pluginDispatchError, e);
             data.put("dead_letter", deadLetter);
             return JsonResultUtils.fail("inference dispatch api failed: " + e.getMessage(), data);
         }
@@ -1068,6 +1070,8 @@ public class InferenceApiController {
                                                          Long modelId,
                                                          Long algorithmId,
                                                          Integer persistReportFlag,
+                                                         Map<String, Object> pluginRoute,
+                                                         String pluginDispatchError,
                                                          Exception exception) {
         Map<String, Object> payload = body == null ? new HashMap<>() : body;
         Map<String, Object> event = new HashMap<>();
@@ -1082,7 +1086,13 @@ public class InferenceApiController {
         event.put("backend_type", inferenceRoutingService.currentBackendType());
         event.put("error_type", exception == null ? null : exception.getClass().getSimpleName());
         event.put("error_message", exception == null ? "" : exception.getMessage());
-        event.put("request_payload", buildDeadLetterRequestPayload(payload, requestTraceId, cameraId, modelId, null));
+        if (shouldAttachPluginRoute(pluginRoute)) {
+            event.put("plugin_route", new HashMap<>(pluginRoute));
+            event.put("plugin_dispatch", buildPluginDispatchData(pluginRoute, false,
+                    isPluginDispatchable(pluginRoute) ? "plugin_dispatch_failed" : "plugin_not_dispatchable",
+                    pluginDispatchError));
+        }
+        event.put("request_payload", buildDeadLetterRequestPayload(payload, requestTraceId, cameraId, modelId, null, pluginRoute));
         event.put("created_at_ms", System.currentTimeMillis());
         try {
             return inferenceDeadLetterService.record(event);
@@ -1098,9 +1108,11 @@ public class InferenceApiController {
                                                               String requestTraceId,
                                                               Long cameraId,
                                                               Long modelId,
-                                                              String source) {
+                                                              String source,
+                                                              Map<String, Object> pluginRoute) {
         try {
             InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            applyPluginRoute(request, pluginRoute);
             return new HashMap<>(request.toPayload());
         } catch (Exception ignored) {
             Map<String, Object> fallback = new HashMap<>();

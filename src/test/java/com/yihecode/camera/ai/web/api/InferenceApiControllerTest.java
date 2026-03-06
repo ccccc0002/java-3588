@@ -222,6 +222,53 @@ class InferenceApiControllerTest {
         verify(inferenceDeadLetterService, atLeastOnce()).record(any());
     }
 
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dispatch_shouldRecordPluginContextInDeadLetter_whenPluginAndBackendFail() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("trace_id", "trace-dead-plugin-1");
+        body.put("camera_id", 133L);
+        body.put("model_id", 233L);
+        body.put("plugin_registration_id", "face-detector:1.0.0");
+        body.put("persist_report", 0);
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector",
+                "runtime", "rk3588_rknn",
+                "infer_url", "http://plugin-a:19090/v1/infer"
+        ));
+
+        when(pluginRouteResolverService.hasSelector(body)).thenReturn(true);
+        when(pluginRouteResolverService.resolve(body)).thenReturn(pluginRoute);
+        when(pluginInferenceDispatchService.isDispatchable(pluginRoute)).thenReturn(true);
+        when(pluginInferenceDispatchService.infer(any(), eq(pluginRoute))).thenThrow(new IllegalStateException("plugin down"));
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.infer(any(), eq("rk3588_rknn"))).thenThrow(new IllegalStateException("backend down"));
+        when(inferenceDeadLetterService.record(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        Map<String, Object> deadLetterPluginRoute = (Map<String, Object>) deadLetter.get("plugin_route");
+        Map<String, Object> pluginDispatch = (Map<String, Object>) deadLetter.get("plugin_dispatch");
+        Map<String, Object> requestPayload = (Map<String, Object>) deadLetter.get("request_payload");
+
+        assertEquals(true, deadLetterPluginRoute.get("requested"));
+        assertEquals("plugin_dispatch_failed", pluginDispatch.get("fallback_reason"));
+        assertEquals("plugin down", pluginDispatch.get("error_message"));
+        assertEquals(true, ((Map<String, Object>) requestPayload.get("plugin_route")).get("requested"));
+        verify(inferenceDeadLetterService, atLeastOnce()).record(any());
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     void route_shouldReturnResolvedBackendForCamera() {
