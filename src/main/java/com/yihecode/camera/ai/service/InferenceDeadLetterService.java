@@ -112,6 +112,15 @@ public class InferenceDeadLetterService {
     }
 
     public synchronized Map<String, Object> stats() {
+        return stats(false, false, null, null, null, null);
+    }
+
+    public synchronized Map<String, Object> stats(Boolean onlyRetryable,
+                                                  Boolean onlyExhausted,
+                                                  String backendType,
+                                                  String pluginId,
+                                                  String pluginRegistrationId,
+                                                  String errorType) {
         Map<String, Object> data = new HashMap<>();
         Map<String, Object> backendTypeCounts = new LinkedHashMap<>();
         Map<String, Object> errorTypeCounts = new LinkedHashMap<>();
@@ -125,8 +134,23 @@ public class InferenceDeadLetterService {
         int retryableEntryCount = 0;
         int nonRetryableEntryCount = 0;
         int replayInProgressEntryCount = 0;
+        int filteredQueueSize = 0;
+        boolean retryableOnly = onlyRetryable != null && onlyRetryable;
+        boolean exhaustedOnly = onlyExhausted != null && onlyExhausted;
         int maxReplayAttempts = maxReplayAttempts();
+        Long oldestId = null;
+        Long newestId = null;
         for (Map<String, Object> entry : deadLetters) {
+            boolean retryable = isRetryable(entry, maxReplayAttempts);
+            if (!matchesStatsFilter(entry, retryable, retryableOnly, exhaustedOnly, backendType, pluginId, pluginRegistrationId, errorType)) {
+                continue;
+            }
+            filteredQueueSize++;
+            Long currentId = toLong(entry.get("dead_letter_id"));
+            if (oldestId == null) {
+                oldestId = currentId;
+            }
+            newestId = currentId;
             incrementCount(backendTypeCounts, asCounterKey(entry.get("backend_type")));
             incrementCount(errorTypeCounts, asCounterKey(entry.get("error_type")));
             incrementCount(pluginIdCounts, asCounterKey(extractPluginField(entry, "plugin_id")));
@@ -158,7 +182,7 @@ public class InferenceDeadLetterService {
             }
         }
 
-        data.put("queue_size", deadLetters.size());
+        data.put("queue_size", filteredQueueSize);
         data.put("max_size", getMaxSize());
         data.put("default_list_limit", DEFAULT_LIST_LIMIT);
         data.put("max_list_limit", MAX_LIST_LIMIT);
@@ -176,18 +200,10 @@ public class InferenceDeadLetterService {
         data.put("plugin_id_counts", pluginIdCounts);
         data.put("plugin_registration_id_counts", pluginRegistrationIdCounts);
         data.put("next_dead_letter_id", sequence + 1);
-
-        Long oldestId = null;
-        Long newestId = null;
-        if (!deadLetters.isEmpty()) {
-            oldestId = toLong(deadLetters.peekFirst().get("dead_letter_id"));
-            newestId = toLong(deadLetters.peekLast().get("dead_letter_id"));
-        }
         data.put("oldest_dead_letter_id", oldestId);
         data.put("newest_dead_letter_id", newestId);
         return data;
     }
-
 
 
     private void incrementCount(Map<String, Object> counts, String key) {
@@ -222,6 +238,36 @@ public class InferenceDeadLetterService {
         }
         return null;
     }
+
+    private boolean matchesStatsFilter(Map<String, Object> entry,
+                                       boolean retryable,
+                                       boolean retryableOnly,
+                                       boolean exhaustedOnly,
+                                       String backendType,
+                                       String pluginId,
+                                       String pluginRegistrationId,
+                                       String errorType) {
+        if (retryableOnly && exhaustedOnly) {
+            return false;
+        }
+        if (retryableOnly && !retryable) {
+            return false;
+        }
+        if (exhaustedOnly && retryable) {
+            return false;
+        }
+        if (!matchesTextFilter(entry == null ? null : entry.get("backend_type"), backendType)) {
+            return false;
+        }
+        if (!matchesTextFilter(extractPluginField(entry, "plugin_id"), pluginId)) {
+            return false;
+        }
+        if (!matchesTextFilter(extractPluginField(entry, "registration_id"), pluginRegistrationId)) {
+            return false;
+        }
+        return matchesTextFilter(entry == null ? null : entry.get("error_type"), errorType);
+    }
+
 
     private boolean matchesTextFilter(Object value, String filter) {
         String normalizedFilter = asCounterKey(filter);
