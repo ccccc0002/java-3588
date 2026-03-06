@@ -470,13 +470,27 @@ public class InferenceApiController {
                                             @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag,
                                             @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
                                             @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
-                                            @RequestParam(value = "dry_run", required = false) Integer dryRunFlag) {
+                                            @RequestParam(value = "dry_run", required = false) Integer dryRunFlag,
+                                            @RequestParam(value = "dead_letter_ids", required = false) String deadLetterIdsText,
+                                            @RequestParam(value = "ids", required = false) String idsText) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
             boolean dryRun = toBooleanFlag(dryRunFlag, false);
-            List<Map<String, Object>> candidates = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
+            List<Long> selectedIds = resolveDeadLetterIds(deadLetterIdsText, idsText, limit);
+            boolean explicitIdsMode = !selectedIds.isEmpty();
+            List<Map<String, Object>> candidates;
+            if (explicitIdsMode) {
+                candidates = new ArrayList<>();
+                for (Long itemId : selectedIds) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("dead_letter_id", itemId);
+                    candidates.add(item);
+                }
+            } else {
+                candidates = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
+            }
 
             int successCount = 0;
             int failedCount = 0;
@@ -542,6 +556,7 @@ public class InferenceApiController {
             data.put("only_retryable", onlyRetryable);
             data.put("only_exhausted", onlyExhausted);
             data.put("dry_run", dryRun);
+            data.put("selection_source", explicitIdsMode ? "explicit_ids" : "latest");
             data.put("selected_count", candidates.size());
             data.put("processed_count", results.size());
             data.put("success_count", successCount);
@@ -557,6 +572,38 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             return JsonResultUtils.fail("inference dead-letter replay batch api failed: " + e.getMessage(), data);
+        }
+    }
+
+    private List<Long> resolveDeadLetterIds(String deadLetterIdsText, String idsText, Integer limit) {
+        int maxSize = limit != null && limit > 0 ? limit : 200;
+        LinkedHashSet<Long> ordered = new LinkedHashSet<>();
+        addDeadLetterIdsTokenized(ordered, deadLetterIdsText, maxSize);
+        addDeadLetterIdsTokenized(ordered, idsText, maxSize);
+        return new ArrayList<>(ordered);
+    }
+
+    private void addDeadLetterIdsTokenized(LinkedHashSet<Long> ordered, String idsText, int maxSize) {
+        if (ordered == null || StrUtil.isBlank(idsText) || ordered.size() >= maxSize) {
+            return;
+        }
+        String[] parts = idsText.split(",");
+        for (String part : parts) {
+            if (ordered.size() >= maxSize) {
+                return;
+            }
+            if (part == null) {
+                continue;
+            }
+            String token = part.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            Long id = toLong(token);
+            if (id == null) {
+                continue;
+            }
+            ordered.add(id);
         }
     }
 
