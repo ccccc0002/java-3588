@@ -166,5 +166,7 @@ class InferenceDeadLetterServiceTest {
         assertEquals(1, ((Number) stats.get("replay_failed_entry_count")).intValue());
         assertEquals(1, ((Number) stats.get("pending_replay_entry_count")).intValue());
         assertEquals(1, ((Number) stats.get("exhausted_replay_entry_count")).intValue());
+        assertEquals(2, ((Number) stats.get("retryable_entry_count")).intValue());
+        assertEquals(1, ((Number) stats.get("non_retryable_entry_count")).intValue());
     }
 }

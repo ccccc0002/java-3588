@@ -319,6 +319,8 @@ class InferenceApiControllerTest {
         stats.put("replay_failed_entry_count", 0);
         stats.put("pending_replay_entry_count", 2);
         stats.put("exhausted_replay_entry_count", 0);
+        stats.put("retryable_entry_count", 3);
+        stats.put("non_retryable_entry_count", 0);
         when(inferenceDeadLetterService.stats()).thenReturn(stats);
 
         JsonResult result = inferenceApiController.deadLetterStats();
@@ -330,6 +332,8 @@ class InferenceApiControllerTest {
         assertEquals(200, ((Number) deadLetter.get("max_size")).intValue());
         assertEquals(1, ((Number) deadLetter.get("replayed_entry_count")).intValue());
         assertEquals(2, ((Number) deadLetter.get("pending_replay_entry_count")).intValue());
+        assertEquals(3, ((Number) deadLetter.get("retryable_entry_count")).intValue());
+        assertEquals(0, ((Number) deadLetter.get("non_retryable_entry_count")).intValue());
     }
 
     @Test
