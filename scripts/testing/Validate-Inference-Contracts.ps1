@@ -232,6 +232,22 @@ $routeBatchAliasFirstCameraId = Get-PropValue -Obj $routeBatchAliasFirst -Name "
 $routeBatchAliasSecondCameraId = Get-PropValue -Obj $routeBatchAliasSecond -Name "camera_id"
 $checks += New-CheckResult -Api "/api/inference/route/batch(cameras-alias)" -Passed (($routeBatchAliasResp.code -eq 0) -and ($routeBatchAliasTraceId -ne $null) -and ($routeBatchAliasTraceId -ne "") -and ($routeBatchAliasList -is [System.Collections.IList]) -and ($routeBatchAliasList.Count -ge 2) -and (([long]$routeBatchAliasFirstCameraId) -eq $CameraId) -and (([long]$routeBatchAliasSecondCameraId) -eq $nextCameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchAliasResp.code, $routeBatchAliasTraceId, $routeBatchAliasFirstCameraId, $routeBatchAliasSecondCameraId, $CameraId, $nextCameraId)
 
+$routeBatchQueryAliasResp = Invoke-ApiGet -Path ("/api/inference/route/batch?cameras={0}%2C{1}" -f $CameraId, $nextCameraId)
+$routeBatchQueryAliasData = Get-PropValue -Obj $routeBatchQueryAliasResp -Name "data"
+$routeBatchQueryAliasTraceId = Get-PropValue -Obj $routeBatchQueryAliasData -Name "trace_id"
+$routeBatchQueryAliasList = Get-PropValue -Obj $routeBatchQueryAliasData -Name "route_list"
+$routeBatchQueryAliasFirst = $null
+$routeBatchQueryAliasSecond = $null
+if ($routeBatchQueryAliasList -is [System.Collections.IList] -and $routeBatchQueryAliasList.Count -gt 0) {
+    $routeBatchQueryAliasFirst = $routeBatchQueryAliasList[0]
+}
+if ($routeBatchQueryAliasList -is [System.Collections.IList] -and $routeBatchQueryAliasList.Count -gt 1) {
+    $routeBatchQueryAliasSecond = $routeBatchQueryAliasList[1]
+}
+$routeBatchQueryAliasFirstCameraId = Get-PropValue -Obj $routeBatchQueryAliasFirst -Name "camera_id"
+$routeBatchQueryAliasSecondCameraId = Get-PropValue -Obj $routeBatchQueryAliasSecond -Name "camera_id"
+$checks += New-CheckResult -Api "/api/inference/route/batch(query-cameras-alias)" -Passed (($routeBatchQueryAliasResp.code -eq 0) -and ($routeBatchQueryAliasTraceId -ne $null) -and ($routeBatchQueryAliasTraceId -ne "") -and ($routeBatchQueryAliasList -is [System.Collections.IList]) -and ($routeBatchQueryAliasList.Count -ge 2) -and (([long]$routeBatchQueryAliasFirstCameraId) -eq $CameraId) -and (([long]$routeBatchQueryAliasSecondCameraId) -eq $nextCameraId)) -Detail ("code={0}; trace_id={1}; first_camera_id={2}; second_camera_id={3}; expected_first={4}; expected_second={5}" -f $routeBatchQueryAliasResp.code, $routeBatchQueryAliasTraceId, $routeBatchQueryAliasFirstCameraId, $routeBatchQueryAliasSecondCameraId, $CameraId, $nextCameraId)
+
 $checks | Format-Table -AutoSize | Out-String | Write-Output
 
 $failedCount = ($checks | Where-Object { -not $_.passed }).Count
