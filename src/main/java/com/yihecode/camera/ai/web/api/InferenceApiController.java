@@ -514,6 +514,9 @@ public class InferenceApiController {
             int failedReplayExhaustedCount = 0;
             int failedOtherCount = 0;
             int dryRunCount = 0;
+            List<Long> successDeadLetterIds = new ArrayList<>();
+            List<Long> failedDeadLetterIds = new ArrayList<>();
+            List<Long> dryRunDeadLetterIds = new ArrayList<>();
             boolean stoppedOnError = false;
             Long stoppedDeadLetterId = null;
             String stoppedReason = null;
@@ -544,6 +547,7 @@ public class InferenceApiController {
                     item.put("planned", true);
                     results.add(item);
                     dryRunCount++;
+                    dryRunDeadLetterIds.add(deadLetterId);
                     continue;
                 }
 
@@ -560,8 +564,10 @@ public class InferenceApiController {
                 results.add(item);
                 if (replayResp.getCode() == 0) {
                     successCount++;
+                    successDeadLetterIds.add(deadLetterId);
                 } else {
                     failedCount++;
+                    failedDeadLetterIds.add(deadLetterId);
                     boolean replayInProgress = toBooleanFlag(replayData.get("replay_in_progress"), false);
                     boolean replayExhausted = toBooleanFlag(replayData.get("replay_exhausted"), false);
                     if (replayInProgress) {
@@ -602,6 +608,10 @@ public class InferenceApiController {
             data.put("failed_replay_exhausted_count", failedReplayExhaustedCount);
             data.put("failed_other_count", failedOtherCount);
             data.put("dry_run_count", dryRunCount);
+            data.put("success_dead_letter_ids", successDeadLetterIds);
+            data.put("failed_dead_letter_ids", failedDeadLetterIds);
+            data.put("dry_run_dead_letter_ids", dryRunDeadLetterIds);
+            data.put("remaining_count", Math.max(candidates.size() - results.size(), 0));
             data.put("results", results);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
