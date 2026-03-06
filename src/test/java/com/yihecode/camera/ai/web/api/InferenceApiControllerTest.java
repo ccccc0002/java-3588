@@ -979,6 +979,59 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldForwardLatestSelectionFilters() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 45L);
+        Map<String, Object> c2 = new HashMap<>();
+        c2.put("dead_letter_id", 46L);
+        candidates.add(c1);
+        candidates.add(c2);
+        when(inferenceDeadLetterService.latest(5, true, false, "rk3588", "face", "face-detector:1.0")).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, null, null, null, null, null, null,
+                "rk3588", "face", "face-detector:1.0");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("rk3588", data.get("backend_type"));
+        assertEquals("face", data.get("plugin_id"));
+        assertEquals("face-detector:1.0", data.get("plugin_registration_id"));
+        assertEquals(2, ((Number) data.get("selected_count")).intValue());
+        assertEquals(2, ((Number) data.get("dry_run_count")).intValue());
+
+        verify(inferenceDeadLetterService).latest(5, true, false, "rk3588", "face", "face-detector:1.0");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldPreferBodyFiltersOverQueryParams() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("backend_type", "legacy");
+        body.put("plugin_id", "helmet");
+        body.put("plugin_registration_id", "helmet-detector:2.0");
+
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 47L);
+        candidates.add(c1);
+        when(inferenceDeadLetterService.latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0")).thenReturn(candidates);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null, null, null, null,
+                "rk3588", "face", "face-detector:1.0");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("legacy", data.get("backend_type"));
+        assertEquals("helmet", data.get("plugin_id"));
+        assertEquals("helmet-detector:2.0", data.get("plugin_registration_id"));
+        assertEquals(1, ((Number) data.get("selected_count")).intValue());
+
+        verify(inferenceDeadLetterService).latest(5, true, false, "legacy", "helmet", "helmet-detector:2.0");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldUseExplicitDeadLetterIdsWhenProvided() {
         JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "52,51,52", null, null, null, null, null);
 

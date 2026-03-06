@@ -590,6 +590,23 @@ public class InferenceApiController {
         }
     }
 
+    public JsonResult deadLetterReplayBatch(@RequestBody(required = false) Map<String, Object> body,
+                                            Integer limit,
+                                            Integer persistReportFlag,
+                                            Integer ackOnSuccessFlag,
+                                            Integer onlyRetryableFlag,
+                                            Integer onlyExhaustedFlag,
+                                            Integer dryRunFlag,
+                                            String deadLetterIdsText,
+                                            String idsText,
+                                            Integer stopOnErrorFlag,
+                                            Integer offset,
+                                            Integer strictResumeFlag,
+                                            Integer expectedTotalSelectedCountFlag) {
+        return deadLetterReplayBatch(body, limit, persistReportFlag, ackOnSuccessFlag, onlyRetryableFlag, onlyExhaustedFlag, dryRunFlag,
+                deadLetterIdsText, idsText, stopOnErrorFlag, offset, strictResumeFlag, expectedTotalSelectedCountFlag, null, null, null);
+    }
+
     @RequestMapping(value = {"/dead-letter/replay/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult deadLetterReplayBatch(@RequestBody(required = false) Map<String, Object> body,
@@ -604,7 +621,10 @@ public class InferenceApiController {
                                             @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag,
                                             @RequestParam(value = "offset", required = false) Integer offset,
                                             @RequestParam(value = "strict_resume", required = false) Integer strictResumeFlag,
-                                            @RequestParam(value = "expected_total_selected_count", required = false) Integer expectedTotalSelectedCountFlag) {
+                                            @RequestParam(value = "expected_total_selected_count", required = false) Integer expectedTotalSelectedCountFlag,
+                                            @RequestParam(value = "backend_type", required = false) String backendType,
+                                            @RequestParam(value = "plugin_id", required = false) String pluginId,
+                                            @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId) {
         String traceId = nextTraceId();
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
@@ -619,6 +639,9 @@ public class InferenceApiController {
             Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
             boolean onlyExhausted = toBooleanFlag(firstNonNull(payload.get("only_exhausted"), onlyExhaustedFlag), false);
+            String selectedBackendType = trimToNull(firstString(payload.get("backend_type"), backendType, null));
+            String selectedPluginId = trimToNull(firstString(payload.get("plugin_id"), pluginId, null));
+            String selectedPluginRegistrationId = trimToNull(firstString(payload.get("plugin_registration_id"), pluginRegistrationId, null));
             boolean dryRun = toBooleanFlag(firstNonNull(payload.get("dry_run"), dryRunFlag), false);
             boolean stopOnError = toBooleanFlag(firstNonNull(payload.get("stop_on_error"), stopOnErrorFlag), false);
             boolean strictResume = toBooleanFlag(firstNonNull(payload.get("strict_resume"), strictResumeFlag), false);
@@ -637,8 +660,11 @@ public class InferenceApiController {
                     item.put("dead_letter_id", itemId);
                     sourceCandidates.add(item);
                 }
-            } else {
+            } else if (selectedBackendType == null && selectedPluginId == null && selectedPluginRegistrationId == null) {
                 sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted);
+            } else {
+                sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted,
+                        selectedBackendType, selectedPluginId, selectedPluginRegistrationId);
             }
 
             int totalSelectedCount = sourceCandidates.size();
@@ -805,6 +831,9 @@ public class InferenceApiController {
             data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
             data.put("only_exhausted", onlyExhausted);
+            data.put("backend_type", selectedBackendType);
+            data.put("plugin_id", selectedPluginId);
+            data.put("plugin_registration_id", selectedPluginRegistrationId);
             data.put("dry_run", dryRun);
             data.put("stop_on_error", stopOnError);
             data.put("stopped_on_error", stoppedOnError);
