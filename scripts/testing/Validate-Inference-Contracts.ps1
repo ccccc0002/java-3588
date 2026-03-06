@@ -115,7 +115,16 @@ $healthData = Get-PropValue -Obj $healthResp -Name "data"
 $healthTraceId = Get-PropValue -Obj $healthData -Name "trace_id"
 $healthBackend = Get-PropValue -Obj $healthData -Name "backend_type"
 $healthUpstream = Get-PropValue -Obj $healthData -Name "upstream"
-$checks += New-CheckResult -Api "/api/inference/health" -Passed (($healthResp.code -eq 0) -and ($healthTraceId -ne $null) -and ($healthTraceId -ne "") -and ($healthBackend -ne $null) -and ($healthBackend -ne "") -and ($healthUpstream -ne $null)) -Detail ("code={0}; trace_id={1}; backend_type={2}" -f $healthResp.code, $healthTraceId, $healthBackend)
+$healthCircuitOpen = Get-PropValue -Obj $healthUpstream -Name "circuit_open"
+$healthCircuitOpenUntilMs = Get-PropValue -Obj $healthUpstream -Name "circuit_open_until_ms"
+$healthCircuitCheckPassed = $true
+if (($healthBackend -ne $null) -and ($healthBackend -eq "rk3588_rknn")) {
+    $healthCircuitCheckPassed = ($healthCircuitOpen -is [bool])
+    if ($healthCircuitCheckPassed -and $healthCircuitOpen -eq $true) {
+        $healthCircuitCheckPassed = ($healthCircuitOpenUntilMs -ne $null) -and (([long]$healthCircuitOpenUntilMs) -gt 0)
+    }
+}
+$checks += New-CheckResult -Api "/api/inference/health" -Passed (($healthResp.code -eq 0) -and ($healthTraceId -ne $null) -and ($healthTraceId -ne "") -and ($healthBackend -ne $null) -and ($healthBackend -ne "") -and ($healthUpstream -ne $null) -and $healthCircuitCheckPassed) -Detail ("code={0}; trace_id={1}; backend_type={2}; circuit_open={3}; circuit_open_until_ms={4}" -f $healthResp.code, $healthTraceId, $healthBackend, $healthCircuitOpen, $healthCircuitOpenUntilMs)
 
 $testReq = @{
     camera_id = $CameraId
