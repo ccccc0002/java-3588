@@ -496,6 +496,7 @@ public class InferenceApiController {
             Integer effectiveAckOnSuccessFlag = firstInteger(payload.get("ack_on_success"), ackOnSuccessFlag);
             Integer expectedTotalSelectedCount = firstInteger(payload.get("expected_total_selected_count"), expectedTotalSelectedCountFlag);
             String expectedWindowFingerprint = firstString(payload.get("expected_window_fingerprint"), null, null);
+            String expectedResumeToken = firstString(payload.get("expected_resume_token"), null, null);
             Object bodyDeadLetterIds = payload.get("dead_letter_ids");
             Object bodyIds = payload.get("ids");
             boolean onlyRetryable = toBooleanFlag(firstNonNull(payload.get("only_retryable"), onlyRetryableFlag), true);
@@ -525,6 +526,8 @@ public class InferenceApiController {
             int totalSelectedCount = sourceCandidates.size();
             String actualWindowFingerprint = computeReplayBatchWindowFingerprint(sourceCandidates);
             int appliedOffset = Math.min(effectiveOffset, totalSelectedCount);
+            String selectionSource = explicitIdsMode ? "explicit_ids" : "latest";
+            String actualResumeToken = computeReplayBatchResumeToken(selectionSource, totalSelectedCount, effectiveLimit, appliedOffset, actualWindowFingerprint);
             List<Map<String, Object>> candidates = new ArrayList<>();
             for (int i = appliedOffset; i < totalSelectedCount && candidates.size() < effectiveLimit; i++) {
                 candidates.add(sourceCandidates.get(i));
@@ -550,6 +553,8 @@ public class InferenceApiController {
                     data.put("actual_total_selected_count", totalSelectedCount);
                     data.put("expected_window_fingerprint", expectedWindowFingerprint);
                     data.put("actual_window_fingerprint", actualWindowFingerprint);
+                    data.put("expected_resume_token", expectedResumeToken);
+                    data.put("actual_resume_token", actualResumeToken);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
@@ -562,9 +567,25 @@ public class InferenceApiController {
                     data.put("actual_total_selected_count", totalSelectedCount);
                     data.put("expected_window_fingerprint", expectedWindowFingerprint);
                     data.put("actual_window_fingerprint", actualWindowFingerprint);
+                    data.put("expected_resume_token", expectedResumeToken);
+                    data.put("actual_resume_token", actualResumeToken);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window fingerprint changed", data);
+                }
+                if (StrUtil.isNotBlank(expectedResumeToken) && !expectedResumeToken.equals(actualResumeToken)) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("trace_id", traceId);
+                    data.put("strict_resume", true);
+                    data.put("expected_total_selected_count", expectedTotalSelectedCount);
+                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("expected_window_fingerprint", expectedWindowFingerprint);
+                    data.put("actual_window_fingerprint", actualWindowFingerprint);
+                    data.put("expected_resume_token", expectedResumeToken);
+                    data.put("actual_resume_token", actualResumeToken);
+                    data.put("effective_limit", effectiveLimit);
+                    data.put("effective_offset", appliedOffset);
+                    return JsonResultUtils.fail("inference dead-letter replay batch failed: resume token changed", data);
                 }
             }
 
@@ -660,6 +681,8 @@ public class InferenceApiController {
             data.put("actual_total_selected_count", totalSelectedCount);
             data.put("expected_window_fingerprint", expectedWindowFingerprint);
             data.put("actual_window_fingerprint", actualWindowFingerprint);
+            data.put("expected_resume_token", expectedResumeToken);
+            data.put("resume_token", actualResumeToken);
             data.put("max_limit", maxLimit);
             data.put("truncated", truncated);
             data.put("only_retryable", onlyRetryable);
@@ -669,7 +692,7 @@ public class InferenceApiController {
             data.put("stopped_on_error", stoppedOnError);
             data.put("stopped_dead_letter_id", stoppedDeadLetterId);
             data.put("stopped_reason", stoppedReason);
-            data.put("selection_source", explicitIdsMode ? "explicit_ids" : "latest");
+            data.put("selection_source", selectionSource);
             data.put("selected_count", candidates.size());
             data.put("processed_count", results.size());
             data.put("success_count", successCount);
@@ -1376,6 +1399,20 @@ public class InferenceApiController {
             }
         }
         return sha256Hex(payload.toString());
+    }
+
+    private String computeReplayBatchResumeToken(String selectionSource,
+                                                 int totalSelectedCount,
+                                                 int effectiveLimit,
+                                                 int appliedOffset,
+                                                 String actualWindowFingerprint) {
+        String payload = String.format("source=%s;total=%d;limit=%d;offset=%d;window=%s",
+                selectionSource,
+                totalSelectedCount,
+                effectiveLimit,
+                appliedOffset,
+                actualWindowFingerprint == null ? "" : actualWindowFingerprint);
+        return sha256Hex(payload);
     }
 
     private String sha256Hex(String raw) {

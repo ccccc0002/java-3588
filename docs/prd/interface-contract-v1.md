@@ -40,6 +40,10 @@
   - 允许格式A（map）：`{"100":"rk3588_rknn","101":"legacy"}`
   - 允许格式B（array）：`[{"camera_id":100,"backend_type":"rk3588_rknn"}]`
   - 允许格式C（backend->camera组）：`{"rk3588_rknn":[100,101,"200-260"],"legacy":[300]}`
+7. `infer_decode_backend`：解码后端提示（可选），如 `mpp|ffmpeg`
+8. `infer_decode_hwaccel`：硬件加速提示（可选），如 `rga`
+9. `infer_decode_max_width`：解码宽度上限（可选）
+10. `infer_decode_max_height`：解码高度上限（可选）
 
 ## 5. 平台 API 契约
 

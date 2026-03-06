@@ -39,6 +39,7 @@
 32. 已完成：`Rk3588InferenceClient` 新增 4 条单测（重试、异常映射、非法响应、配置缺失）并引入 `InferenceHttpGateway` 抽象以实现可测试化；待远端 Maven 环境执行门禁验证。
 33. 已完成：`InferenceRoutingService` 追加灰度解析单测（backend 分组数组、nested `camera_overrides`）以覆盖配置变体解析路径；待远端 Maven 环境执行门禁验证。
 34. 已完成：`infer_backend_camera_overrides` 增强支持区间表达（如 `\"200-260\"`），用于按摄像头分组灰度；已补充单测覆盖。
+35. 已完成：`Rk3588InferenceClient` 支持下发解码提示（`infer_decode_backend/hwaccel/max_width/max_height`）到 `/v1/infer` payload，并补充单测校验。
 
 ## 2. 小队与职责
 1. 媒体小队：流媒体接入、播放链路、流状态管理

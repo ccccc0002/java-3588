@@ -5,11 +5,16 @@ param(
     [long]$AlgorithmId = 1,
     [int]$VideoPort = 0,
     [string]$InferenceSource = "test://frame",
+    [string]$PluginId = "face-detector",
+    [string]$PluginVersion = "1.0.0",
+    [string]$PluginRuntime = "rk3588_rknn",
+    [string]$PluginHealthUrl = "http://127.0.0.1:18080/health",
     [string]$Cookie = "",
     [int]$TimeoutSec = 10,
     [ValidateSet("quick", "full")]
     [string]$Mode = "full",
-    [switch]$IncludeInference
+    [switch]$IncludeInference,
+    [switch]$IncludePlugin
 )
 
 $ErrorActionPreference = "Continue"
@@ -18,6 +23,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $contractsScript = Join-Path $scriptDir "Validate-Stream-Contracts.ps1"
 $traceScript = Join-Path $scriptDir "Validate-TraceId-Lists.ps1"
 $inferenceScript = Join-Path $scriptDir "Validate-Inference-Contracts.ps1"
+$pluginScript = Join-Path $scriptDir "Validate-Plugin-Contracts.ps1"
 
 if (-not (Test-Path $contractsScript)) {
     Write-Output "FAIL: missing script Validate-Stream-Contracts.ps1"
@@ -31,12 +37,15 @@ if ($IncludeInference -and -not (Test-Path $inferenceScript)) {
     Write-Output "FAIL: missing script Validate-Inference-Contracts.ps1"
     exit 2
 }
+if ($IncludePlugin -and -not (Test-Path $pluginScript)) {
+    Write-Output "FAIL: missing script Validate-Plugin-Contracts.ps1"
+    exit 2
+}
 
 $failed = 0
 
 Write-Output ("== Mode: {0} ==" -f $Mode)
 
-# quick: only stream contract checks; full: run contract + trace-id list checks
 Write-Output "== Run: Validate-Stream-Contracts =="
 & $contractsScript -BaseUrl $BaseUrl -CameraId $CameraId -VideoPort $VideoPort -Cookie $Cookie -TimeoutSec $TimeoutSec
 if ($LASTEXITCODE -ne 0) {
@@ -54,6 +63,14 @@ if ($Mode -eq "full") {
 if ($IncludeInference) {
     Write-Output "== Run: Validate-Inference-Contracts =="
     & $inferenceScript -BaseUrl $BaseUrl -CameraId $CameraId -ModelId $ModelId -AlgorithmId $AlgorithmId -Source $InferenceSource -Cookie $Cookie -TimeoutSec $TimeoutSec
+    if ($LASTEXITCODE -ne 0) {
+        $failed++
+    }
+}
+
+if ($IncludePlugin) {
+    Write-Output "== Run: Validate-Plugin-Contracts =="
+    & $pluginScript -BaseUrl $BaseUrl -PluginId $PluginId -Version $PluginVersion -Runtime $PluginRuntime -HealthUrl $PluginHealthUrl -Cookie $Cookie -TimeoutSec $TimeoutSec
     if ($LASTEXITCODE -ne 0) {
         $failed++
     }

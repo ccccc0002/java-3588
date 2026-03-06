@@ -1,0 +1,160 @@
+package com.yihecode.camera.ai.web.api;
+
+import cn.hutool.core.util.StrUtil;
+import com.yihecode.camera.ai.plugin.PluginManifest;
+import com.yihecode.camera.ai.plugin.PluginManifestValidator;
+import com.yihecode.camera.ai.service.PluginHealthProbeService;
+import com.yihecode.camera.ai.service.PluginRegistrationService;
+import com.yihecode.camera.ai.utils.JsonResult;
+import com.yihecode.camera.ai.utils.JsonResultUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+@Controller
+@RequestMapping({"/api/plugin"})
+public class PluginApiController {
+
+    private static final String PLUGIN_MANIFEST_SCHEMA_VERSION = "plugin-manifest.v1";
+
+    @Autowired(required = false)
+    private PluginRegistrationService pluginRegistrationService;
+
+    @Autowired(required = false)
+    private PluginHealthProbeService pluginHealthProbeService;
+
+    @RequestMapping(value = {"/manifest/validate"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult validateManifest(@RequestBody(required = false) Map<String, Object> body) {
+        PluginManifest manifest = toManifest(body);
+        List<String> errors = PluginManifestValidator.validate(manifest);
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("trace_id", UUID.randomUUID().toString());
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        data.put("valid", errors.isEmpty());
+        data.put("errors", errors);
+        data.put("normalized_manifest", toMap(manifest));
+        return JsonResultUtils.success(data);
+    }
+
+    @RequestMapping(value = {"/health/probe"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult healthProbe(@RequestBody(required = false) Map<String, Object> body) {
+        String traceId = UUID.randomUUID().toString();
+        String healthUrl = trimToNull(firstString(body, "health_url", "healthUrl"));
+        if (pluginHealthProbeService == null) {
+            return JsonResultUtils.fail("plugin health probe service is unavailable", Map.of("trace_id", traceId));
+        }
+        return JsonResultUtils.success(pluginHealthProbeService.probe(traceId, healthUrl));
+    }
+
+    @RequestMapping(value = {"/register"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public JsonResult register(@RequestBody(required = false) Map<String, Object> body) {
+        String traceId = UUID.randomUUID().toString();
+        PluginManifest manifest = toManifest(body);
+        String healthUrl = trimToNull(firstString(body, "health_url", "healthUrl"));
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.register(traceId, manifest, healthUrl));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        data.put("normalized_manifest", toMap(manifest));
+        return JsonResultUtils.success(data);
+    }
+
+    @RequestMapping(value = {"/list"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult list() {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.listRegistrations(traceId));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
+    @RequestMapping(value = {"/detail"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult detail(@RequestParam(value = "registration_id", required = false) String registrationId) {
+        String traceId = UUID.randomUUID().toString();
+        if (pluginRegistrationService == null) {
+            return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
+        }
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.getRegistration(traceId, trimToNull(registrationId)));
+        data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
+        return JsonResultUtils.success(data);
+    }
+
+    private PluginManifest toManifest(Map<String, Object> body) {
+        PluginManifest manifest = new PluginManifest();
+        if (body == null || body.isEmpty()) {
+            manifest.setCapabilities(Collections.emptyList());
+            return manifest;
+        }
+
+        manifest.setPluginId(trimToNull(firstString(body, "plugin_id", "pluginId")));
+        manifest.setVersion(trimToNull(firstString(body, "version")));
+        manifest.setRuntime(trimToNull(firstString(body, "runtime")));
+        manifest.setCapabilities(normalizeCapabilities(body.get("capabilities")));
+        return manifest;
+    }
+
+    private Map<String, Object> toMap(PluginManifest manifest) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("plugin_id", trimToNull(manifest.getPluginId()));
+        data.put("version", trimToNull(manifest.getVersion()));
+        data.put("runtime", trimToNull(manifest.getRuntime()));
+        data.put("capabilities", normalizeCapabilities(manifest.getCapabilities()));
+        return data;
+    }
+
+    private String firstString(Map<String, Object> body, String... keys) {
+        if (body == null) {
+            return null;
+        }
+        for (String key : keys) {
+            Object value = body.get(key);
+            if (value instanceof String) {
+                return (String) value;
+            }
+        }
+        return null;
+    }
+
+    private String trimToNull(String value) {
+        return StrUtil.isBlank(value) ? null : value.trim();
+    }
+
+    private List<String> normalizeCapabilities(Object value) {
+        if (!(value instanceof List<?>)) {
+            return Collections.emptyList();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (Object item : (List<?>) value) {
+            if (item == null) {
+                continue;
+            }
+            String capability = item.toString();
+            if (StrUtil.isNotBlank(capability)) {
+                normalized.add(capability.trim());
+            }
+        }
+        return new ArrayList<>(normalized);
+    }
+}

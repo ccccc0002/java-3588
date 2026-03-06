@@ -1,0 +1,124 @@
+package com.yihecode.camera.ai.service;
+
+import com.yihecode.camera.ai.plugin.PluginManifest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PluginRegistrationServiceImplTest {
+
+    @Mock
+    private PluginHealthProbeService pluginHealthProbeService;
+
+    @Mock
+    private PluginRegistryService pluginRegistryService;
+
+    @InjectMocks
+    private PluginRegistrationServiceImpl pluginRegistrationService;
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void register_shouldRejectInvalidManifestWithoutCallingHealthProbe() {
+        PluginManifest manifest = new PluginManifest();
+        manifest.setVersion("1.0.0");
+        manifest.setRuntime("rk3588_rknn");
+        manifest.setCapabilities(Arrays.asList("inference"));
+
+        Map<String, Object> data = pluginRegistrationService.register("trace-plugin-register-1", manifest, "http://plugin-a:19090/health");
+
+        assertEquals(Boolean.FALSE, data.get("accepted"));
+        assertEquals("rejected", data.get("registration_status"));
+        List<String> errors = (List<String>) data.get("errors");
+        assertTrue(String.join(";", errors).toLowerCase().contains("plugin_id"));
+        verify(pluginHealthProbeService, never()).probe(any(), any());
+        verify(pluginRegistryService, never()).save(any());
+    }
+
+    @Test
+    void register_shouldAcceptValidManifestWithoutHealthProbe() {
+        PluginManifest manifest = new PluginManifest();
+        manifest.setPluginId("face-detector");
+        manifest.setVersion("1.0.0");
+        manifest.setRuntime("rk3588_rknn");
+        manifest.setCapabilities(Arrays.asList("inference", "alert"));
+
+        Map<String, Object> data = pluginRegistrationService.register("trace-plugin-register-2", manifest, null);
+
+        assertEquals(Boolean.TRUE, data.get("accepted"));
+        assertEquals("accepted", data.get("registration_status"));
+        assertEquals("face-detector:1.0.0", data.get("registration_id"));
+        assertEquals("memory", data.get("storage_mode"));
+        verify(pluginRegistryService).save(any());
+    }
+
+    @Test
+    void register_shouldRejectWhenHealthProbeFails() {
+        PluginManifest manifest = new PluginManifest();
+        manifest.setPluginId("face-detector");
+        manifest.setVersion("1.0.0");
+        manifest.setRuntime("rk3588_rknn");
+        manifest.setCapabilities(Arrays.asList("inference"));
+
+        Map<String, Object> health = new HashMap<>();
+        health.put("healthy", false);
+        health.put("status", "down");
+        health.put("error", "non-200 response: 503");
+        when(pluginHealthProbeService.probe("trace-plugin-register-3", "http://plugin-a:19090/health")).thenReturn(health);
+
+        Map<String, Object> data = pluginRegistrationService.register("trace-plugin-register-3", manifest, "http://plugin-a:19090/health");
+
+        assertEquals(Boolean.FALSE, data.get("accepted"));
+        assertEquals("health_check_failed", data.get("registration_status"));
+        verify(pluginHealthProbeService).probe("trace-plugin-register-3", "http://plugin-a:19090/health");
+        verify(pluginRegistryService, never()).save(any());
+    }
+
+    @Test
+    void getRegistration_shouldReturnStoredRecordWhenFound() {
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+        record.setPluginId("face-detector");
+        record.setVersion("1.0.0");
+        when(pluginRegistryService.findByRegistrationId("face-detector:1.0.0")).thenReturn(Optional.of(record));
+
+        Map<String, Object> data = pluginRegistrationService.getRegistration("trace-plugin-get-1", "face-detector:1.0.0");
+
+        assertEquals("trace-plugin-get-1", data.get("trace_id"));
+        assertNotNull(data.get("plugin"));
+        verify(pluginRegistryService).findByRegistrationId("face-detector:1.0.0");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listRegistrations_shouldReturnStoredRecords() {
+        PluginRegistryRecord record = new PluginRegistryRecord();
+        record.setRegistrationId("face-detector:1.0.0");
+        record.setPluginId("face-detector");
+        record.setVersion("1.0.0");
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(record));
+
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-1");
+
+        assertEquals("trace-plugin-list-1", data.get("trace_id"));
+        List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
+        assertEquals(1, plugins.size());
+        assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+    }
+}
