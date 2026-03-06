@@ -256,6 +256,20 @@ $deadLetterReplayNotFoundTraceId = Get-PropValue -Obj $deadLetterReplayNotFoundD
 $deadLetterReplayNotFoundId = Get-PropValue -Obj $deadLetterReplayNotFoundData -Name "dead_letter_id"
 $checks += New-CheckResult -Api "/api/inference/dead-letter/replay(not-found)" -Passed (($deadLetterReplayNotFoundResp.code -ne 0) -and ($deadLetterReplayNotFoundTraceId -ne $null) -and ($deadLetterReplayNotFoundTraceId -ne "") -and ($deadLetterReplayNotFoundId -ne $null) -and (([long]$deadLetterReplayNotFoundId) -eq -1)) -Detail ("code={0}; trace_id={1}; dead_letter_id={2}" -f $deadLetterReplayNotFoundResp.code, $deadLetterReplayNotFoundTraceId, $deadLetterReplayNotFoundId)
 
+$deadLetterReplayBatchResp = Invoke-ApiGet -Path "/api/inference/dead-letter/replay/batch?limit=2&only_exhausted=1"
+$deadLetterReplayBatchData = Get-PropValue -Obj $deadLetterReplayBatchResp -Name "data"
+$deadLetterReplayBatchTraceId = Get-PropValue -Obj $deadLetterReplayBatchData -Name "trace_id"
+$deadLetterReplayBatchSelectedCount = Get-PropValue -Obj $deadLetterReplayBatchData -Name "selected_count"
+$deadLetterReplayBatchProcessedCount = Get-PropValue -Obj $deadLetterReplayBatchData -Name "processed_count"
+$deadLetterReplayBatchSuccessCount = Get-PropValue -Obj $deadLetterReplayBatchData -Name "success_count"
+$deadLetterReplayBatchFailedCount = Get-PropValue -Obj $deadLetterReplayBatchData -Name "failed_count"
+$deadLetterReplayBatchResults = Get-PropValue -Obj $deadLetterReplayBatchData -Name "results"
+$deadLetterReplayBatchCountsConsistent = $false
+if (($deadLetterReplayBatchSelectedCount -ne $null) -and ($deadLetterReplayBatchProcessedCount -ne $null) -and ($deadLetterReplayBatchSuccessCount -ne $null) -and ($deadLetterReplayBatchFailedCount -ne $null) -and ($deadLetterReplayBatchResults -is [System.Collections.IList])) {
+    $deadLetterReplayBatchCountsConsistent = (([int]$deadLetterReplayBatchSelectedCount) -eq ([int]$deadLetterReplayBatchProcessedCount)) -and (([int]$deadLetterReplayBatchProcessedCount) -eq (([int]$deadLetterReplayBatchSuccessCount) + ([int]$deadLetterReplayBatchFailedCount))) -and ($deadLetterReplayBatchResults.Count -eq ([int]$deadLetterReplayBatchProcessedCount)) -and ($deadLetterReplayBatchResults.Count -le 2)
+}
+$checks += New-CheckResult -Api "/api/inference/dead-letter/replay/batch" -Passed (($deadLetterReplayBatchResp.code -eq 0) -and ($deadLetterReplayBatchTraceId -ne $null) -and ($deadLetterReplayBatchTraceId -ne "") -and ($deadLetterReplayBatchResults -is [System.Collections.IList]) -and $deadLetterReplayBatchCountsConsistent) -Detail ("code={0}; trace_id={1}; selected={2}; processed={3}; success={4}; failed={5}; list_size={6}; counts_consistent={7}" -f $deadLetterReplayBatchResp.code, $deadLetterReplayBatchTraceId, $deadLetterReplayBatchSelectedCount, $deadLetterReplayBatchProcessedCount, $deadLetterReplayBatchSuccessCount, $deadLetterReplayBatchFailedCount, ($(if ($deadLetterReplayBatchResults -is [System.Collections.IList]) { $deadLetterReplayBatchResults.Count } else { -1 })), $deadLetterReplayBatchCountsConsistent)
+
 $testReq = @{
     camera_id = $CameraId
     model_id = $ModelId

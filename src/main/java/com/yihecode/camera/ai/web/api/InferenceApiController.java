@@ -463,6 +463,71 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/dead-letter/replay/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterReplayBatch(@RequestParam(value = "limit", required = false) Integer limit,
+                                            @RequestParam(value = "persist_report", required = false) Integer persistReportFlag,
+                                            @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag,
+                                            @RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
+                                            @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag) {
+        String traceId = nextTraceId();
+        try {
+            boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
+            boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
+            List<Map<String, Object>> candidates = inferenceDeadLetterService.latest(limit, onlyRetryable, onlyExhausted);
+
+            int successCount = 0;
+            int failedCount = 0;
+            List<Map<String, Object>> results = new ArrayList<>();
+            for (Map<String, Object> candidate : candidates) {
+                Long deadLetterId = toLong(candidate.get("dead_letter_id"));
+                if (deadLetterId == null) {
+                    Map<String, Object> invalid = new HashMap<>();
+                    invalid.put("dead_letter_id", null);
+                    invalid.put("code", -1);
+                    invalid.put("msg", "invalid dead letter id");
+                    results.add(invalid);
+                    failedCount++;
+                    continue;
+                }
+
+                JsonResult replayResp = deadLetterReplay(deadLetterId, persistReportFlag, ackOnSuccessFlag);
+                Map<String, Object> replayData = toMap(replayResp.getData());
+                Map<String, Object> item = new HashMap<>();
+                item.put("dead_letter_id", deadLetterId);
+                item.put("code", replayResp.getCode());
+                item.put("msg", replayResp.getMsg());
+                item.put("trace_id", replayData.get("trace_id"));
+                item.put("acked", replayData.get("acked"));
+                item.put("replay_exhausted", replayData.get("replay_exhausted"));
+                item.put("replay_in_progress", replayData.get("replay_in_progress"));
+                results.add(item);
+                if (replayResp.getCode() == 0) {
+                    successCount++;
+                } else {
+                    failedCount++;
+                }
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("requested_limit", limit);
+            data.put("only_retryable", onlyRetryable);
+            data.put("only_exhausted", onlyExhausted);
+            data.put("selected_count", candidates.size());
+            data.put("processed_count", results.size());
+            data.put("success_count", successCount);
+            data.put("failed_count", failedCount);
+            data.put("results", results);
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter replay batch api failed, trace_id={}", traceId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            return JsonResultUtils.fail("inference dead-letter replay batch api failed: " + e.getMessage(), data);
+        }
+    }
+
     @RequestMapping(value = {"/route/batch"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult routeBatch(@RequestBody(required = false) Map<String, Object> body,
