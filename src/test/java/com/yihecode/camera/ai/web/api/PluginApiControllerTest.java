@@ -19,7 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -142,16 +145,25 @@ class PluginApiControllerTest {
         Map<String, Object> listing = new HashMap<>();
         listing.put("trace_id", "trace-plugin-list-2");
         listing.put("plugins", Arrays.asList(Map.of("registration_id", "face-detector:1.0.0")));
-        when(pluginRegistrationService.listRegistrations(anyString())).thenReturn(listing);
+        when(pluginRegistrationService.listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100))).thenReturn(listing);
 
-        JsonResult result = pluginApiController.list();
+        JsonResult result = pluginApiController.list(null, null, null, null, 0, 100);
 
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
         assertEquals(1, plugins.size());
         assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
-        verify(pluginRegistrationService).listRegistrations(anyString());
+        verify(pluginRegistrationService).listRegistrations(anyString(), isNull(), isNull(), isNull(), isNull(), eq(0), eq(100));
+    }
+
+    @Test
+    void list_shouldForwardFilters() {
+        when(pluginRegistrationService.listRegistrations(anyString(), anyString(), anyString(), anyString(), any(), anyInt(), anyInt())).thenReturn(Map.of("plugins", Arrays.asList()));
+
+        pluginApiController.list("detector", "rk3588", "healthy", true, 5, 20);
+
+        verify(pluginRegistrationService).listRegistrations(anyString(), eq("detector"), eq("rk3588"), eq("healthy"), eq(true), eq(5), eq(20));
     }
 
     @Test
@@ -177,7 +189,7 @@ class PluginApiControllerTest {
         refreshed.put("trace_id", "trace-plugin-refresh-2");
         refreshed.put("found", true);
         refreshed.put("refreshed", true);
-        refreshed.put("plugin", Map.of("status", "ok"));
+        refreshed.put("plugin", Map.of("status", "healthy"));
         when(pluginRegistrationService.refreshRegistration(anyString(), anyString())).thenReturn(refreshed);
 
         JsonResult result = pluginApiController.refresh("face-detector:1.0.0");
@@ -185,7 +197,7 @@ class PluginApiControllerTest {
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(Boolean.TRUE, data.get("refreshed"));
-        assertEquals("ok", ((Map<String, Object>) data.get("plugin")).get("status"));
+        assertEquals("healthy", ((Map<String, Object>) data.get("plugin")).get("status"));
         verify(pluginRegistrationService).refreshRegistration(anyString(), anyString());
     }
 

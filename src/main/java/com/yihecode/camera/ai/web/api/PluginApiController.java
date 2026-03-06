@@ -79,12 +79,23 @@ public class PluginApiController {
 
     @RequestMapping(value = {"/list"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
-    public JsonResult list() {
+    public JsonResult list(@RequestParam(value = "plugin_id", required = false) String pluginId,
+                           @RequestParam(value = "runtime", required = false) String runtime,
+                           @RequestParam(value = "status", required = false) String status,
+                           @RequestParam(value = "healthy", required = false) Boolean healthy,
+                           @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset,
+                           @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit) {
         String traceId = UUID.randomUUID().toString();
         if (pluginRegistrationService == null) {
             return JsonResultUtils.fail("plugin registration service is unavailable", Map.of("trace_id", traceId));
         }
-        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.listRegistrations(traceId));
+        Map<String, Object> data = new LinkedHashMap<>(pluginRegistrationService.listRegistrations(traceId,
+                trimToNull(pluginId),
+                trimToNull(runtime),
+                trimToNull(status),
+                healthy,
+                offset,
+                limit));
         data.put("schema_version", PLUGIN_MANIFEST_SCHEMA_VERSION);
         return JsonResultUtils.success(data);
     }

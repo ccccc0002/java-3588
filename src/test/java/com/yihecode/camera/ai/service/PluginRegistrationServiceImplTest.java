@@ -66,6 +66,7 @@ class PluginRegistrationServiceImplTest {
         assertEquals("accepted", data.get("registration_status"));
         assertEquals("face-detector:1.0.0", data.get("registration_id"));
         assertEquals("memory", data.get("storage_mode"));
+        assertEquals("registered", ((Map<String, Object>) data.get("plugin")).get("status"));
         verify(pluginRegistryService).save(any());
     }
 
@@ -115,12 +116,41 @@ class PluginRegistrationServiceImplTest {
         record.setVersion("1.0.0");
         when(pluginRegistryService.list()).thenReturn(Arrays.asList(record));
 
-        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-1");
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-1", null, null, null, null, 0, 100);
 
         assertEquals("trace-plugin-list-1", data.get("trace_id"));
         List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
         assertEquals(1, plugins.size());
         assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+        assertEquals(1, ((Number) data.get("total")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listRegistrations_shouldFilterAndPaginateRecords() {
+        PluginRegistryRecord first = new PluginRegistryRecord();
+        first.setRegistrationId("face-detector:1.0.0");
+        first.setPluginId("face-detector");
+        first.setRuntime("rk3588_rknn");
+        first.setHealthy(true);
+        first.setStatus("healthy");
+
+        PluginRegistryRecord second = new PluginRegistryRecord();
+        second.setRegistrationId("helmet-detector:1.0.0");
+        second.setPluginId("helmet-detector");
+        second.setRuntime("rk3588_rknn");
+        second.setHealthy(false);
+        second.setStatus("unreachable");
+
+        when(pluginRegistryService.list()).thenReturn(Arrays.asList(first, second));
+
+        Map<String, Object> data = pluginRegistrationService.listRegistrations("trace-plugin-list-2", "detector", "rk3588", "healthy", true, 0, 10);
+
+        List<Map<String, Object>> plugins = (List<Map<String, Object>>) data.get("plugins");
+        assertEquals(1, plugins.size());
+        assertEquals("face-detector:1.0.0", plugins.get(0).get("registration_id"));
+        assertEquals(1, ((Number) data.get("total")).intValue());
+        assertEquals(Boolean.FALSE, data.get("has_more"));
     }
 
     @Test
@@ -129,7 +159,7 @@ class PluginRegistrationServiceImplTest {
         PluginRegistryRecord record = new PluginRegistryRecord();
         record.setRegistrationId("face-detector:1.0.0");
         record.setHealthUrl("http://plugin-a:19090/health");
-        record.setStatus("accepted");
+        record.setStatus("registered");
         when(pluginRegistryService.findByRegistrationId("face-detector:1.0.0")).thenReturn(Optional.of(record));
         Map<String, Object> health = new HashMap<>();
         health.put("healthy", true);
@@ -141,7 +171,7 @@ class PluginRegistrationServiceImplTest {
         assertEquals(Boolean.TRUE, data.get("found"));
         assertEquals(Boolean.TRUE, data.get("refreshed"));
         Map<String, Object> plugin = (Map<String, Object>) data.get("plugin");
-        assertEquals("ok", plugin.get("status"));
+        assertEquals("healthy", plugin.get("status"));
         verify(pluginRegistryService).save(any());
     }
 

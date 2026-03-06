@@ -10,7 +10,13 @@ public interface PluginRegistrationService {
 
     Map<String, Object> getRegistration(String traceId, String registrationId);
 
-    Map<String, Object> listRegistrations(String traceId);
+    Map<String, Object> listRegistrations(String traceId,
+                                          String pluginId,
+                                          String runtime,
+                                          String status,
+                                          Boolean healthy,
+                                          Integer offset,
+                                          Integer limit);
 
     Map<String, Object> refreshRegistration(String traceId, String registrationId);
 
