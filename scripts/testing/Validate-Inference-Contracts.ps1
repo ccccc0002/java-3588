@@ -211,6 +211,13 @@ $deadLetterGetNotFoundTraceId = Get-PropValue -Obj $deadLetterGetNotFoundData -N
 $deadLetterGetNotFoundId = Get-PropValue -Obj $deadLetterGetNotFoundData -Name "dead_letter_id"
 $checks += New-CheckResult -Api "/api/inference/dead-letter/get(not-found)" -Passed (($deadLetterGetNotFoundResp.code -ne 0) -and ($deadLetterGetNotFoundTraceId -ne $null) -and ($deadLetterGetNotFoundTraceId -ne "") -and ($deadLetterGetNotFoundId -ne $null) -and (([long]$deadLetterGetNotFoundId) -eq -1)) -Detail ("code={0}; trace_id={1}; dead_letter_id={2}" -f $deadLetterGetNotFoundResp.code, $deadLetterGetNotFoundTraceId, $deadLetterGetNotFoundId)
 
+$deadLetterRemoveNotFoundResp = Invoke-ApiGet -Path "/api/inference/dead-letter/remove?dead_letter_id=-1"
+$deadLetterRemoveNotFoundData = Get-PropValue -Obj $deadLetterRemoveNotFoundResp -Name "data"
+$deadLetterRemoveNotFoundTraceId = Get-PropValue -Obj $deadLetterRemoveNotFoundData -Name "trace_id"
+$deadLetterRemoveNotFoundId = Get-PropValue -Obj $deadLetterRemoveNotFoundData -Name "dead_letter_id"
+$deadLetterRemoveNotFoundRemoved = Get-PropValue -Obj $deadLetterRemoveNotFoundData -Name "removed"
+$checks += New-CheckResult -Api "/api/inference/dead-letter/remove(not-found)" -Passed (($deadLetterRemoveNotFoundResp.code -ne 0) -and ($deadLetterRemoveNotFoundTraceId -ne $null) -and ($deadLetterRemoveNotFoundTraceId -ne "") -and ($deadLetterRemoveNotFoundId -ne $null) -and (([long]$deadLetterRemoveNotFoundId) -eq -1) -and ($deadLetterRemoveNotFoundRemoved -is [bool]) -and (-not [bool]$deadLetterRemoveNotFoundRemoved)) -Detail ("code={0}; trace_id={1}; dead_letter_id={2}; removed={3}" -f $deadLetterRemoveNotFoundResp.code, $deadLetterRemoveNotFoundTraceId, $deadLetterRemoveNotFoundId, $deadLetterRemoveNotFoundRemoved)
+
 $deadLetterReplayNotFoundResp = Invoke-ApiGet -Path "/api/inference/dead-letter/replay?dead_letter_id=-1"
 $deadLetterReplayNotFoundData = Get-PropValue -Obj $deadLetterReplayNotFoundResp -Name "data"
 $deadLetterReplayNotFoundTraceId = Get-PropValue -Obj $deadLetterReplayNotFoundData -Name "trace_id"

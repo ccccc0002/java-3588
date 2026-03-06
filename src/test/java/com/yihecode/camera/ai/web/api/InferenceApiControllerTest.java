@@ -429,6 +429,34 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterRemove_shouldDeleteWhenExists() {
+        when(inferenceDeadLetterService.removeById(79L)).thenReturn(true);
+
+        JsonResult result = inferenceApiController.deadLetterRemove(79L);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(79L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(true, data.get("removed"));
+        assertTrue(data.get("trace_id") != null && !"".equals(String.valueOf(data.get("trace_id"))));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterRemove_shouldFailWhenNotFound() {
+        when(inferenceDeadLetterService.removeById(80L)).thenReturn(false);
+
+        JsonResult result = inferenceApiController.deadLetterRemove(80L);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(80L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(false, data.get("removed"));
+        assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplay_shouldReplayAndAckWhenRequested() {
         Map<String, Object> requestPayload = new HashMap<>();
         requestPayload.put("trace_id", "trace-old");

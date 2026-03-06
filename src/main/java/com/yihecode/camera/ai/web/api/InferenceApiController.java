@@ -334,6 +334,30 @@ public class InferenceApiController {
         }
     }
 
+    @RequestMapping(value = {"/dead-letter/remove"}, method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult deadLetterRemove(@RequestParam(value = "dead_letter_id", required = false) Long deadLetterId) {
+        String traceId = nextTraceId();
+        try {
+            boolean removed = inferenceDeadLetterService.removeById(deadLetterId);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter_id", deadLetterId);
+            data.put("removed", removed);
+            if (!removed) {
+                return JsonResultUtils.fail("inference dead-letter remove failed: dead letter not found", data);
+            }
+            return JsonResultUtils.success(data);
+        } catch (Exception e) {
+            log.error("inference dead-letter remove api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
+            Map<String, Object> data = new HashMap<>();
+            data.put("trace_id", traceId);
+            data.put("dead_letter_id", deadLetterId);
+            data.put("removed", false);
+            return JsonResultUtils.fail("inference dead-letter remove api failed: " + e.getMessage(), data);
+        }
+    }
+
     @RequestMapping(value = {"/dead-letter/replay"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
     public JsonResult deadLetterReplay(@RequestParam(value = "dead_letter_id", required = false) Long deadLetterId,
