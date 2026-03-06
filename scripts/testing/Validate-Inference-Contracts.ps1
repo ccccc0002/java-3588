@@ -126,6 +126,28 @@ if (($healthBackend -ne $null) -and ($healthBackend -eq "rk3588_rknn")) {
 }
 $checks += New-CheckResult -Api "/api/inference/health" -Passed (($healthResp.code -eq 0) -and ($healthTraceId -ne $null) -and ($healthTraceId -ne "") -and ($healthBackend -ne $null) -and ($healthBackend -ne "") -and ($healthUpstream -ne $null) -and $healthCircuitCheckPassed) -Detail ("code={0}; trace_id={1}; backend_type={2}; circuit_open={3}; circuit_open_until_ms={4}" -f $healthResp.code, $healthTraceId, $healthBackend, $healthCircuitOpen, $healthCircuitOpenUntilMs)
 
+$circuitStatusResp = Invoke-ApiGet -Path "/api/inference/circuit/status"
+$circuitStatusData = Get-PropValue -Obj $circuitStatusResp -Name "data"
+$circuitStatusTraceId = Get-PropValue -Obj $circuitStatusData -Name "trace_id"
+$circuitStatusBackendType = Get-PropValue -Obj $circuitStatusData -Name "backend_type"
+$circuitStatusCircuit = Get-PropValue -Obj $circuitStatusData -Name "circuit"
+$circuitStatusInnerTraceId = Get-PropValue -Obj $circuitStatusCircuit -Name "trace_id"
+$circuitStatusInnerBackend = Get-PropValue -Obj $circuitStatusCircuit -Name "backend"
+$circuitStatusRouteBackend = Get-PropValue -Obj $circuitStatusCircuit -Name "route_backend"
+$circuitStatusOpen = Get-PropValue -Obj $circuitStatusCircuit -Name "circuit_open"
+$checks += New-CheckResult -Api "/api/inference/circuit/status" -Passed (($circuitStatusResp.code -eq 0) -and ($circuitStatusTraceId -ne $null) -and ($circuitStatusTraceId -ne "") -and ($circuitStatusBackendType -ne $null) -and ($circuitStatusBackendType -ne "") -and ($circuitStatusCircuit -ne $null) -and ($circuitStatusInnerTraceId -ne $null) -and ($circuitStatusInnerTraceId -ne "") -and ($circuitStatusInnerBackend -ne $null) -and ($circuitStatusInnerBackend -ne "") -and ($circuitStatusRouteBackend -ne $null) -and ($circuitStatusRouteBackend -ne "") -and ($circuitStatusOpen -is [bool])) -Detail ("code={0}; trace_id={1}; backend_type={2}; circuit_trace_id={3}; circuit_backend={4}; route_backend={5}; circuit_open={6}" -f $circuitStatusResp.code, $circuitStatusTraceId, $circuitStatusBackendType, $circuitStatusInnerTraceId, $circuitStatusInnerBackend, $circuitStatusRouteBackend, $circuitStatusOpen)
+
+$circuitResetResp = Invoke-ApiGet -Path "/api/inference/circuit/reset"
+$circuitResetData = Get-PropValue -Obj $circuitResetResp -Name "data"
+$circuitResetTraceId = Get-PropValue -Obj $circuitResetData -Name "trace_id"
+$circuitResetBackendType = Get-PropValue -Obj $circuitResetData -Name "backend_type"
+$circuitResetCircuit = Get-PropValue -Obj $circuitResetData -Name "circuit"
+$circuitResetInnerTraceId = Get-PropValue -Obj $circuitResetCircuit -Name "trace_id"
+$circuitResetInnerBackend = Get-PropValue -Obj $circuitResetCircuit -Name "backend"
+$circuitResetRouteBackend = Get-PropValue -Obj $circuitResetCircuit -Name "route_backend"
+$circuitResetFlag = Get-PropValue -Obj $circuitResetCircuit -Name "reset"
+$checks += New-CheckResult -Api "/api/inference/circuit/reset" -Passed (($circuitResetResp.code -eq 0) -and ($circuitResetTraceId -ne $null) -and ($circuitResetTraceId -ne "") -and ($circuitResetBackendType -ne $null) -and ($circuitResetBackendType -ne "") -and ($circuitResetCircuit -ne $null) -and ($circuitResetInnerTraceId -ne $null) -and ($circuitResetInnerTraceId -ne "") -and ($circuitResetInnerBackend -ne $null) -and ($circuitResetInnerBackend -ne "") -and ($circuitResetRouteBackend -ne $null) -and ($circuitResetRouteBackend -ne "") -and ($circuitResetFlag -is [bool])) -Detail ("code={0}; trace_id={1}; backend_type={2}; circuit_trace_id={3}; circuit_backend={4}; route_backend={5}; reset={6}" -f $circuitResetResp.code, $circuitResetTraceId, $circuitResetBackendType, $circuitResetInnerTraceId, $circuitResetInnerBackend, $circuitResetRouteBackend, $circuitResetFlag)
+
 $testReq = @{
     camera_id = $CameraId
     model_id = $ModelId
