@@ -273,9 +273,14 @@ public class InferenceApiController {
     public JsonResult deadLetterLatest(@RequestParam(value = "limit", required = false) Integer limit) {
         String traceId = nextTraceId();
         try {
+            List<Map<String, Object>> latest = inferenceDeadLetterService.latest(limit);
+            List<Map<String, Object>> display = new ArrayList<>();
+            for (Map<String, Object> item : latest) {
+                display.add(enrichDeadLetterReplayBudget(item));
+            }
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("dead_letter", inferenceDeadLetterService.latest(limit));
+            data.put("dead_letter", display);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference dead-letter latest api failed, trace_id={}", traceId, e);
@@ -299,7 +304,7 @@ public class InferenceApiController {
             }
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("dead_letter", deadLetter);
+            data.put("dead_letter", enrichDeadLetterReplayBudget(deadLetter));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference dead-letter get api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
@@ -601,6 +606,18 @@ public class InferenceApiController {
         fallback.put("frame", new HashMap<>());
         fallback.put("roi", Collections.emptyList());
         return fallback;
+    }
+
+    private Map<String, Object> enrichDeadLetterReplayBudget(Map<String, Object> entry) {
+        Map<String, Object> data = entry == null ? new HashMap<>() : new HashMap<>(entry);
+        int replayCount = toInt(data.get("replay_count"), 0);
+        int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
+        int remainingReplayAttempts = Math.max(0, maxReplayAttempts - replayCount);
+        data.put("replay_count", replayCount);
+        data.put("max_replay_attempts", maxReplayAttempts);
+        data.put("remaining_replay_attempts", remainingReplayAttempts);
+        data.put("replay_exhausted", remainingReplayAttempts <= 0);
+        return data;
     }
 
     private Map<String, Object> toMap(Object value) {

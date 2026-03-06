@@ -338,8 +338,10 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> latest = new ArrayList<>();
         Map<String, Object> item = new HashMap<>();
         item.put("trace_id", "trace-dl-latest");
+        item.put("replay_count", 1);
         latest.add(item);
         when(inferenceDeadLetterService.latest(5)).thenReturn(latest);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
         JsonResult result = inferenceApiController.deadLetterLatest(5);
 
@@ -348,6 +350,8 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
         assertEquals(1, deadLetter.size());
         assertEquals("trace-dl-latest", deadLetter.get(0).get("trace_id"));
+        assertEquals(2, ((Number) deadLetter.get(0).get("remaining_replay_attempts")).intValue());
+        assertEquals(false, deadLetter.get(0).get("replay_exhausted"));
     }
 
     @Test
@@ -373,7 +377,9 @@ class InferenceApiControllerTest {
         Map<String, Object> item = new HashMap<>();
         item.put("dead_letter_id", 77L);
         item.put("trace_id", "trace-get-77");
+        item.put("replay_count", 2);
         when(inferenceDeadLetterService.findById(77L)).thenReturn(item);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
 
         JsonResult result = inferenceApiController.deadLetterGet(77L);
 
@@ -382,6 +388,8 @@ class InferenceApiControllerTest {
         Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
         assertEquals(77L, ((Number) deadLetter.get("dead_letter_id")).longValue());
         assertEquals("trace-get-77", deadLetter.get("trace_id"));
+        assertEquals(1, ((Number) deadLetter.get("remaining_replay_attempts")).intValue());
+        assertEquals(false, deadLetter.get("replay_exhausted"));
     }
 
     @Test
