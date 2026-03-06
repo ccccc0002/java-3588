@@ -172,7 +172,17 @@ $deadLetterLatestResp = Invoke-ApiGet -Path "/api/inference/dead-letter/latest?l
 $deadLetterLatestData = Get-PropValue -Obj $deadLetterLatestResp -Name "data"
 $deadLetterLatestTraceId = Get-PropValue -Obj $deadLetterLatestData -Name "trace_id"
 $deadLetterLatest = Get-PropValue -Obj $deadLetterLatestData -Name "dead_letter"
-$checks += New-CheckResult -Api "/api/inference/dead-letter/latest" -Passed (($deadLetterLatestResp.code -eq 0) -and ($deadLetterLatestTraceId -ne $null) -and ($deadLetterLatestTraceId -ne "") -and ($deadLetterLatest -is [System.Collections.IList]) -and ($deadLetterLatest.Count -le 5)) -Detail ("code={0}; trace_id={1}; list_size={2}" -f $deadLetterLatestResp.code, $deadLetterLatestTraceId, ($(if ($deadLetterLatest -is [System.Collections.IList]) { $deadLetterLatest.Count } else { -1 })))
+$deadLetterLatestBudgetCheckPassed = $true
+$deadLetterLatestBudgetDetail = "empty-list-skip"
+if ($deadLetterLatest -is [System.Collections.IList] -and $deadLetterLatest.Count -gt 0) {
+    $deadLetterLatestFirst = $deadLetterLatest[0]
+    $deadLetterLatestFirstMaxReplayAttempts = Get-PropValue -Obj $deadLetterLatestFirst -Name "max_replay_attempts"
+    $deadLetterLatestFirstRemainingReplayAttempts = Get-PropValue -Obj $deadLetterLatestFirst -Name "remaining_replay_attempts"
+    $deadLetterLatestFirstReplayExhausted = Get-PropValue -Obj $deadLetterLatestFirst -Name "replay_exhausted"
+    $deadLetterLatestBudgetCheckPassed = ($deadLetterLatestFirstMaxReplayAttempts -ne $null) -and (([int]$deadLetterLatestFirstMaxReplayAttempts) -ge 1) -and ($deadLetterLatestFirstRemainingReplayAttempts -ne $null) -and (([int]$deadLetterLatestFirstRemainingReplayAttempts) -ge 0) -and ($deadLetterLatestFirstReplayExhausted -is [bool])
+    $deadLetterLatestBudgetDetail = ("first.max_replay_attempts={0}; first.remaining_replay_attempts={1}; first.replay_exhausted={2}" -f $deadLetterLatestFirstMaxReplayAttempts, $deadLetterLatestFirstRemainingReplayAttempts, $deadLetterLatestFirstReplayExhausted)
+}
+$checks += New-CheckResult -Api "/api/inference/dead-letter/latest" -Passed (($deadLetterLatestResp.code -eq 0) -and ($deadLetterLatestTraceId -ne $null) -and ($deadLetterLatestTraceId -ne "") -and ($deadLetterLatest -is [System.Collections.IList]) -and ($deadLetterLatest.Count -le 5) -and $deadLetterLatestBudgetCheckPassed) -Detail ("code={0}; trace_id={1}; list_size={2}; budget_check={3}; budget_detail={4}" -f $deadLetterLatestResp.code, $deadLetterLatestTraceId, ($(if ($deadLetterLatest -is [System.Collections.IList]) { $deadLetterLatest.Count } else { -1 })), $deadLetterLatestBudgetCheckPassed, $deadLetterLatestBudgetDetail)
 
 $deadLetterGetNotFoundResp = Invoke-ApiGet -Path "/api/inference/dead-letter/get?dead_letter_id=-1"
 $deadLetterGetNotFoundData = Get-PropValue -Obj $deadLetterGetNotFoundResp -Name "data"
