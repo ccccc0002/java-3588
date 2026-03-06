@@ -479,12 +479,14 @@ public class InferenceApiController {
                                             @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
                                             @RequestParam(value = "dry_run", required = false) Integer dryRunFlag,
                                             @RequestParam(value = "dead_letter_ids", required = false) String deadLetterIdsText,
-                                            @RequestParam(value = "ids", required = false) String idsText) {
+                                            @RequestParam(value = "ids", required = false) String idsText,
+                                            @RequestParam(value = "stop_on_error", required = false) Integer stopOnErrorFlag) {
         String traceId = nextTraceId();
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, true);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
             boolean dryRun = toBooleanFlag(dryRunFlag, false);
+            boolean stopOnError = toBooleanFlag(stopOnErrorFlag, false);
             int maxLimit = resolveDeadLetterReplayBatchMaxLimit();
             int effectiveLimit = normalizeDeadLetterReplayBatchLimit(limit, maxLimit);
             boolean truncated = limit != null && limit > 0 && limit > effectiveLimit;
@@ -508,6 +510,9 @@ public class InferenceApiController {
             int failedReplayExhaustedCount = 0;
             int failedOtherCount = 0;
             int dryRunCount = 0;
+            boolean stoppedOnError = false;
+            Long stoppedDeadLetterId = null;
+            String stoppedReason = null;
             List<Map<String, Object>> results = new ArrayList<>();
             for (Map<String, Object> candidate : candidates) {
                 Long deadLetterId = toLong(candidate.get("dead_letter_id"));
@@ -519,6 +524,11 @@ public class InferenceApiController {
                     results.add(invalid);
                     failedCount++;
                     failedOtherCount++;
+                    if (stopOnError) {
+                        stoppedOnError = true;
+                        stoppedReason = "invalid dead letter id";
+                        break;
+                    }
                     continue;
                 }
 
@@ -557,6 +567,12 @@ public class InferenceApiController {
                     } else {
                         failedOtherCount++;
                     }
+                    if (stopOnError) {
+                        stoppedOnError = true;
+                        stoppedDeadLetterId = deadLetterId;
+                        stoppedReason = firstString(replayResp.getMsg(), "replay failed", "replay failed");
+                        break;
+                    }
                 }
             }
 
@@ -569,6 +585,10 @@ public class InferenceApiController {
             data.put("only_retryable", onlyRetryable);
             data.put("only_exhausted", onlyExhausted);
             data.put("dry_run", dryRun);
+            data.put("stop_on_error", stopOnError);
+            data.put("stopped_on_error", stoppedOnError);
+            data.put("stopped_dead_letter_id", stoppedDeadLetterId);
+            data.put("stopped_reason", stoppedReason);
             data.put("selection_source", explicitIdsMode ? "explicit_ids" : "latest");
             data.put("selected_count", candidates.size());
             data.put("processed_count", results.size());
