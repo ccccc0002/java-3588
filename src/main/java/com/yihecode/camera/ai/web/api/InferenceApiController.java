@@ -822,6 +822,7 @@ public class InferenceApiController {
             String stoppedReason = null;
             Map<String, Object> backendTypeCounts = new LinkedHashMap<>();
             Map<String, Object> failureReasonCounts = new LinkedHashMap<>();
+            Map<String, Object> reportStatusCounts = new LinkedHashMap<>();
             List<Map<String, Object>> results = new ArrayList<>();
             for (Map<String, Object> candidate : candidates) {
                 Long deadLetterId = toLong(candidate.get("dead_letter_id"));
@@ -882,6 +883,8 @@ public class InferenceApiController {
                 item.put("replay_in_progress", replayData.get("replay_in_progress"));
                 results.add(item);
                 incrementCount(backendTypeCounts, trimToNull(firstString(replayData.get("backend_type"), null, null)));
+                Map<String, Object> report = toMap(replayData.get("report"));
+                incrementCount(reportStatusCounts, trimToNull(firstString(report.get("status"), null, null)));
                 if (replayResp.getCode() == 0) {
                     successCount++;
                     successDeadLetterIds.add(deadLetterId);
@@ -950,6 +953,7 @@ public class InferenceApiController {
             data.put("dry_run_dead_letter_ids", dryRunDeadLetterIds);
             data.put("backend_type_counts", backendTypeCounts);
             data.put("failure_reason_counts", failureReasonCounts);
+            data.put("report_status_counts", reportStatusCounts);
             data.put("remaining_count", Math.max(candidates.size() - results.size(), 0));
             data.put("results", results);
             return JsonResultUtils.success(data);
