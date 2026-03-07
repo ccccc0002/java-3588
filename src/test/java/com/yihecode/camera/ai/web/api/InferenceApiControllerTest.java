@@ -950,6 +950,11 @@ class InferenceApiControllerTest {
         assertEquals(2, results.size());
         assertEquals(0, ((Number) results.get(0).get("code")).intValue());
         assertEquals(0, ((Number) results.get(1).get("code")).intValue());
+        assertEquals("rk3588_rknn", results.get(0).get("backend_type"));
+        Map<String, Object> itemReport = (Map<String, Object>) results.get(0).get("report");
+        assertEquals("skipped", itemReport.get("status"));
+        Map<String, Object> itemReplayMeta = (Map<String, Object>) results.get(0).get("replay_meta");
+        assertEquals(1, ((Number) itemReplayMeta.get("replay_count")).intValue());
         assertEquals(1, ((Number) results.get(0).get("replay_count")).intValue());
         Map<String, Object> itemReplayBudget = (Map<String, Object>) results.get(0).get("replay_budget");
         assertEquals(3, ((Number) itemReplayBudget.get("max_replay_attempts")).intValue());

@@ -834,7 +834,10 @@ public class InferenceApiController {
                 item.put("code", replayResp.getCode());
                 item.put("msg", replayResp.getMsg());
                 item.put("trace_id", replayData.get("trace_id"));
+                item.put("backend_type", replayData.get("backend_type"));
                 item.put("acked", replayData.get("acked"));
+                item.put("report", replayData.get("report"));
+                item.put("replay_meta", replayData.get("replay_meta"));
                 item.put("failure_reason", replayData.get("failure_reason"));
                 item.put("max_replay_attempts", replayData.containsKey("max_replay_attempts") ? replayData.get("max_replay_attempts") : replayBudget.get("max_replay_attempts"));
                 item.put("replay_count", replayData.containsKey("replay_count") ? replayData.get("replay_count") : replayBudget.get("replay_count"));
