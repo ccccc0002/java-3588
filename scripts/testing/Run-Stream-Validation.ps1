@@ -15,7 +15,8 @@ param(
     [string]$Mode = "full",
     [switch]$IncludeInference,
     [switch]$IncludePlugin,
-    [switch]$IncludeTraceGovernance
+    [switch]$IncludeTraceGovernance,
+    [switch]$IncludeRolloutReadiness
 )
 
 $ErrorActionPreference = "Continue"
@@ -26,6 +27,7 @@ $traceScript = Join-Path $scriptDir "Validate-TraceId-Lists.ps1"
 $inferenceScript = Join-Path $scriptDir "Validate-Inference-Contracts.ps1"
 $pluginScript = Join-Path $scriptDir "Validate-Plugin-Contracts.ps1"
 $traceGovernanceScript = Join-Path $scriptDir "Validate-Trace-Governance-Flow.ps1"
+$rolloutReadinessScript = Join-Path $scriptDir "Validate-Rollout-Readiness.ps1"
 
 if (-not (Test-Path $contractsScript)) {
     Write-Output "FAIL: missing script Validate-Stream-Contracts.ps1"
@@ -45,6 +47,10 @@ if ($IncludePlugin -and -not (Test-Path $pluginScript)) {
 }
 if (($IncludeTraceGovernance -or ($IncludeInference -and $Mode -eq "full")) -and -not (Test-Path $traceGovernanceScript)) {
     Write-Output "FAIL: missing script Validate-Trace-Governance-Flow.ps1"
+    exit 2
+}
+if (($IncludeRolloutReadiness -or ($IncludeInference -and $Mode -eq "full")) -and -not (Test-Path $rolloutReadinessScript)) {
+    Write-Output "FAIL: missing script Validate-Rollout-Readiness.ps1"
     exit 2
 }
 
@@ -85,6 +91,14 @@ if ($IncludePlugin) {
 if ($IncludeTraceGovernance -or ($IncludeInference -and $Mode -eq "full")) {
     Write-Output "== Run: Validate-Trace-Governance-Flow =="
     & $traceGovernanceScript -BaseUrl $BaseUrl -CameraId $CameraId -ModelId $ModelId -AlgorithmId $AlgorithmId -VideoPort $VideoPort -Source $InferenceSource -Cookie $Cookie -TimeoutSec $TimeoutSec
+    if ($LASTEXITCODE -ne 0) {
+        $failed++
+    }
+}
+
+if ($IncludeRolloutReadiness -or ($IncludeInference -and $Mode -eq "full")) {
+    Write-Output "== Run: Validate-Rollout-Readiness =="
+    & $rolloutReadinessScript -BaseUrl $BaseUrl -PrimaryCameraId $CameraId -SecondaryCameraId ($CameraId + 1) -Cookie $Cookie -TimeoutSec $TimeoutSec
     if ($LASTEXITCODE -ne 0) {
         $failed++
     }
