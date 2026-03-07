@@ -137,6 +137,13 @@ public class InferenceDeadLetterService {
         int filteredQueueSize = 0;
         boolean retryableOnly = onlyRetryable != null && onlyRetryable;
         boolean exhaustedOnly = onlyExhausted != null && onlyExhausted;
+        boolean filterActive = retryableOnly
+                || exhaustedOnly
+                || StrUtil.isNotBlank(backendType)
+                || StrUtil.isNotBlank(pluginId)
+                || StrUtil.isNotBlank(pluginRegistrationId)
+                || StrUtil.isNotBlank(errorType);
+        int totalQueueSize = deadLetters.size();
         int maxReplayAttempts = maxReplayAttempts();
         Long oldestId = null;
         Long newestId = null;
@@ -183,6 +190,9 @@ public class InferenceDeadLetterService {
         }
 
         data.put("queue_size", filteredQueueSize);
+        data.put("total_queue_size", totalQueueSize);
+        data.put("filtered_queue_size", filteredQueueSize);
+        data.put("filter_active", filterActive);
         data.put("max_size", getMaxSize());
         data.put("default_list_limit", DEFAULT_LIST_LIMIT);
         data.put("max_list_limit", MAX_LIST_LIMIT);

@@ -48,6 +48,9 @@ class InferenceDeadLetterServiceTest {
 
         Map<String, Object> stats = inferenceDeadLetterService.stats();
         assertEquals(2, ((Number) stats.get("queue_size")).intValue());
+        assertEquals(2, ((Number) stats.get("total_queue_size")).intValue());
+        assertEquals(2, ((Number) stats.get("filtered_queue_size")).intValue());
+        assertEquals(false, stats.get("filter_active"));
         assertEquals(20, ((Number) stats.get("default_list_limit")).intValue());
         assertEquals(200, ((Number) stats.get("max_list_limit")).intValue());
         List<Map<String, Object>> latest = inferenceDeadLetterService.latest(10);
@@ -316,6 +319,9 @@ class InferenceDeadLetterServiceTest {
         Map<String, Object> stats = inferenceDeadLetterService.stats(true, false, "rk3588", "face", "face-detector:1.0", "timeout");
 
         assertEquals(1, ((Number) stats.get("queue_size")).intValue());
+        assertEquals(3, ((Number) stats.get("total_queue_size")).intValue());
+        assertEquals(1, ((Number) stats.get("filtered_queue_size")).intValue());
+        assertEquals(true, stats.get("filter_active"));
         assertEquals(1, ((Number) stats.get("retryable_entry_count")).intValue());
         assertEquals(0, ((Number) stats.get("non_retryable_entry_count")).intValue());
         assertEquals(1, ((Number) ((Map<String, Object>) stats.get("backend_type_counts")).get("rk3588_rknn")).intValue());
