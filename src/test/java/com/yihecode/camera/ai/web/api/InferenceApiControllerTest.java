@@ -728,7 +728,30 @@ class InferenceApiControllerTest {
         assertTrue(result.getCode() != 0);
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(999L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(false, data.get("replay_in_progress"));
+        assertEquals(false, data.get("replay_exhausted"));
+        assertEquals("not_found", data.get("failure_reason"));
         assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplay_shouldFailWhenDeadLetterUnavailable() {
+        Map<String, Object> deadLetter = new HashMap<>();
+        deadLetter.put("dead_letter_id", 15L);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+        when(inferenceDeadLetterService.tryAcquireReplay(eq(15L), anyString(), eq(3)))
+                .thenReturn(buildAcquireResult(false, "conflict", deadLetter));
+
+        JsonResult result = inferenceApiController.deadLetterReplay(15L, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(15L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(false, data.get("replay_in_progress"));
+        assertEquals(false, data.get("replay_exhausted"));
+        assertEquals("conflict", data.get("failure_reason"));
+        assertTrue(String.valueOf(result.getMsg()).contains("dead letter unavailable"));
     }
 
     @Test

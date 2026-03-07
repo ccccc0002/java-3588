@@ -517,13 +517,18 @@ public class InferenceApiController {
                 Map<String, Object> data = new HashMap<>();
                 data.put("trace_id", traceId);
                 data.put("dead_letter_id", deadLetterId);
+                data.put("replay_in_progress", false);
+                data.put("replay_exhausted", false);
+                data.put("failure_reason", "not_found");
                 return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found", data);
             }
             if (!acquired) {
                 Map<String, Object> data = new HashMap<>();
                 data.put("trace_id", traceId);
                 data.put("dead_letter_id", deadLetterId);
+                data.put("failure_reason", acquireReason);
                 data.put("replay_in_progress", "in_progress".equals(acquireReason));
+                data.put("replay_exhausted", false);
                 if ("replay_exhausted".equals(acquireReason)) {
                     int replayCount = toInt(entry.get("replay_count"), 0);
                     Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
