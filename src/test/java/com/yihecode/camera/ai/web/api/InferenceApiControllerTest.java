@@ -871,6 +871,60 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplay_shouldIncludePluginDispatchDetailsWhenPluginReplayFails() {
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector",
+                "runtime", "rk3588_rknn",
+                "health_url", "http://plugin-a:19090/health"
+        ));
+
+        Map<String, Object> requestPayload = new HashMap<>();
+        requestPayload.put("trace_id", "trace-replay-plugin-fail");
+        requestPayload.put("camera_id", 115L);
+        requestPayload.put("model_id", 215L);
+        requestPayload.put("frame", new HashMap<>());
+        requestPayload.put("roi", new ArrayList<>());
+        requestPayload.put("plugin_route", pluginRoute);
+
+        Map<String, Object> deadLetter = new HashMap<>();
+        deadLetter.put("dead_letter_id", 15L);
+        deadLetter.put("replay_count", 0);
+        deadLetter.put("request_payload", requestPayload);
+
+        Map<String, Object> replayMeta = new HashMap<>();
+        replayMeta.put("replay_count", 1);
+        replayMeta.put("last_replay_success", false);
+
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+        when(inferenceDeadLetterService.tryAcquireReplay(eq(15L), anyString(), eq(3)))
+                .thenReturn(buildAcquireResult(true, "ok", deadLetter));
+        when(pluginInferenceDispatchService.isDispatchable(any())).thenReturn(true);
+        when(pluginInferenceDispatchService.infer(any(), any())).thenThrow(new IllegalStateException("plugin dispatch failed"));
+        when(inferenceRoutingService.backendTypeForCamera(115L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.infer(any(), eq("rk3588_rknn"))).thenThrow(new IllegalStateException("backend fallback failed"));
+        when(inferenceDeadLetterService.markReplay(eq(15L), eq(false), anyString(), eq("backend fallback failed")))
+                .thenReturn(replayMeta);
+
+        JsonResult result = inferenceApiController.deadLetterReplay(15L, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> returnedPluginRoute = (Map<String, Object>) data.get("plugin_route");
+        Map<String, Object> pluginDispatch = (Map<String, Object>) data.get("plugin_dispatch");
+        assertEquals(true, returnedPluginRoute.get("requested"));
+        assertEquals(false, pluginDispatch.get("dispatched"));
+        assertEquals(true, pluginDispatch.get("fallback"));
+        assertEquals("plugin_dispatch_failed", pluginDispatch.get("fallback_reason"));
+        assertEquals("plugin dispatch failed", pluginDispatch.get("error_message"));
+    }
+
+    @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldReplaySelectedEntriesAndSummarize() {
         List<Map<String, Object>> candidates = new ArrayList<>();
         Map<String, Object> c1 = new HashMap<>();
@@ -960,6 +1014,67 @@ class InferenceApiControllerTest {
         assertEquals(3, ((Number) itemReplayBudget.get("max_replay_attempts")).intValue());
         assertEquals(2, ((Number) itemReplayBudget.get("remaining_replay_attempts")).intValue());
         verify(inferenceDeadLetterService, times(2)).releaseReplay(anyLong(), anyString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldIncludePluginDispatchDetailsWhenPluginReplayFails() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 25L);
+        candidates.add(c1);
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector",
+                "runtime", "rk3588_rknn"
+        ));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("camera_id", 125L);
+        payload.put("model_id", 225L);
+        payload.put("frame", new HashMap<>());
+        payload.put("roi", new ArrayList<>());
+        payload.put("plugin_route", pluginRoute);
+
+        Map<String, Object> entry = new HashMap<>();
+        entry.put("dead_letter_id", 25L);
+        entry.put("replay_count", 0);
+        entry.put("request_payload", payload);
+        entry.put("algorithm_id", 325L);
+        entry.put("persist_report", false);
+
+        Map<String, Object> replayMeta = new HashMap<>();
+        replayMeta.put("replay_count", 1);
+
+        when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(candidates);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+        when(inferenceDeadLetterService.tryAcquireReplay(eq(25L), anyString(), eq(3))).thenReturn(buildAcquireResult(true, "ok", entry));
+        when(pluginInferenceDispatchService.isDispatchable(any())).thenReturn(true);
+        when(pluginInferenceDispatchService.infer(any(), any())).thenThrow(new IllegalStateException("plugin dispatch failed"));
+        when(inferenceRoutingService.backendTypeForCamera(125L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+        when(inferenceRoutingService.infer(any(), eq("rk3588_rknn"))).thenThrow(new IllegalStateException("backend fallback failed"));
+        when(inferenceDeadLetterService.markReplay(eq(25L), eq(false), anyString(), eq("backend fallback failed"))).thenReturn(replayMeta);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 0, 1, null, null, null, null, null, null, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        assertEquals(1, results.size());
+        Map<String, Object> item = results.get(0);
+        assertEquals("execution_error", item.get("failure_reason"));
+        Map<String, Object> itemPluginRoute = (Map<String, Object>) item.get("plugin_route");
+        Map<String, Object> itemPluginDispatch = (Map<String, Object>) item.get("plugin_dispatch");
+        assertEquals(true, itemPluginRoute.get("requested"));
+        assertEquals(false, itemPluginDispatch.get("dispatched"));
+        assertEquals("plugin_dispatch_failed", itemPluginDispatch.get("fallback_reason"));
+        assertEquals("plugin dispatch failed", itemPluginDispatch.get("error_message"));
     }
 
     @Test

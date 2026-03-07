@@ -506,6 +506,10 @@ public class InferenceApiController {
                                        @RequestParam(value = "ack_on_success", required = false) Integer ackOnSuccessFlag) {
         String traceId = nextTraceId();
         boolean replayLockAcquired = false;
+        Map<String, Object> replayPluginRoute = null;
+        boolean pluginDispatchable = false;
+        boolean pluginDispatched = false;
+        String pluginDispatchError = null;
         try {
             int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
             Map<String, Object> acquireResult = inferenceDeadLetterService.tryAcquireReplay(deadLetterId, traceId, maxReplayAttempts);
@@ -545,12 +549,12 @@ public class InferenceApiController {
             frame.put("replay_count", replayCount + 1);
             payload.put("frame", frame);
             InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
-            Map<String, Object> replayPluginRoute = firstPluginRoute(payload, entry);
+            replayPluginRoute = firstPluginRoute(payload, entry);
             applyPluginRoute(request, replayPluginRoute);
             String pluginBackendHint = extractPluginBackendHint(replayPluginRoute);
-            boolean pluginDispatchable = isPluginDispatchable(replayPluginRoute);
-            boolean pluginDispatched = false;
-            String pluginDispatchError = null;
+            pluginDispatchable = isPluginDispatchable(replayPluginRoute);
+            pluginDispatched = false;
+            pluginDispatchError = null;
             String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
                     : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
@@ -629,6 +633,12 @@ public class InferenceApiController {
                 data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
                 data.put("replay_meta", replayMeta);
                 data.put("replay_budget", replayBudget);
+            }
+            if (shouldAttachPluginRoute(replayPluginRoute)) {
+                data.put("plugin_route", replayPluginRoute);
+                data.put("plugin_dispatch", buildPluginDispatchData(replayPluginRoute, pluginDispatched,
+                        pluginDispatchable ? (pluginDispatched ? null : "plugin_dispatch_failed") : "plugin_not_dispatchable",
+                        pluginDispatchError));
             }
             return JsonResultUtils.fail("inference dead-letter replay api failed: " + e.getMessage(), data);
         } finally {
