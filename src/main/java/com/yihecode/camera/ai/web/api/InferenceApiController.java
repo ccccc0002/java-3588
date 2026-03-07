@@ -847,6 +847,9 @@ public class InferenceApiController {
                 item.put("backend_type", replayData.get("backend_type"));
                 item.put("plugin_route", replayData.get("plugin_route"));
                 item.put("plugin_dispatch", replayData.get("plugin_dispatch"));
+                item.put("algorithm_id", replayData.get("algorithm_id"));
+                item.put("request", replayData.get("request"));
+                item.put("result", replayData.get("result"));
                 item.put("acked", replayData.get("acked"));
                 item.put("report", replayData.get("report"));
                 item.put("replay_meta", replayData.get("replay_meta"));

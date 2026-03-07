@@ -925,6 +925,7 @@ class InferenceApiControllerTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test
     void deadLetterReplayBatch_shouldReplaySelectedEntriesAndSummarize() {
         List<Map<String, Object>> candidates = new ArrayList<>();
         Map<String, Object> c1 = new HashMap<>();
@@ -1010,6 +1011,11 @@ class InferenceApiControllerTest {
         Map<String, Object> itemReplayMeta = (Map<String, Object>) results.get(0).get("replay_meta");
         assertEquals(1, ((Number) itemReplayMeta.get("replay_count")).intValue());
         assertEquals(1, ((Number) results.get(0).get("replay_count")).intValue());
+        assertEquals(321L, ((Number) results.get(0).get("algorithm_id")).longValue());
+        Map<String, Object> itemRequest = (Map<String, Object>) results.get(0).get("request");
+        Map<String, Object> itemResult = (Map<String, Object>) results.get(0).get("result");
+        assertEquals(21L, ((Number) ((Map<String, Object>) itemRequest.get("frame")).get("replay_dead_letter_id")).longValue());
+        assertEquals("trace-batch", itemResult.get("trace_id"));
         Map<String, Object> itemReplayBudget = (Map<String, Object>) results.get(0).get("replay_budget");
         assertEquals(3, ((Number) itemReplayBudget.get("max_replay_attempts")).intValue());
         assertEquals(2, ((Number) itemReplayBudget.get("remaining_replay_attempts")).intValue());
