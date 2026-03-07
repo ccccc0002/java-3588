@@ -828,6 +828,7 @@ public class InferenceApiController {
 
                 JsonResult replayResp = deadLetterReplay(deadLetterId, effectivePersistReportFlag, effectiveAckOnSuccessFlag);
                 Map<String, Object> replayData = toMap(replayResp.getData());
+                Map<String, Object> replayBudget = toMap(replayData.get("replay_budget"));
                 Map<String, Object> item = new HashMap<>();
                 item.put("dead_letter_id", deadLetterId);
                 item.put("code", replayResp.getCode());
@@ -835,6 +836,10 @@ public class InferenceApiController {
                 item.put("trace_id", replayData.get("trace_id"));
                 item.put("acked", replayData.get("acked"));
                 item.put("failure_reason", replayData.get("failure_reason"));
+                item.put("max_replay_attempts", replayData.containsKey("max_replay_attempts") ? replayData.get("max_replay_attempts") : replayBudget.get("max_replay_attempts"));
+                item.put("replay_count", replayData.containsKey("replay_count") ? replayData.get("replay_count") : replayBudget.get("replay_count"));
+                item.put("remaining_replay_attempts", replayData.containsKey("remaining_replay_attempts") ? replayData.get("remaining_replay_attempts") : replayBudget.get("remaining_replay_attempts"));
+                item.put("replay_budget", replayData.get("replay_budget"));
                 item.put("replay_exhausted", replayData.get("replay_exhausted"));
                 item.put("replay_in_progress", replayData.get("replay_in_progress"));
                 results.add(item);

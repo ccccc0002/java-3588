@@ -950,6 +950,10 @@ class InferenceApiControllerTest {
         assertEquals(2, results.size());
         assertEquals(0, ((Number) results.get(0).get("code")).intValue());
         assertEquals(0, ((Number) results.get(1).get("code")).intValue());
+        assertEquals(1, ((Number) results.get(0).get("replay_count")).intValue());
+        Map<String, Object> itemReplayBudget = (Map<String, Object>) results.get(0).get("replay_budget");
+        assertEquals(3, ((Number) itemReplayBudget.get("max_replay_attempts")).intValue());
+        assertEquals(2, ((Number) itemReplayBudget.get("remaining_replay_attempts")).intValue());
         verify(inferenceDeadLetterService, times(2)).releaseReplay(anyLong(), anyString());
     }
 
@@ -1024,6 +1028,10 @@ class InferenceApiControllerTest {
         assertEquals(2, results.size());
         assertEquals(true, results.get(1).get("replay_in_progress"));
         assertEquals("in_progress", results.get(1).get("failure_reason"));
+        assertEquals(0, ((Number) results.get(1).get("replay_count")).intValue());
+        Map<String, Object> failedReplayBudget = (Map<String, Object>) results.get(1).get("replay_budget");
+        assertEquals(3, ((Number) failedReplayBudget.get("max_replay_attempts")).intValue());
+        assertEquals(3, ((Number) failedReplayBudget.get("remaining_replay_attempts")).intValue());
         verify(inferenceDeadLetterService, times(1)).releaseReplay(anyLong(), anyString());
     }
 
