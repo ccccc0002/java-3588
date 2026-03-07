@@ -623,6 +623,8 @@ class InferenceApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(10L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals("rk3588_rknn", data.get("backend_type"));
+        assertEquals(false, data.get("replay_in_progress"));
+        assertEquals(false, data.get("replay_exhausted"));
         assertEquals(true, data.get("acked"));
         Map<String, Object> report = (Map<String, Object>) data.get("report");
         assertEquals("skipped", report.get("status"));

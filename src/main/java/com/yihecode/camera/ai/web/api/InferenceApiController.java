@@ -611,6 +611,8 @@ public class InferenceApiController {
                 data.put("plugin_dispatch", pluginDispatch);
             }
             data.put("report", reportData);
+            data.put("replay_in_progress", false);
+            data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
             data.put("acked", acked);
             data.put("replay_meta", replayMeta);
             data.put("replay_budget", replayBudget);
