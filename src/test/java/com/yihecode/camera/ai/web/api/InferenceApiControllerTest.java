@@ -771,6 +771,7 @@ class InferenceApiControllerTest {
     void deadLetterReplay_shouldFailWhenReplayAlreadyInProgress() {
         Map<String, Object> deadLetter = new HashMap<>();
         deadLetter.put("dead_letter_id", 13L);
+        deadLetter.put("replay_count", 1);
         deadLetter.put("replay_in_progress", true);
         deadLetter.put("replay_lock_trace_id", "trace-lock-13");
         deadLetter.put("replay_lock_at_ms", 123456789L);
@@ -783,7 +784,14 @@ class InferenceApiControllerTest {
         assertTrue(result.getCode() != 0);
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(13L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(1, ((Number) data.get("replay_count")).intValue());
+        assertEquals(2, ((Number) data.get("remaining_replay_attempts")).intValue());
         assertEquals(true, data.get("replay_in_progress"));
+        Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
+        assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
+        assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
+        assertEquals(2, ((Number) replayBudget.get("remaining_replay_attempts")).intValue());
+        assertEquals(false, replayBudget.get("replay_exhausted"));
         assertEquals("trace-lock-13", data.get("replay_lock_trace_id"));
         assertTrue(String.valueOf(result.getMsg()).contains("already in progress"));
     }
