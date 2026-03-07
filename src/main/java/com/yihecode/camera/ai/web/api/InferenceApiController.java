@@ -820,6 +820,8 @@ public class InferenceApiController {
             boolean stoppedOnError = false;
             Long stoppedDeadLetterId = null;
             String stoppedReason = null;
+            Map<String, Object> backendTypeCounts = new LinkedHashMap<>();
+            Map<String, Object> failureReasonCounts = new LinkedHashMap<>();
             List<Map<String, Object>> results = new ArrayList<>();
             for (Map<String, Object> candidate : candidates) {
                 Long deadLetterId = toLong(candidate.get("dead_letter_id"));
@@ -831,6 +833,7 @@ public class InferenceApiController {
                     results.add(invalid);
                     failedCount++;
                     failedOtherCount++;
+                    incrementCount(failureReasonCounts, "invalid_dead_letter_id");
                     if (stopOnError) {
                         stoppedOnError = true;
                         stoppedReason = "invalid dead letter id";
@@ -878,12 +881,14 @@ public class InferenceApiController {
                 item.put("replay_exhausted", replayData.get("replay_exhausted"));
                 item.put("replay_in_progress", replayData.get("replay_in_progress"));
                 results.add(item);
+                incrementCount(backendTypeCounts, trimToNull(firstString(replayData.get("backend_type"), null, null)));
                 if (replayResp.getCode() == 0) {
                     successCount++;
                     successDeadLetterIds.add(deadLetterId);
                 } else {
                     failedCount++;
                     failedDeadLetterIds.add(deadLetterId);
+                    incrementCount(failureReasonCounts, trimToNull(firstString(replayData.get("failure_reason"), null, null)));
                     boolean replayInProgress = toBooleanFlag(replayData.get("replay_in_progress"), false);
                     boolean replayExhausted = toBooleanFlag(replayData.get("replay_exhausted"), false);
                     if (replayInProgress) {
@@ -943,6 +948,8 @@ public class InferenceApiController {
             data.put("success_dead_letter_ids", successDeadLetterIds);
             data.put("failed_dead_letter_ids", failedDeadLetterIds);
             data.put("dry_run_dead_letter_ids", dryRunDeadLetterIds);
+            data.put("backend_type_counts", backendTypeCounts);
+            data.put("failure_reason_counts", failureReasonCounts);
             data.put("remaining_count", Math.max(candidates.size() - results.size(), 0));
             data.put("results", results);
             return JsonResultUtils.success(data);
@@ -1386,6 +1393,14 @@ public class InferenceApiController {
         data.put("remaining_replay_attempts", remainingReplayAttempts);
         data.put("replay_exhausted", remainingReplayAttempts <= 0);
         return data;
+    }
+
+    private void incrementCount(Map<String, Object> counts, String key) {
+        if (counts == null || StrUtil.isBlank(key)) {
+            return;
+        }
+        int current = toInt(counts.get(key), 0);
+        counts.put(key, current + 1);
     }
 
     private Map<String, Object> toMap(Object value) {

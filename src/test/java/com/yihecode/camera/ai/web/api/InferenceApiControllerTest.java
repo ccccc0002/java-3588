@@ -998,6 +998,10 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
         assertEquals(0, ((Number) data.get("dry_run_count")).intValue());
         assertEquals(0, ((Number) data.get("remaining_count")).intValue());
+        Map<String, Object> backendTypeCounts = (Map<String, Object>) data.get("backend_type_counts");
+        Map<String, Object> failureReasonCounts = (Map<String, Object>) data.get("failure_reason_counts");
+        assertEquals(2, ((Number) backendTypeCounts.get("rk3588_rknn")).intValue());
+        assertEquals(0, failureReasonCounts.size());
         List<Long> successIds = (List<Long>) data.get("success_dead_letter_ids");
         List<Long> failedIds = (List<Long>) data.get("failed_dead_letter_ids");
         List<Long> dryRunIds = (List<Long>) data.get("dry_run_dead_letter_ids");
@@ -1219,6 +1223,10 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) data.get("failed_other_count")).intValue());
         assertEquals(0, ((Number) data.get("dry_run_count")).intValue());
         assertEquals(0, ((Number) data.get("remaining_count")).intValue());
+        Map<String, Object> backendTypeCounts = (Map<String, Object>) data.get("backend_type_counts");
+        Map<String, Object> failureReasonCounts = (Map<String, Object>) data.get("failure_reason_counts");
+        assertEquals(1, ((Number) backendTypeCounts.get("rk3588_rknn")).intValue());
+        assertEquals(1, ((Number) failureReasonCounts.get("in_progress")).intValue());
         List<Long> successIds = (List<Long>) data.get("success_dead_letter_ids");
         List<Long> failedIds = (List<Long>) data.get("failed_dead_letter_ids");
         List<Long> dryRunIds = (List<Long>) data.get("dry_run_dead_letter_ids");
