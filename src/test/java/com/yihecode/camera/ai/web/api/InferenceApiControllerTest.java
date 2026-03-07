@@ -389,7 +389,7 @@ class InferenceApiControllerTest {
         stats.put("error_type_counts", Map.of("IllegalStateException", 1));
         stats.put("plugin_id_counts", Map.of("face-detector", 2));
         stats.put("plugin_registration_id_counts", Map.of("face-detector:1.0.0", 2));
-        when(inferenceDeadLetterService.stats()).thenReturn(stats);
+        when(inferenceDeadLetterService.stats(false, false, null, null, null, null)).thenReturn(stats);
 
         JsonResult result = inferenceApiController.deadLetterStats();
 
@@ -405,6 +405,25 @@ class InferenceApiControllerTest {
         assertEquals(1, ((Number) deadLetter.get("replay_in_progress_entry_count")).intValue());
         assertEquals(2, ((Number) ((Map<String, Object>) deadLetter.get("backend_type_counts")).get("rk3588_rknn")).intValue());
         assertEquals(2, ((Number) ((Map<String, Object>) deadLetter.get("plugin_registration_id_counts")).get("face-detector:1.0.0")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterStats_shouldForwardFilters() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("queue_size", 1);
+        stats.put("backend_type_counts", Map.of("rk3588_rknn", 1));
+        when(inferenceDeadLetterService.stats(true, false, "rk3588", "face", "face-detector:1.0", "Timeout"))
+                .thenReturn(stats);
+
+        JsonResult result = inferenceApiController.deadLetterStats(1, null, "rk3588", "face", "face-detector:1.0", "Timeout");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
+        assertEquals(1, ((Number) deadLetter.get("queue_size")).intValue());
+        assertEquals(1, ((Number) ((Map<String, Object>) deadLetter.get("backend_type_counts")).get("rk3588_rknn")).intValue());
+        verify(inferenceDeadLetterService).stats(true, false, "rk3588", "face", "face-detector:1.0", "Timeout");
     }
 
     @Test

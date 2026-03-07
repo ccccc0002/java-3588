@@ -337,14 +337,32 @@ public class InferenceApiController {
         }
     }
 
+    public JsonResult deadLetterStats() {
+        return deadLetterStats(null, null, null, null, null, null);
+    }
+
     @RequestMapping(value = {"/dead-letter/stats"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
-    public JsonResult deadLetterStats() {
+    public JsonResult deadLetterStats(@RequestParam(value = "only_retryable", required = false) Integer onlyRetryableFlag,
+                                      @RequestParam(value = "only_exhausted", required = false) Integer onlyExhaustedFlag,
+                                      @RequestParam(value = "backend_type", required = false) String backendType,
+                                      @RequestParam(value = "plugin_id", required = false) String pluginId,
+                                      @RequestParam(value = "plugin_registration_id", required = false) String pluginRegistrationId,
+                                      @RequestParam(value = "error_type", required = false) String errorType) {
         String traceId = nextTraceId();
         try {
+            boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
+            boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
-            data.put("dead_letter", inferenceDeadLetterService.stats());
+            data.put("dead_letter", inferenceDeadLetterService.stats(
+                    onlyRetryable,
+                    onlyExhausted,
+                    trimToNull(backendType),
+                    trimToNull(pluginId),
+                    trimToNull(pluginRegistrationId),
+                    trimToNull(errorType)
+            ));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference dead-letter stats api failed, trace_id={}", traceId, e);
