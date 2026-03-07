@@ -732,6 +732,7 @@ class InferenceApiControllerTest {
         assertEquals(false, data.get("replay_exhausted"));
         assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
         assertEquals("not_found", data.get("failure_reason"));
+        assertEquals("INFER_DL_REPLAY_NOT_FOUND", data.get("error_code"));
         assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
     }
 
@@ -863,6 +864,7 @@ class InferenceApiControllerTest {
         assertEquals(false, data.get("replay_exhausted"));
         assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
         assertEquals("execution_error", data.get("failure_reason"));
+        assertEquals("INFER_DL_REPLAY_EXECUTION_ERROR", data.get("error_code"));
         Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
         assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
         assertEquals("rk3588_rknn", data.get("backend_type"));
@@ -1085,6 +1087,7 @@ class InferenceApiControllerTest {
         assertEquals(1, results.size());
         Map<String, Object> item = results.get(0);
         assertEquals("execution_error", item.get("failure_reason"));
+        assertEquals("INFER_DL_REPLAY_EXECUTION_ERROR", item.get("error_code"));
         assertEquals("rk3588_rknn", item.get("backend_type"));
         assertEquals(325L, ((Number) item.get("algorithm_id")).longValue());
         Map<String, Object> itemRequest = (Map<String, Object>) item.get("request");
@@ -1690,6 +1693,7 @@ class InferenceApiControllerTest {
         assertTrue(result.getCode() != 0);
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(true, data.get("strict_resume"));
+        assertEquals("INFER_DL_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED", data.get("error_code"));
         assertEquals(null, data.get("expected_total_selected_count"));
         assertEquals(1, ((Number) data.get("actual_total_selected_count")).intValue());
     }
@@ -1815,6 +1819,7 @@ class InferenceApiControllerTest {
         assertTrue(result.getCode() != 0);
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(true, data.get("strict_resume"));
+        assertEquals("INFER_DL_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH", data.get("error_code"));
         assertEquals("resume-mismatch", data.get("expected_resume_token"));
         String actual = String.valueOf(data.get("actual_resume_token"));
         assertEquals(64, actual.length());

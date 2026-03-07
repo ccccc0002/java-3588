@@ -41,6 +41,15 @@ public class InferenceApiController {
     private static final String DEAD_LETTER_REPLAY_BATCH_MAX_LIMIT_CONFIG_KEY = "infer_dead_letter_replay_batch_max_limit";
     private static final int DEAD_LETTER_REPLAY_BATCH_DEFAULT_LIMIT = 200;
     private static final int DEAD_LETTER_REPLAY_BATCH_HARD_CAP = 2000;
+    private static final String ERROR_CODE_REPLAY_NOT_FOUND = "INFER_DL_REPLAY_NOT_FOUND";
+    private static final String ERROR_CODE_REPLAY_UNAVAILABLE = "INFER_DL_REPLAY_UNAVAILABLE";
+    private static final String ERROR_CODE_REPLAY_EXHAUSTED = "INFER_DL_REPLAY_EXHAUSTED";
+    private static final String ERROR_CODE_REPLAY_IN_PROGRESS = "INFER_DL_REPLAY_IN_PROGRESS";
+    private static final String ERROR_CODE_REPLAY_EXECUTION = "INFER_DL_REPLAY_EXECUTION_ERROR";
+    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED";
+    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH";
+    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_WINDOW_FINGERPRINT_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_WINDOW_FINGERPRINT_MISMATCH";
+    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH";
 
     @Autowired
     private InferenceRoutingService inferenceRoutingService;
@@ -762,6 +771,7 @@ public class InferenceApiController {
                     data.put("actual_total_selected_count", totalSelectedCount);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
+                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: expected_total_selected_count required when strict_resume enabled", data);
                 }
                 if (!expectedTotalSelectedCount.equals(totalSelectedCount)) {
@@ -776,6 +786,7 @@ public class InferenceApiController {
                     data.put("actual_resume_token", actualResumeToken);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
+                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
                 }
                 if (StrUtil.isNotBlank(expectedWindowFingerprint) && !expectedWindowFingerprint.equals(actualWindowFingerprint)) {
@@ -790,6 +801,7 @@ public class InferenceApiController {
                     data.put("actual_resume_token", actualResumeToken);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
+                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_WINDOW_FINGERPRINT_MISMATCH);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window fingerprint changed", data);
                 }
                 if (StrUtil.isNotBlank(expectedResumeToken) && !expectedResumeToken.equals(actualResumeToken)) {
@@ -804,6 +816,7 @@ public class InferenceApiController {
                     data.put("actual_resume_token", actualResumeToken);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
+                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: resume token changed", data);
                 }
             }
@@ -863,6 +876,7 @@ public class InferenceApiController {
                 item.put("code", replayResp.getCode());
                 item.put("msg", replayResp.getMsg());
                 item.put("trace_id", replayData.get("trace_id"));
+                item.put("error_code", replayData.get("error_code"));
                 item.put("backend_type", replayData.get("backend_type"));
                 item.put("plugin_route", replayData.get("plugin_route"));
                 item.put("plugin_dispatch", replayData.get("plugin_dispatch"));
@@ -1339,9 +1353,26 @@ public class InferenceApiController {
         data.put("dead_letter_id", deadLetterId);
         data.put("max_replay_attempts", maxReplayAttempts);
         data.put("failure_reason", failureReason);
+        data.put("error_code", replayErrorCodeForFailureReason(failureReason));
         data.put("replay_in_progress", replayInProgress);
         data.put("replay_exhausted", replayExhausted);
         return data;
+    }
+
+    private String replayErrorCodeForFailureReason(String failureReason) {
+        if ("not_found".equals(failureReason)) {
+            return ERROR_CODE_REPLAY_NOT_FOUND;
+        }
+        if ("replay_exhausted".equals(failureReason)) {
+            return ERROR_CODE_REPLAY_EXHAUSTED;
+        }
+        if ("in_progress".equals(failureReason)) {
+            return ERROR_CODE_REPLAY_IN_PROGRESS;
+        }
+        if ("execution_error".equals(failureReason)) {
+            return ERROR_CODE_REPLAY_EXECUTION;
+        }
+        return ERROR_CODE_REPLAY_UNAVAILABLE;
     }
 
     private void enrichReplayFailureBudget(Map<String, Object> data,
