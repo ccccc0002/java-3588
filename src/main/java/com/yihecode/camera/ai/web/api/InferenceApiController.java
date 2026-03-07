@@ -630,13 +630,23 @@ public class InferenceApiController {
             data.put("replay_budget", replayBudget);
             return JsonResultUtils.success(data);
         } catch (Exception e) {
+            Map<String, Object> replayMeta = null;
             if (replayLockAcquired) {
-                inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
+                replayMeta = inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
             }
             log.error("inference dead-letter replay api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("dead_letter_id", deadLetterId);
+            data.put("replay_in_progress", false);
+            if (replayMeta != null) {
+                int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
+                int replayCount = toInt(replayMeta.get("replay_count"), 0);
+                Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
+                data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
+                data.put("replay_meta", replayMeta);
+                data.put("replay_budget", replayBudget);
+            }
             return JsonResultUtils.fail("inference dead-letter replay api failed: " + e.getMessage(), data);
         } finally {
             if (replayLockAcquired) {

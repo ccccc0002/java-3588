@@ -812,11 +812,17 @@ class InferenceApiControllerTest {
         deadLetter.put("dead_letter_id", 12L);
         deadLetter.put("replay_count", 0);
         deadLetter.put("request_payload", requestPayload);
+        Map<String, Object> replayMeta = new HashMap<>();
+        replayMeta.put("replay_count", 1);
+        replayMeta.put("last_replay_success", false);
+
         when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
         when(inferenceDeadLetterService.tryAcquireReplay(eq(12L), anyString(), eq(3)))
                 .thenReturn(buildAcquireResult(true, "ok", deadLetter));
         when(inferenceRoutingService.backendTypeForCamera(113L)).thenReturn("rk3588_rknn");
         when(inferenceRoutingService.infer(any())).thenThrow(new IllegalStateException("mock replay infer error"));
+        when(inferenceDeadLetterService.markReplay(eq(12L), eq(false), anyString(), eq("mock replay infer error")))
+                .thenReturn(replayMeta);
 
         JsonResult result = inferenceApiController.deadLetterReplay(12L, null, null);
 
@@ -825,6 +831,13 @@ class InferenceApiControllerTest {
         verify(inferenceDeadLetterService).releaseReplay(eq(12L), anyString());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(12L, ((Number) data.get("dead_letter_id")).longValue());
+        assertEquals(false, data.get("replay_in_progress"));
+        assertEquals(false, data.get("replay_exhausted"));
+        Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
+        assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
+        assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
+        assertEquals(2, ((Number) replayBudget.get("remaining_replay_attempts")).intValue());
+        assertEquals(false, replayBudget.get("replay_exhausted"));
     }
 
     @Test
