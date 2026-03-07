@@ -510,6 +510,9 @@ public class InferenceApiController {
         boolean pluginDispatchable = false;
         boolean pluginDispatched = false;
         String pluginDispatchError = null;
+        InferenceRequest replayRequest = null;
+        Long replayAlgorithmId = null;
+        String replayBackendType = null;
         try {
             int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
             Map<String, Object> acquireResult = inferenceDeadLetterService.tryAcquireReplay(deadLetterId, traceId, maxReplayAttempts);
@@ -549,6 +552,7 @@ public class InferenceApiController {
             frame.put("replay_count", replayCount + 1);
             payload.put("frame", frame);
             InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
+            replayRequest = request;
             replayPluginRoute = firstPluginRoute(payload, entry);
             applyPluginRoute(request, replayPluginRoute);
             String pluginBackendHint = extractPluginBackendHint(replayPluginRoute);
@@ -558,6 +562,8 @@ public class InferenceApiController {
             String routedBackend = StrUtil.isNotBlank(pluginBackendHint)
                     ? inferenceRoutingService.backendTypeForCamera(request.getCameraId(), pluginBackendHint)
                     : inferenceRoutingService.backendTypeForCamera(request.getCameraId());
+            replayBackendType = routedBackend;
+            replayAlgorithmId = firstLong(toLong(entry.get("algorithm_id")), null, request.getModelId());
             InferenceResult result;
             if (pluginDispatchable) {
                 try {
@@ -575,6 +581,7 @@ public class InferenceApiController {
                         : inferenceRoutingService.infer(request);
             }
             String backendType = firstString(result.getBackendType(), routedBackend, inferenceRoutingService.currentBackendType());
+            replayBackendType = backendType;
             Map<String, Object> pluginDispatch = buildPluginDispatchData(replayPluginRoute, pluginDispatched,
                     pluginDispatchable ? (pluginDispatched ? null : "plugin_dispatch_failed")
                             : (shouldAttachPluginRoute(replayPluginRoute) ? "plugin_not_dispatchable" : null),
@@ -582,13 +589,12 @@ public class InferenceApiController {
 
             boolean entryPersistReport = toBooleanFlag(entry.get("persist_report"), false);
             boolean persistReport = toBooleanFlag(persistReportFlag, entryPersistReport);
-            Long finalAlgorithmId = firstLong(toLong(entry.get("algorithm_id")), null, request.getModelId());
 
             Map<String, Object> reportData = new HashMap<>();
             reportData.put("trace_id", traceId);
             reportData.put("enabled", persistReport);
             if (persistReport) {
-                reportData.putAll(inferenceReportBridgeService.persistAndBroadcast(request.getCameraId(), finalAlgorithmId, result, traceId));
+                reportData.putAll(inferenceReportBridgeService.persistAndBroadcast(request.getCameraId(), replayAlgorithmId, result, traceId));
             } else {
                 reportData.put("status", "skipped");
                 reportData.put("reason", "persist_report disabled");
@@ -603,10 +609,10 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("dead_letter_id", deadLetterId);
-            data.put("backend_type", backendType);
+            data.put("backend_type", replayBackendType);
             data.put("request", request.toPayload());
             data.put("result", result.toMap());
-            data.put("algorithm_id", finalAlgorithmId);
+            data.put("algorithm_id", replayAlgorithmId);
             if (shouldAttachPluginRoute(replayPluginRoute)) {
                 data.put("plugin_route", replayPluginRoute);
                 data.put("plugin_dispatch", pluginDispatch);
@@ -627,6 +633,15 @@ public class InferenceApiController {
             int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
             Map<String, Object> data = buildReplayFailureData(traceId, deadLetterId, maxReplayAttempts,
                     "execution_error", false, false);
+            if (StrUtil.isNotBlank(replayBackendType)) {
+                data.put("backend_type", replayBackendType);
+            }
+            if (replayRequest != null) {
+                data.put("request", replayRequest.toPayload());
+            }
+            if (replayAlgorithmId != null) {
+                data.put("algorithm_id", replayAlgorithmId);
+            }
             if (replayMeta != null) {
                 int replayCount = toInt(replayMeta.get("replay_count"), 0);
                 Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);

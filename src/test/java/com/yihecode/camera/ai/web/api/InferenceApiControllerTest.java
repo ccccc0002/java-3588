@@ -850,6 +850,7 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.infer(any())).thenThrow(new IllegalStateException("mock replay infer error"));
         when(inferenceDeadLetterService.markReplay(eq(12L), eq(false), anyString(), eq("mock replay infer error")))
                 .thenReturn(replayMeta);
+        deadLetter.put("algorithm_id", 313L);
 
         JsonResult result = inferenceApiController.deadLetterReplay(12L, null, null);
 
@@ -864,6 +865,10 @@ class InferenceApiControllerTest {
         assertEquals("execution_error", data.get("failure_reason"));
         Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
         assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
+        assertEquals("rk3588_rknn", data.get("backend_type"));
+        assertEquals(313L, ((Number) data.get("algorithm_id")).longValue());
+        Map<String, Object> failedRequest = (Map<String, Object>) data.get("request");
+        assertEquals(12L, ((Number) ((Map<String, Object>) failedRequest.get("frame")).get("replay_dead_letter_id")).longValue());
         assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
         assertEquals(2, ((Number) replayBudget.get("remaining_replay_attempts")).intValue());
         assertEquals(false, replayBudget.get("replay_exhausted"));
@@ -1066,7 +1071,6 @@ class InferenceApiControllerTest {
         when(inferenceRoutingService.backendTypeForCamera(125L, "rk3588_rknn")).thenReturn("rk3588_rknn");
         when(inferenceRoutingService.infer(any(), eq("rk3588_rknn"))).thenThrow(new IllegalStateException("backend fallback failed"));
         when(inferenceDeadLetterService.markReplay(eq(25L), eq(false), anyString(), eq("backend fallback failed"))).thenReturn(replayMeta);
-
         JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 0, 1, null, null, null, null, null, null, null, null);
 
         assertEquals(0, result.getCode());
@@ -1075,6 +1079,10 @@ class InferenceApiControllerTest {
         assertEquals(1, results.size());
         Map<String, Object> item = results.get(0);
         assertEquals("execution_error", item.get("failure_reason"));
+        assertEquals("rk3588_rknn", item.get("backend_type"));
+        assertEquals(325L, ((Number) item.get("algorithm_id")).longValue());
+        Map<String, Object> itemRequest = (Map<String, Object>) item.get("request");
+        assertEquals(25L, ((Number) ((Map<String, Object>) itemRequest.get("frame")).get("replay_dead_letter_id")).longValue());
         Map<String, Object> itemPluginRoute = (Map<String, Object>) item.get("plugin_route");
         Map<String, Object> itemPluginDispatch = (Map<String, Object>) item.get("plugin_dispatch");
         assertEquals(true, itemPluginRoute.get("requested"));
