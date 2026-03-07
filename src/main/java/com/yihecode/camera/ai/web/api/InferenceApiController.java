@@ -514,41 +514,19 @@ public class InferenceApiController {
             String acquireReason = firstString(acquireResult.get("reason"), "unknown", "unknown");
             Map<String, Object> entry = toMap(acquireResult.get("entry"));
             if (!exists || entry.isEmpty()) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("trace_id", traceId);
-                data.put("dead_letter_id", deadLetterId);
-                data.put("max_replay_attempts", maxReplayAttempts);
-                data.put("replay_in_progress", false);
-                data.put("replay_exhausted", false);
-                data.put("failure_reason", "not_found");
-                return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found", data);
+                return JsonResultUtils.fail("inference dead-letter replay failed: dead letter not found",
+                        buildReplayFailureData(traceId, deadLetterId, maxReplayAttempts, "not_found", false, false));
             }
             if (!acquired) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("trace_id", traceId);
-                data.put("dead_letter_id", deadLetterId);
-                data.put("max_replay_attempts", maxReplayAttempts);
-                data.put("failure_reason", acquireReason);
-                data.put("replay_in_progress", "in_progress".equals(acquireReason));
-                data.put("replay_exhausted", false);
+                Map<String, Object> data = buildReplayFailureData(traceId, deadLetterId, maxReplayAttempts,
+                        acquireReason, "in_progress".equals(acquireReason), false);
                 if ("replay_exhausted".equals(acquireReason)) {
-                    int replayCount = toInt(entry.get("replay_count"), 0);
-                    Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
-                    data.put("replay_count", replayCount);
-                    data.put("max_replay_attempts", maxReplayAttempts);
-                    data.put("remaining_replay_attempts", replayBudget.get("remaining_replay_attempts"));
+                    enrichReplayFailureBudget(data, maxReplayAttempts, toInt(entry.get("replay_count"), 0));
                     data.put("replay_exhausted", true);
-                    data.put("replay_budget", replayBudget);
                     return JsonResultUtils.fail("inference dead-letter replay failed: replay attempts exhausted", data);
                 }
                 if ("in_progress".equals(acquireReason)) {
-                    int replayCount = toInt(entry.get("replay_count"), 0);
-                    Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
-                    data.put("replay_count", replayCount);
-                    data.put("max_replay_attempts", maxReplayAttempts);
-                    data.put("remaining_replay_attempts", replayBudget.get("remaining_replay_attempts"));
-                    data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
-                    data.put("replay_budget", replayBudget);
+                    enrichReplayFailureBudget(data, maxReplayAttempts, toInt(entry.get("replay_count"), 0));
                     data.put("replay_lock_trace_id", entry.get("replay_lock_trace_id"));
                     data.put("replay_lock_at_ms", entry.get("replay_lock_at_ms"));
                     return JsonResultUtils.fail("inference dead-letter replay failed: replay already in progress", data);
@@ -642,16 +620,12 @@ public class InferenceApiController {
                 replayMeta = inferenceDeadLetterService.markReplay(deadLetterId, false, traceId, e.getMessage());
             }
             log.error("inference dead-letter replay api failed, trace_id={}, dead_letter_id={}", traceId, deadLetterId, e);
-            Map<String, Object> data = new HashMap<>();
-            data.put("trace_id", traceId);
-            data.put("dead_letter_id", deadLetterId);
-            data.put("replay_in_progress", false);
-            data.put("failure_reason", "execution_error");
+            int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
+            Map<String, Object> data = buildReplayFailureData(traceId, deadLetterId, maxReplayAttempts,
+                    "execution_error", false, false);
             if (replayMeta != null) {
-                int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
                 int replayCount = toInt(replayMeta.get("replay_count"), 0);
                 Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
-                data.put("max_replay_attempts", maxReplayAttempts);
                 data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
                 data.put("replay_meta", replayMeta);
                 data.put("replay_budget", replayBudget);
@@ -1300,6 +1274,32 @@ public class InferenceApiController {
             return fromEntry;
         }
         return fromPayload.isEmpty() ? fromEntry : fromPayload;
+    }
+
+    private Map<String, Object> buildReplayFailureData(String traceId,
+                                                     Long deadLetterId,
+                                                     int maxReplayAttempts,
+                                                     String failureReason,
+                                                     boolean replayInProgress,
+                                                     boolean replayExhausted) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("trace_id", traceId);
+        data.put("dead_letter_id", deadLetterId);
+        data.put("max_replay_attempts", maxReplayAttempts);
+        data.put("failure_reason", failureReason);
+        data.put("replay_in_progress", replayInProgress);
+        data.put("replay_exhausted", replayExhausted);
+        return data;
+    }
+
+    private void enrichReplayFailureBudget(Map<String, Object> data,
+                                           int maxReplayAttempts,
+                                           int replayCount) {
+        Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
+        data.put("replay_count", replayCount);
+        data.put("remaining_replay_attempts", replayBudget.get("remaining_replay_attempts"));
+        data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
+        data.put("replay_budget", replayBudget);
     }
 
     private Map<String, Object> buildDeadLetterFilterData(boolean onlyRetryable,
