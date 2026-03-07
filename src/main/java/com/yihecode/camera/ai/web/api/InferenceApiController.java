@@ -1300,6 +1300,7 @@ public class InferenceApiController {
         int replayCount = toInt(data.get("replay_count"), 0);
         int maxReplayAttempts = inferenceDeadLetterService.maxReplayAttempts();
         int remainingReplayAttempts = Math.max(0, maxReplayAttempts - replayCount);
+        data.put("replay_in_progress", toBooleanFlag(data.get("replay_in_progress"), false));
         data.put("replay_count", replayCount);
         data.put("max_replay_attempts", maxReplayAttempts);
         data.put("remaining_replay_attempts", remainingReplayAttempts);
