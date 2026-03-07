@@ -1226,6 +1226,8 @@ class InferenceApiControllerTest {
         assertEquals(0, ((Number) results.get(1).get("replay_count")).intValue());
         Map<String, Object> failedReplayBudget = (Map<String, Object>) results.get(1).get("replay_budget");
         assertEquals(3, ((Number) failedReplayBudget.get("max_replay_attempts")).intValue());
+        assertEquals("trace-lock-32", results.get(1).get("replay_lock_trace_id"));
+        assertEquals(123L, ((Number) results.get(1).get("replay_lock_at_ms")).longValue());
         assertEquals(3, ((Number) failedReplayBudget.get("remaining_replay_attempts")).intValue());
         verify(inferenceDeadLetterService, times(1)).releaseReplay(anyLong(), anyString());
     }
