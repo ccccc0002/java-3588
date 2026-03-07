@@ -526,9 +526,12 @@ public class InferenceApiController {
                 data.put("replay_in_progress", "in_progress".equals(acquireReason));
                 if ("replay_exhausted".equals(acquireReason)) {
                     int replayCount = toInt(entry.get("replay_count"), 0);
+                    Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
                     data.put("replay_count", replayCount);
                     data.put("max_replay_attempts", maxReplayAttempts);
+                    data.put("remaining_replay_attempts", replayBudget.get("remaining_replay_attempts"));
                     data.put("replay_exhausted", true);
+                    data.put("replay_budget", replayBudget);
                     return JsonResultUtils.fail("inference dead-letter replay failed: replay attempts exhausted", data);
                 }
                 if ("in_progress".equals(acquireReason)) {
