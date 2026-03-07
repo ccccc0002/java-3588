@@ -448,6 +448,9 @@ class InferenceApiControllerTest {
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
+        assertEquals(5, ((Number) data.get("requested_limit")).intValue());
+        assertEquals(1, ((Number) data.get("returned_count")).intValue());
+        assertEquals(false, data.get("filter_active"));
         assertEquals(1, deadLetter.size());
         assertEquals("trace-dl-latest", deadLetter.get(0).get("trace_id"));
         assertEquals(2, ((Number) deadLetter.get(0).get("remaining_replay_attempts")).intValue());
@@ -2366,6 +2369,9 @@ class InferenceApiControllerTest {
         assertEquals(0, result.getCode());
         Map<String, Object> data = (Map<String, Object>) result.getData();
         List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
+        assertEquals(5, ((Number) data.get("requested_limit")).intValue());
+        assertEquals(1, ((Number) data.get("returned_count")).intValue());
+        assertEquals(true, data.get("filter_active"));
         assertEquals(1, deadLetter.size());
         assertEquals("trace-dl-plugin-filter", deadLetter.get(0).get("trace_id"));
         assertEquals(false, data.get("only_retryable"));

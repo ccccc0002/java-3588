@@ -419,6 +419,8 @@ public class InferenceApiController {
             }
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
+            data.put("requested_limit", limit);
+            data.put("returned_count", display.size());
             data.put("dead_letter", display);
             data.putAll(buildDeadLetterFilterData(onlyRetryable, onlyExhausted, selectedBackendType,
                     selectedPluginId, selectedPluginRegistrationId, selectedErrorType));
@@ -1284,6 +1286,12 @@ public class InferenceApiController {
         data.put("plugin_id", pluginId);
         data.put("plugin_registration_id", pluginRegistrationId);
         data.put("error_type", errorType);
+        data.put("filter_active", onlyRetryable
+                || onlyExhausted
+                || StrUtil.isNotBlank(backendType)
+                || StrUtil.isNotBlank(pluginId)
+                || StrUtil.isNotBlank(pluginRegistrationId)
+                || StrUtil.isNotBlank(errorType));
         return data;
     }
 
