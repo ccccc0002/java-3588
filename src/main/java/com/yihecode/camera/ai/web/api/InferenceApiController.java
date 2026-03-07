@@ -353,16 +353,22 @@ public class InferenceApiController {
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
+            String selectedBackendType = trimToNull(backendType);
+            String selectedPluginId = trimToNull(pluginId);
+            String selectedPluginRegistrationId = trimToNull(pluginRegistrationId);
+            String selectedErrorType = trimToNull(errorType);
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("dead_letter", inferenceDeadLetterService.stats(
                     onlyRetryable,
                     onlyExhausted,
-                    trimToNull(backendType),
-                    trimToNull(pluginId),
-                    trimToNull(pluginRegistrationId),
-                    trimToNull(errorType)
+                    selectedBackendType,
+                    selectedPluginId,
+                    selectedPluginRegistrationId,
+                    selectedErrorType
             ));
+            data.putAll(buildDeadLetterFilterData(onlyRetryable, onlyExhausted, selectedBackendType,
+                    selectedPluginId, selectedPluginRegistrationId, selectedErrorType));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference dead-letter stats api failed, trace_id={}", traceId, e);
@@ -394,14 +400,18 @@ public class InferenceApiController {
         try {
             boolean onlyRetryable = toBooleanFlag(onlyRetryableFlag, false);
             boolean onlyExhausted = toBooleanFlag(onlyExhaustedFlag, false);
+            String selectedBackendType = trimToNull(backendType);
+            String selectedPluginId = trimToNull(pluginId);
+            String selectedPluginRegistrationId = trimToNull(pluginRegistrationId);
+            String selectedErrorType = trimToNull(errorType);
             List<Map<String, Object>> latest = inferenceDeadLetterService.latest(
                     limit,
                     onlyRetryable,
                     onlyExhausted,
-                    trimToNull(backendType),
-                    trimToNull(pluginId),
-                    trimToNull(pluginRegistrationId),
-                    trimToNull(errorType)
+                    selectedBackendType,
+                    selectedPluginId,
+                    selectedPluginRegistrationId,
+                    selectedErrorType
             );
             List<Map<String, Object>> display = new ArrayList<>();
             for (Map<String, Object> item : latest) {
@@ -410,6 +420,8 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("dead_letter", display);
+            data.putAll(buildDeadLetterFilterData(onlyRetryable, onlyExhausted, selectedBackendType,
+                    selectedPluginId, selectedPluginRegistrationId, selectedErrorType));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference dead-letter latest api failed, trace_id={}", traceId, e);
@@ -1255,6 +1267,22 @@ public class InferenceApiController {
             return fromEntry;
         }
         return fromPayload.isEmpty() ? fromEntry : fromPayload;
+    }
+
+    private Map<String, Object> buildDeadLetterFilterData(boolean onlyRetryable,
+                                                          boolean onlyExhausted,
+                                                          String backendType,
+                                                          String pluginId,
+                                                          String pluginRegistrationId,
+                                                          String errorType) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("only_retryable", onlyRetryable);
+        data.put("only_exhausted", onlyExhausted);
+        data.put("backend_type", backendType);
+        data.put("plugin_id", pluginId);
+        data.put("plugin_registration_id", pluginRegistrationId);
+        data.put("error_type", errorType);
+        return data;
     }
 
     private Map<String, Object> enrichDeadLetterReplayBudget(Map<String, Object> entry) {

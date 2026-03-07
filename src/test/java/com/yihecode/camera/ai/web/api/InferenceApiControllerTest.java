@@ -423,6 +423,12 @@ class InferenceApiControllerTest {
         Map<String, Object> deadLetter = (Map<String, Object>) data.get("dead_letter");
         assertEquals(1, ((Number) deadLetter.get("queue_size")).intValue());
         assertEquals(1, ((Number) ((Map<String, Object>) deadLetter.get("backend_type_counts")).get("rk3588_rknn")).intValue());
+        assertEquals(true, data.get("only_retryable"));
+        assertEquals(false, data.get("only_exhausted"));
+        assertEquals("rk3588", data.get("backend_type"));
+        assertEquals("face", data.get("plugin_id"));
+        assertEquals("face-detector:1.0", data.get("plugin_registration_id"));
+        assertEquals("Timeout", data.get("error_type"));
         verify(inferenceDeadLetterService).stats(true, false, "rk3588", "face", "face-detector:1.0", "Timeout");
     }
 
@@ -2360,6 +2366,12 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> deadLetter = (List<Map<String, Object>>) data.get("dead_letter");
         assertEquals(1, deadLetter.size());
         assertEquals("trace-dl-plugin-filter", deadLetter.get(0).get("trace_id"));
+        assertEquals(false, data.get("only_retryable"));
+        assertEquals(false, data.get("only_exhausted"));
+        assertEquals("rk3588", data.get("backend_type"));
+        assertEquals("face", data.get("plugin_id"));
+        assertEquals("face-detector:1.0", data.get("plugin_registration_id"));
+        assertEquals("Timeout", data.get("error_type"));
         verify(inferenceDeadLetterService).latest(5, false, false, "rk3588", "face", "face-detector:1.0", "Timeout");
     }
 
