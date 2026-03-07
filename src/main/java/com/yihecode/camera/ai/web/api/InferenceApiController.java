@@ -834,6 +834,7 @@ public class InferenceApiController {
                 item.put("msg", replayResp.getMsg());
                 item.put("trace_id", replayData.get("trace_id"));
                 item.put("acked", replayData.get("acked"));
+                item.put("failure_reason", replayData.get("failure_reason"));
                 item.put("replay_exhausted", replayData.get("replay_exhausted"));
                 item.put("replay_in_progress", replayData.get("replay_in_progress"));
                 results.add(item);

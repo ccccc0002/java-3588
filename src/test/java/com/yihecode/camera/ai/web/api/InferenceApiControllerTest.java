@@ -1023,6 +1023,7 @@ class InferenceApiControllerTest {
         List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
         assertEquals(2, results.size());
         assertEquals(true, results.get(1).get("replay_in_progress"));
+        assertEquals("in_progress", results.get(1).get("failure_reason"));
         verify(inferenceDeadLetterService, times(1)).releaseReplay(anyLong(), anyString());
     }
 
@@ -2444,3 +2445,4 @@ class InferenceApiControllerTest {
     }
 
 }
+
