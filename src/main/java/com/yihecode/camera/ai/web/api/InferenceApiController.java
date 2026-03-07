@@ -538,7 +538,9 @@ public class InferenceApiController {
                     int replayCount = toInt(entry.get("replay_count"), 0);
                     Map<String, Object> replayBudget = buildReplayBudget(maxReplayAttempts, replayCount);
                     data.put("replay_count", replayCount);
+                    data.put("max_replay_attempts", maxReplayAttempts);
                     data.put("remaining_replay_attempts", replayBudget.get("remaining_replay_attempts"));
+                    data.put("replay_exhausted", replayBudget.get("replay_exhausted"));
                     data.put("replay_budget", replayBudget);
                     data.put("replay_lock_trace_id", entry.get("replay_lock_trace_id"));
                     data.put("replay_lock_at_ms", entry.get("replay_lock_at_ms"));

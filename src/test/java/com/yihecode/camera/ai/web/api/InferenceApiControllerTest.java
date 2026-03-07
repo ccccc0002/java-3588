@@ -785,8 +785,10 @@ class InferenceApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals(13L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals(1, ((Number) data.get("replay_count")).intValue());
+        assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
         assertEquals(2, ((Number) data.get("remaining_replay_attempts")).intValue());
         assertEquals(true, data.get("replay_in_progress"));
+        assertEquals(false, data.get("replay_exhausted"));
         Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
         assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
         assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
