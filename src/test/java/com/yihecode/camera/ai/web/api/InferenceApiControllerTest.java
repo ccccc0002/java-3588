@@ -964,6 +964,75 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldIncludePluginDispatchDetailsWhenReplayUsesPluginRoute() {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> c1 = new HashMap<>();
+        c1.put("dead_letter_id", 24L);
+        candidates.add(c1);
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "plugin_id", "face-detector",
+                "runtime", "rk3588_rknn",
+                "infer_url", "http://plugin-a:19090/v1/infer"
+        ));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("camera_id", 124L);
+        payload.put("model_id", 224L);
+        payload.put("frame", new HashMap<>());
+        payload.put("roi", new ArrayList<>());
+        payload.put("plugin_route", pluginRoute);
+
+        Map<String, Object> entry = new HashMap<>();
+        entry.put("dead_letter_id", 24L);
+        entry.put("request_payload", payload);
+        entry.put("algorithm_id", 324L);
+        entry.put("persist_report", false);
+
+        InferenceResult infer = new InferenceResult();
+        infer.setTraceId("trace-batch-plugin");
+        infer.setLatencyMs(5L);
+        infer.setBackendType("rk3588_rknn");
+        infer.setAttempt(1);
+        infer.setDetections(new ArrayList<>());
+
+        Map<String, Object> replayMeta = new HashMap<>();
+        replayMeta.put("replay_count", 1);
+
+        when(inferenceDeadLetterService.latest(5, true, false)).thenReturn(candidates);
+        when(inferenceDeadLetterService.maxReplayAttempts()).thenReturn(3);
+        when(inferenceDeadLetterService.tryAcquireReplay(eq(24L), anyString(), eq(3))).thenReturn(buildAcquireResult(true, "ok", entry));
+        when(pluginInferenceDispatchService.isDispatchable(any())).thenReturn(true);
+        when(pluginInferenceDispatchService.infer(any(), any())).thenReturn(infer);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(124L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+        when(inferenceDeadLetterService.markReplay(eq(24L), eq(true), anyString(), eq("ok"))).thenReturn(replayMeta);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 0, 1, null, null, null, null, null, null, null, null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        assertEquals(1, results.size());
+        Map<String, Object> item = results.get(0);
+        Map<String, Object> itemPluginRoute = (Map<String, Object>) item.get("plugin_route");
+        Map<String, Object> itemPluginDispatch = (Map<String, Object>) item.get("plugin_dispatch");
+        assertEquals(true, itemPluginRoute.get("requested"));
+        assertEquals(true, itemPluginDispatch.get("dispatched"));
+        assertEquals(false, itemPluginDispatch.get("fallback"));
+
+        verify(pluginInferenceDispatchService).infer(any(), any());
+        verify(inferenceRoutingService, never()).infer(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldIncludeFailureWhenReplayInProgress() {
         List<Map<String, Object>> candidates = new ArrayList<>();
         Map<String, Object> c1 = new HashMap<>();
