@@ -730,6 +730,7 @@ class InferenceApiControllerTest {
         assertEquals(999L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals(false, data.get("replay_in_progress"));
         assertEquals(false, data.get("replay_exhausted"));
+        assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
         assertEquals("not_found", data.get("failure_reason"));
         assertTrue(String.valueOf(result.getMsg()).contains("dead letter not found"));
     }
@@ -750,6 +751,7 @@ class InferenceApiControllerTest {
         assertEquals(15L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals(false, data.get("replay_in_progress"));
         assertEquals(false, data.get("replay_exhausted"));
+        assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
         assertEquals("conflict", data.get("failure_reason"));
         assertTrue(String.valueOf(result.getMsg()).contains("dead letter unavailable"));
     }
@@ -856,6 +858,8 @@ class InferenceApiControllerTest {
         assertEquals(12L, ((Number) data.get("dead_letter_id")).longValue());
         assertEquals(false, data.get("replay_in_progress"));
         assertEquals(false, data.get("replay_exhausted"));
+        assertEquals(3, ((Number) data.get("max_replay_attempts")).intValue());
+        assertEquals("execution_error", data.get("failure_reason"));
         Map<String, Object> replayBudget = (Map<String, Object>) data.get("replay_budget");
         assertEquals(3, ((Number) replayBudget.get("max_replay_attempts")).intValue());
         assertEquals(1, ((Number) replayBudget.get("replay_count")).intValue());
