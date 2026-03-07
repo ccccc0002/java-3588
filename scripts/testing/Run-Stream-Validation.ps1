@@ -14,7 +14,8 @@ param(
     [ValidateSet("quick", "full")]
     [string]$Mode = "full",
     [switch]$IncludeInference,
-    [switch]$IncludePlugin
+    [switch]$IncludePlugin,
+    [switch]$IncludeTraceGovernance
 )
 
 $ErrorActionPreference = "Continue"
@@ -24,6 +25,7 @@ $contractsScript = Join-Path $scriptDir "Validate-Stream-Contracts.ps1"
 $traceScript = Join-Path $scriptDir "Validate-TraceId-Lists.ps1"
 $inferenceScript = Join-Path $scriptDir "Validate-Inference-Contracts.ps1"
 $pluginScript = Join-Path $scriptDir "Validate-Plugin-Contracts.ps1"
+$traceGovernanceScript = Join-Path $scriptDir "Validate-Trace-Governance-Flow.ps1"
 
 if (-not (Test-Path $contractsScript)) {
     Write-Output "FAIL: missing script Validate-Stream-Contracts.ps1"
@@ -39,6 +41,10 @@ if ($IncludeInference -and -not (Test-Path $inferenceScript)) {
 }
 if ($IncludePlugin -and -not (Test-Path $pluginScript)) {
     Write-Output "FAIL: missing script Validate-Plugin-Contracts.ps1"
+    exit 2
+}
+if (($IncludeTraceGovernance -or ($IncludeInference -and $Mode -eq "full")) -and -not (Test-Path $traceGovernanceScript)) {
+    Write-Output "FAIL: missing script Validate-Trace-Governance-Flow.ps1"
     exit 2
 }
 
@@ -71,6 +77,14 @@ if ($IncludeInference) {
 if ($IncludePlugin) {
     Write-Output "== Run: Validate-Plugin-Contracts =="
     & $pluginScript -BaseUrl $BaseUrl -PluginId $PluginId -Version $PluginVersion -Runtime $PluginRuntime -HealthUrl $PluginHealthUrl -Cookie $Cookie -TimeoutSec $TimeoutSec
+    if ($LASTEXITCODE -ne 0) {
+        $failed++
+    }
+}
+
+if ($IncludeTraceGovernance -or ($IncludeInference -and $Mode -eq "full")) {
+    Write-Output "== Run: Validate-Trace-Governance-Flow =="
+    & $traceGovernanceScript -BaseUrl $BaseUrl -CameraId $CameraId -ModelId $ModelId -AlgorithmId $AlgorithmId -VideoPort $VideoPort -Source $InferenceSource -Cookie $Cookie -TimeoutSec $TimeoutSec
     if ($LASTEXITCODE -ne 0) {
         $failed++
     }
