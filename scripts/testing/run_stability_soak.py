@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 import urllib.error
@@ -20,6 +21,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 STRICT_RESUME_ERROR = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED"
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 DEFAULT_SOURCE = "test://frame"
+BRIDGE_CTL_PATH = Path(__file__).resolve().parent.parent / "rk3588" / "runtime_bridge_ctl.py"
 
 
 class ValidationError(RuntimeError):
@@ -216,6 +218,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--auth-header-name", default="")
     parser.add_argument("--auth-header-value", default="")
     parser.add_argument("--timeout-sec", type=int, default=10)
+    parser.add_argument("--manage-bridge", action="store_true")
+    parser.add_argument("--bridge-bootstrap-token", default="")
+    parser.add_argument("--bridge-wait-seconds", type=int, default=20)
+    parser.add_argument("--bridge-poll-interval", type=int, default=1)
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
@@ -424,6 +430,44 @@ def record_failure(
     return failed
 
 
+
+def default_bridge_runner(command: str, bridge_args: List[str]) -> Dict[str, Any]:
+    completed = subprocess.run([sys.executable, str(BRIDGE_CTL_PATH), command, *bridge_args], capture_output=True, text=True)
+    payload: Dict[str, Any] = {}
+    stdout = completed.stdout or ''
+    lines = [line.strip() for line in stdout.splitlines() if line.strip()]
+    if lines:
+        try:
+            payload = json.loads(lines[-1])
+        except json.JSONDecodeError:
+            payload = {'status': 'invalid_output', 'raw': lines[-1]}
+    return {
+        'exit_code': completed.returncode,
+        'stdout': stdout,
+        'stderr': completed.stderr,
+        'payload': payload,
+    }
+
+
+def build_bridge_args(args: argparse.Namespace) -> List[str]:
+    bridge_args = [
+        '--wait-seconds', str(args.bridge_wait_seconds),
+        '--poll-interval', str(args.bridge_poll_interval),
+    ]
+    if args.bridge_bootstrap_token:
+        bridge_args.extend(['--env', f'RUNTIME_BOOTSTRAP_TOKEN={args.bridge_bootstrap_token}'])
+    return bridge_args
+
+
+def bridge_payload_summary(run_result: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not isinstance(run_result, dict):
+        return None
+    payload = run_result.get('payload') if isinstance(run_result.get('payload'), dict) else {}
+    if not payload:
+        return None
+    return dict(payload)
+
+
 def build_summary(
     args: argparse.Namespace,
     started_at: str,
@@ -434,7 +478,7 @@ def build_summary(
     status: str,
     last_error: Optional[str],
 ) -> Dict[str, Any]:
-    return {
+    summary = {
         "started_at": started_at,
         "finished_at": finished_at,
         "base_url": args.base_url,
@@ -445,6 +489,7 @@ def build_summary(
         "interval_sec": args.interval_sec,
         "max_iterations": args.max_iterations,
         "dry_run": args.dry_run,
+        "manage_bridge": args.manage_bridge,
         "fail_fast": args.fail_fast,
         "iterations_completed": iterations_completed,
         "total_events": total_events,
@@ -452,9 +497,10 @@ def build_summary(
         "status": status,
         "last_error": last_error,
     }
+    return summary
 
 
-def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> int:
+def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None, bridge_runner: Optional[Any] = None) -> int:
     args = parse_args(argv)
     recorder = EventRecorder(Path(args.output_dir))
     started_at = utc_now()
@@ -462,6 +508,33 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> 
     client_impl = client if client is not None else (
         DryRunClient() if args.dry_run else ApiClient(args.base_url, args.timeout_sec, args.cookie, args.auth_header_name, args.auth_header_value)
     )
+    bridge_exec = bridge_runner or default_bridge_runner
+    bridge_start_result = None
+    bridge_stop_result = None
+    should_stop_bridge = False
+    if args.manage_bridge:
+        bridge_start_result = bridge_exec('start', build_bridge_args(args))
+        bridge_payload = bridge_payload_summary(bridge_start_result) or {}
+        bridge_status = str(bridge_payload.get('status', '')).strip()
+        should_stop_bridge = bridge_status == 'started'
+        if int(bridge_start_result.get('exit_code', 1)) != 0 or bridge_status not in {'started', 'already_running', 'running'}:
+            finished_at = utc_now()
+            summary = build_summary(
+                args=args,
+                started_at=started_at,
+                finished_at=finished_at,
+                iterations_completed=0,
+                total_events=0,
+                failed_steps=1,
+                status='failed',
+                last_error='bridge start failed',
+            )
+            bridge_payload = bridge_payload_summary(bridge_start_result)
+            if bridge_payload is not None:
+                summary['bridge_start'] = bridge_payload
+            recorder.write_summary(summary)
+            print(json.dumps(summary, ensure_ascii=True, indent=2))
+            return 1
 
     iterations_completed = 0
     total_events = 0
@@ -503,6 +576,9 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> 
         if time.time() >= deadline:
             break
 
+    if args.manage_bridge and should_stop_bridge:
+        bridge_stop_result = bridge_exec('stop', build_bridge_args(args))
+
     finished_at = utc_now()
     if iterations_completed == 0 and failed_steps > 0:
         status = "failed"
@@ -518,6 +594,12 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> 
         status=status,
         last_error=last_error,
     )
+    bridge_start_payload = bridge_payload_summary(bridge_start_result)
+    if bridge_start_payload is not None:
+        summary['bridge_start'] = bridge_start_payload
+    bridge_stop_payload = bridge_payload_summary(bridge_stop_result)
+    if bridge_stop_payload is not None:
+        summary['bridge_stop'] = bridge_stop_payload
     recorder.write_summary(summary)
 
     print(json.dumps(summary, ensure_ascii=True, indent=2))
