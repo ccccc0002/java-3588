@@ -36,6 +36,10 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--soak-duration-sec', '60',
             '--soak-interval-sec', '5',
             '--soak-max-iterations', '2',
+            '--manage-bridge',
+            '--bridge-bootstrap-token', 'edge-demo-bootstrap',
+            '--bridge-wait-seconds', '15',
+            '--bridge-poll-interval', '1',
             '--fail-fast',
             '--dry-run',
         ])
@@ -58,6 +62,10 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.soak_duration_sec, 60)
         self.assertEqual(args.soak_interval_sec, 5)
         self.assertEqual(args.soak_max_iterations, 2)
+        self.assertTrue(args.manage_bridge)
+        self.assertEqual(args.bridge_bootstrap_token, 'edge-demo-bootstrap')
+        self.assertEqual(args.bridge_wait_seconds, 15)
+        self.assertEqual(args.bridge_poll_interval, 1)
         self.assertTrue(args.fail_fast)
         self.assertTrue(args.dry_run)
 
@@ -108,8 +116,43 @@ class RunLinuxGatesTests(unittest.TestCase):
             self.assertTrue(summary['cookie_present'])
             self.assertEqual(summary['auth_header_name'], 'access-token')
             self.assertTrue(summary['auth_header_present'])
+            self.assertFalse(summary['manage_bridge'])
             self.assertNotIn('cookie', summary)
             self.assertNotIn('auth_header_value', summary)
+
+    def test_manage_bridge_wraps_stage_execution_and_cleanup(self):
+        command_calls = []
+        bridge_calls = []
+
+        def fake_runner(stage_name, command, summary_path):
+            command_calls.append((stage_name, command, summary_path))
+            pathlib.Path(summary_path).parent.mkdir(parents=True, exist_ok=True)
+            pathlib.Path(summary_path).write_text(json.dumps({'status': 'passed'}), encoding='utf-8')
+            return {'exit_code': 0, 'stdout': f'PASS {stage_name}', 'stderr': ''}
+
+        def fake_bridge_runner(command, bridge_args):
+            bridge_calls.append((command, list(bridge_args)))
+            if command == 'start':
+                return {'exit_code': 0, 'stdout': '', 'stderr': '', 'payload': {'status': 'started', 'pid': 1234}}
+            return {'exit_code': 0, 'stdout': '', 'stderr': '', 'payload': {'status': 'stopped', 'pid': 1234}}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            exit_code = run_linux_gates.main([
+                '--base-url', 'http://127.0.0.1:18082',
+                '--output-dir', temp_dir,
+                '--manage-bridge',
+                '--bridge-bootstrap-token', 'edge-demo-bootstrap',
+            ], command_runner=fake_runner, bridge_runner=fake_bridge_runner)
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(3, len(command_calls))
+            self.assertEqual(['start', 'stop'], [item[0] for item in bridge_calls])
+            self.assertTrue(any(arg == 'RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap' for arg in bridge_calls[0][1]))
+
+            summary = json.loads((pathlib.Path(temp_dir) / 'summary.json').read_text(encoding='utf-8'))
+            self.assertTrue(summary['manage_bridge'])
+            self.assertEqual('started', summary['bridge_start']['status'])
+            self.assertEqual('stopped', summary['bridge_stop']['status'])
 
     def test_fail_fast_stops_after_first_failed_stage(self):
         def fake_runner(stage_name, command, summary_path):

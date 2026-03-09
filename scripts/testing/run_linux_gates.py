@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 DEFAULT_OUTPUT_DIR = "scripts/testing/out/linux-gates"
 SCRIPT_DIR = Path(__file__).resolve().parent
+BRIDGE_CTL_PATH = SCRIPT_DIR.parent / 'rk3588' / 'runtime_bridge_ctl.py'
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=60)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--manage-bridge", action="store_true")
+    parser.add_argument("--bridge-bootstrap-token", default="")
+    parser.add_argument("--bridge-wait-seconds", type=int, default=20)
+    parser.add_argument("--bridge-poll-interval", type=int, default=1)
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
@@ -64,6 +69,34 @@ def default_command_runner(stage_name: str, command: List[str], summary_path: st
         "summary_path": summary_path,
         "stage_name": stage_name,
     }
+
+
+def default_bridge_runner(command: str, bridge_args: List[str]) -> Dict[str, Any]:
+    completed = subprocess.run([sys.executable, str(BRIDGE_CTL_PATH), command, *bridge_args], capture_output=True, text=True)
+    payload: Dict[str, Any] = {}
+    stdout = completed.stdout or ""
+    lines = [line.strip() for line in stdout.splitlines() if line.strip()]
+    if lines:
+        try:
+            payload = json.loads(lines[-1])
+        except json.JSONDecodeError:
+            payload = {"status": "invalid_output", "raw": lines[-1]}
+    return {
+        "exit_code": completed.returncode,
+        "stdout": stdout,
+        "stderr": completed.stderr,
+        "payload": payload,
+    }
+
+
+def build_bridge_args(args: argparse.Namespace) -> List[str]:
+    bridge_args = [
+        '--wait-seconds', str(args.bridge_wait_seconds),
+        '--poll-interval', str(args.bridge_poll_interval),
+    ]
+    if args.bridge_bootstrap_token:
+        bridge_args.extend(['--env', f'RUNTIME_BOOTSTRAP_TOKEN={args.bridge_bootstrap_token}'])
+    return bridge_args
 
 
 def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List[Dict[str, Any]]:
@@ -168,10 +201,26 @@ def event_from_stage(result: StageResult) -> Dict[str, Any]:
     }
 
 
-def summary_from_results(args: argparse.Namespace, started_at: str, finished_at: str, results: List[StageResult]) -> Dict[str, Any]:
+def bridge_payload_summary(run_result: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not isinstance(run_result, dict):
+        return None
+    payload = run_result.get('payload') if isinstance(run_result.get('payload'), dict) else {}
+    if not payload:
+        return None
+    return dict(payload)
+
+
+def summary_from_results(
+    args: argparse.Namespace,
+    started_at: str,
+    finished_at: str,
+    results: List[StageResult],
+    bridge_start: Optional[Dict[str, Any]] = None,
+    bridge_stop: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     passed_stages = len([item for item in results if item.passed])
     failed_stages = len(results) - passed_stages
-    return {
+    summary = {
         "started_at": started_at,
         "finished_at": finished_at,
         "base_url": args.base_url,
@@ -186,6 +235,7 @@ def summary_from_results(args: argparse.Namespace, started_at: str, finished_at:
         "auth_header_name": args.auth_header_name,
         "auth_header_present": bool(args.auth_header_value),
         "include_soak": args.include_soak,
+        "manage_bridge": args.manage_bridge,
         "dry_run": args.dry_run,
         "fail_fast": args.fail_fast,
         "executed_stages": len(results),
@@ -193,9 +243,20 @@ def summary_from_results(args: argparse.Namespace, started_at: str, finished_at:
         "failed_stages": failed_stages,
         "status": "passed" if failed_stages == 0 else "failed",
     }
+    bridge_start_payload = bridge_payload_summary(bridge_start)
+    if bridge_start_payload is not None:
+        summary['bridge_start'] = bridge_start_payload
+    bridge_stop_payload = bridge_payload_summary(bridge_stop)
+    if bridge_stop_payload is not None:
+        summary['bridge_stop'] = bridge_stop_payload
+    return summary
 
 
-def main(argv: Optional[Sequence[str]] = None, command_runner: Optional[Callable[[str, List[str], str], Dict[str, Any]]] = None) -> int:
+def main(
+    argv: Optional[Sequence[str]] = None,
+    command_runner: Optional[Callable[[str, List[str], str], Dict[str, Any]]] = None,
+    bridge_runner: Optional[Callable[[str, List[str]], Dict[str, Any]]] = None,
+) -> int:
     args = parse_args(argv)
     root_output = Path(args.output_dir)
     root_output.mkdir(parents=True, exist_ok=True)
@@ -203,29 +264,50 @@ def main(argv: Optional[Sequence[str]] = None, command_runner: Optional[Callable
     summary_path = root_output / "summary.json"
     started_at = utc_now()
     runner = command_runner or default_command_runner
+    bridge_exec = bridge_runner or default_bridge_runner
     results: List[StageResult] = []
+    bridge_start_result: Optional[Dict[str, Any]] = None
+    bridge_stop_result: Optional[Dict[str, Any]] = None
+    should_stop_bridge = False
 
-    for stage in build_stage_definitions(args, root_output):
-        stage_output_dir = Path(stage["output_dir"])
-        stage_output_dir.mkdir(parents=True, exist_ok=True)
-        child_summary_path = stage_output_dir / "summary.json"
-        run_result = runner(stage["name"], stage["command"], str(child_summary_path))
-        child_summary = read_stage_summary(child_summary_path, int(run_result.get("exit_code", 1)))
-        passed = int(run_result.get("exit_code", 1)) == 0 and str(child_summary.get("status")) == "passed"
-        detail = f"status={child_summary.get('status')}; exit_code={run_result.get('exit_code', 1)}; summary_path={child_summary_path}"
-        stage_result = StageResult(stage=stage["name"], passed=passed, detail=detail, exit_code=int(run_result.get("exit_code", 1)), summary=child_summary)
-        results.append(stage_result)
-        with events_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(event_from_stage(stage_result), ensure_ascii=True) + "\n")
-        print((run_result.get("stdout") or "").rstrip())
-        stderr = (run_result.get("stderr") or "").rstrip()
-        if stderr:
-            print(stderr, file=sys.stderr)
-        if not passed and args.fail_fast:
-            break
+    try:
+        if args.manage_bridge:
+            bridge_start_result = bridge_exec('start', build_bridge_args(args))
+            bridge_payload = bridge_payload_summary(bridge_start_result) or {}
+            bridge_status = str(bridge_payload.get('status', '')).strip()
+            should_stop_bridge = bridge_status == 'started'
+            if int(bridge_start_result.get('exit_code', 1)) != 0 or bridge_status not in {'started', 'already_running', 'running'}:
+                finished_at = utc_now()
+                final_summary = summary_from_results(args, started_at, finished_at, results, bridge_start_result, None)
+                final_summary['status'] = 'failed'
+                summary_path.write_text(json.dumps(final_summary, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+                print(json.dumps(final_summary, ensure_ascii=True, indent=2))
+                return 1
+
+        for stage in build_stage_definitions(args, root_output):
+            stage_output_dir = Path(stage["output_dir"])
+            stage_output_dir.mkdir(parents=True, exist_ok=True)
+            child_summary_path = stage_output_dir / "summary.json"
+            run_result = runner(stage["name"], stage["command"], str(child_summary_path))
+            child_summary = read_stage_summary(child_summary_path, int(run_result.get("exit_code", 1)))
+            passed = int(run_result.get("exit_code", 1)) == 0 and str(child_summary.get("status")) == "passed"
+            detail = f"status={child_summary.get('status')}; exit_code={run_result.get('exit_code', 1)}; summary_path={child_summary_path}"
+            stage_result = StageResult(stage=stage["name"], passed=passed, detail=detail, exit_code=int(run_result.get("exit_code", 1)), summary=child_summary)
+            results.append(stage_result)
+            with events_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(event_from_stage(stage_result), ensure_ascii=True) + "\n")
+            print((run_result.get("stdout") or "").rstrip())
+            stderr = (run_result.get("stderr") or "").rstrip()
+            if stderr:
+                print(stderr, file=sys.stderr)
+            if not passed and args.fail_fast:
+                break
+    finally:
+        if args.manage_bridge and should_stop_bridge:
+            bridge_stop_result = bridge_exec('stop', build_bridge_args(args))
 
     finished_at = utc_now()
-    final_summary = summary_from_results(args, started_at, finished_at, results)
+    final_summary = summary_from_results(args, started_at, finished_at, results, bridge_start_result, bridge_stop_result)
     summary_path.write_text(json.dumps(final_summary, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(final_summary, ensure_ascii=True, indent=2))
     return 0 if final_summary["failed_stages"] == 0 else 1
