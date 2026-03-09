@@ -34,19 +34,22 @@ class CheckResult:
 
 
 class ApiClient:
-    def __init__(self, base_url: str, timeout_sec: int = 10):
+    def __init__(self, base_url: str, timeout_sec: int = 10, cookie: str = "", auth_header_name: str = "", auth_header_value: str = ""):
         self.base_url = base_url.rstrip("/")
         self.timeout_sec = timeout_sec
+        self.cookie = cookie
+        self.auth_header_name = auth_header_name
+        self.auth_header_value = auth_header_value
 
     def get(self, path: str) -> Dict[str, Any]:
-        request = urllib.request.Request(self.base_url + path, headers={"Accept": "application/json"}, method="GET")
+        request = urllib.request.Request(self.base_url + path, headers=self._headers(), method="GET")
         return self._send(request)
 
     def post_json(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         request = urllib.request.Request(
             self.base_url + path,
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers=self._headers("application/json"),
             method="POST",
         )
         return self._send(request)
@@ -55,10 +58,20 @@ class ApiClient:
         request = urllib.request.Request(
             self.base_url + path,
             data=urllib.parse.urlencode([(k, str(v)) for k, v in payload.items() if v is not None]).encode("utf-8"),
-            headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+            headers=self._headers("application/x-www-form-urlencoded"),
             method="POST",
         )
         return self._send(request)
+
+    def _headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
+        headers = {"Accept": "application/json"}
+        if content_type:
+            headers["Content-Type"] = content_type
+        if self.cookie:
+            headers["Cookie"] = self.cookie
+        if self.auth_header_name and self.auth_header_value:
+            headers[self.auth_header_name] = self.auth_header_value
+        return headers
 
     def _send(self, request: urllib.request.Request) -> Dict[str, Any]:
         try:
@@ -163,6 +176,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--algorithm-id", type=int, default=1)
     parser.add_argument("--video-port", type=int, default=0)
     parser.add_argument("--source", default=DEFAULT_SOURCE)
+    parser.add_argument("--cookie", default="")
+    parser.add_argument("--auth-header-name", default="")
+    parser.add_argument("--auth-header-value", default="")
     parser.add_argument("--timeout-sec", type=int, default=10)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--fail-fast", action="store_true")
@@ -324,7 +340,9 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> 
     args = parse_args(argv)
     recorder = EventRecorder(Path(args.output_dir))
     started_at = utc_now()
-    client_impl = client if client is not None else (DryRunClient(args.source) if args.dry_run else ApiClient(args.base_url, args.timeout_sec))
+    client_impl = client if client is not None else (
+        DryRunClient(args.source) if args.dry_run else ApiClient(args.base_url, args.timeout_sec, args.cookie, args.auth_header_name, args.auth_header_value)
+    )
     results: List[CheckResult] = []
     last_error: Optional[str] = None
     status = "passed"

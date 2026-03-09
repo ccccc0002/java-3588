@@ -26,6 +26,9 @@ class SoakRunnerTests(unittest.TestCase):
             '--interval-sec', '2',
             '--max-iterations', '3',
             '--output-dir', 'tmp/out',
+            '--cookie', 'satoken=test-cookie',
+            '--auth-header-name', 'access-token',
+            '--auth-header-value', 'test-access-token',
             '--fail-fast',
             '--dry-run',
         ])
@@ -38,6 +41,9 @@ class SoakRunnerTests(unittest.TestCase):
         self.assertEqual(args.interval_sec, 2)
         self.assertEqual(args.max_iterations, 3)
         self.assertEqual(args.output_dir, 'tmp/out')
+        self.assertEqual(args.cookie, 'satoken=test-cookie')
+        self.assertEqual(args.auth_header_name, 'access-token')
+        self.assertEqual(args.auth_header_value, 'test-access-token')
         self.assertTrue(args.fail_fast)
         self.assertTrue(args.dry_run)
 
@@ -70,6 +76,19 @@ class SoakRunnerTests(unittest.TestCase):
             self.assertEqual(summary['status'], 'passed')
             self.assertEqual(summary['failed_steps'], 0)
             self.assertEqual(summary['dry_run'], True)
+
+    def test_api_client_post_form_includes_auth_header(self):
+        client = run_stability_soak.ApiClient('http://127.0.0.1:8080', auth_header_name='access-token', auth_header_value='test-access-token')
+        captured = {}
+
+        def fake_send(request):
+            captured['headers'] = {key.lower(): value for key, value in request.header_items()}
+            return {'code': 0, '_http_status': 200}
+
+        client._send = fake_send
+        client.post_form('/stream/start', {'cameraId': 1})
+
+        self.assertEqual(captured['headers'].get('access-token'), 'test-access-token')
 
     def test_fail_fast_returns_non_zero_and_records_failure(self):
         class FailingClient:

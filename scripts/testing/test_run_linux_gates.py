@@ -27,6 +27,9 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--expected-backend-type', 'rk3588_rknn',
             '--expected-override-source', 'camera_override',
             '--source', 'test://frame',
+            '--cookie', 'satoken=test-cookie',
+            '--auth-header-name', 'access-token',
+            '--auth-header-value', 'test-access-token',
             '--output-dir', 'tmp/out',
             '--timeout-sec', '20',
             '--include-soak',
@@ -46,6 +49,9 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.expected_backend_type, 'rk3588_rknn')
         self.assertEqual(args.expected_override_source, 'camera_override')
         self.assertEqual(args.source, 'test://frame')
+        self.assertEqual(args.cookie, 'satoken=test-cookie')
+        self.assertEqual(args.auth_header_name, 'access-token')
+        self.assertEqual(args.auth_header_value, 'test-access-token')
         self.assertEqual(args.output_dir, 'tmp/out')
         self.assertEqual(args.timeout_sec, 20)
         self.assertTrue(args.include_soak)
@@ -57,6 +63,12 @@ class RunLinuxGatesTests(unittest.TestCase):
 
     def test_dry_run_writes_combined_passing_summary(self):
         def fake_runner(stage_name, command, summary_path):
+            self.assertIn('--cookie', command)
+            self.assertIn('satoken=gate-cookie', command)
+            self.assertIn('--auth-header-name', command)
+            self.assertIn('access-token', command)
+            self.assertIn('--auth-header-value', command)
+            self.assertIn('gate-access-token', command)
             summary = {
                 'status': 'passed',
                 'failed_checks': 0,
@@ -71,6 +83,9 @@ class RunLinuxGatesTests(unittest.TestCase):
             exit_code = run_linux_gates.main([
                 '--base-url', 'http://127.0.0.1:8080',
                 '--output-dir', temp_dir,
+                '--cookie', 'satoken=gate-cookie',
+                '--auth-header-name', 'access-token',
+                '--auth-header-value', 'gate-access-token',
                 '--dry-run',
             ], command_runner=fake_runner)
 
@@ -90,9 +105,20 @@ class RunLinuxGatesTests(unittest.TestCase):
             self.assertEqual(summary['status'], 'passed')
             self.assertEqual(summary['failed_stages'], 0)
             self.assertEqual(summary['executed_stages'], 3)
+            self.assertTrue(summary['cookie_present'])
+            self.assertEqual(summary['auth_header_name'], 'access-token')
+            self.assertTrue(summary['auth_header_present'])
+            self.assertNotIn('cookie', summary)
+            self.assertNotIn('auth_header_value', summary)
 
     def test_fail_fast_stops_after_first_failed_stage(self):
         def fake_runner(stage_name, command, summary_path):
+            self.assertIn('--cookie', command)
+            self.assertIn('satoken=gate-cookie', command)
+            self.assertIn('--auth-header-name', command)
+            self.assertIn('access-token', command)
+            self.assertIn('--auth-header-value', command)
+            self.assertIn('gate-access-token', command)
             failed = stage_name == 'trace_governance'
             summary = {
                 'status': 'failed' if failed else 'passed',
@@ -108,6 +134,9 @@ class RunLinuxGatesTests(unittest.TestCase):
             exit_code = run_linux_gates.main([
                 '--base-url', 'http://127.0.0.1:8080',
                 '--output-dir', temp_dir,
+                '--cookie', 'satoken=gate-cookie',
+                '--auth-header-name', 'access-token',
+                '--auth-header-value', 'gate-access-token',
                 '--fail-fast',
                 '--dry-run',
             ], command_runner=fake_runner)
@@ -117,6 +146,11 @@ class RunLinuxGatesTests(unittest.TestCase):
             self.assertEqual(summary['status'], 'failed')
             self.assertEqual(summary['failed_stages'], 1)
             self.assertEqual(summary['executed_stages'], 2)
+            self.assertTrue(summary['cookie_present'])
+            self.assertEqual(summary['auth_header_name'], 'access-token')
+            self.assertTrue(summary['auth_header_present'])
+            self.assertNotIn('cookie', summary)
+            self.assertNotIn('auth_header_value', summary)
 
 
 if __name__ == '__main__':

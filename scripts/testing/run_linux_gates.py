@@ -37,6 +37,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--expected-backend-type", default="")
     parser.add_argument("--expected-override-source", default="")
     parser.add_argument("--source", default="test://frame")
+    parser.add_argument("--cookie", default="")
+    parser.add_argument("--auth-header-name", default="")
+    parser.add_argument("--auth-header-value", default="")
     parser.add_argument("--timeout-sec", type=int, default=10)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--include-soak", action="store_true")
@@ -79,6 +82,9 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--expected-backend-type", args.expected_backend_type,
                 "--expected-override-source", args.expected_override_source,
                 "--timeout-sec", str(args.timeout_sec),
+                "--cookie", args.cookie,
+                "--auth-header-name", args.auth_header_name,
+                "--auth-header-value", args.auth_header_value,
             ],
         },
         {
@@ -92,6 +98,9 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--algorithm-id", str(args.algorithm_id),
                 "--source", args.source,
                 "--timeout-sec", str(args.timeout_sec),
+                "--cookie", args.cookie,
+                "--auth-header-name", args.auth_header_name,
+                "--auth-header-value", args.auth_header_value,
             ],
         },
         {
@@ -105,6 +114,9 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--expected-backend-type", args.expected_backend_type,
                 "--expected-override-source", args.expected_override_source,
                 "--timeout-sec", str(args.timeout_sec),
+                "--cookie", args.cookie,
+                "--auth-header-name", args.auth_header_name,
+                "--auth-header-value", args.auth_header_value,
             ],
         },
     ]
@@ -124,6 +136,9 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                     "--duration-sec", str(args.soak_duration_sec),
                     "--interval-sec", str(args.soak_interval_sec),
                     "--max-iterations", str(args.soak_max_iterations),
+                    "--cookie", args.cookie,
+                    "--auth-header-name", args.auth_header_name,
+                    "--auth-header-value", args.auth_header_value,
                 ],
             }
         )
@@ -167,6 +182,9 @@ def summary_from_results(args: argparse.Namespace, started_at: str, finished_at:
         "secondary_camera_id": args.secondary_camera_id,
         "expected_backend_type": args.expected_backend_type,
         "expected_override_source": args.expected_override_source,
+        "cookie_present": bool(args.cookie),
+        "auth_header_name": args.auth_header_name,
+        "auth_header_present": bool(args.auth_header_value),
         "include_soak": args.include_soak,
         "dry_run": args.dry_run,
         "fail_fast": args.fail_fast,

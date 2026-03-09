@@ -23,6 +23,9 @@ class ValidateRolloutReadinessTests(unittest.TestCase):
             '--secondary-camera-id', '10',
             '--expected-backend-type', 'rk3588_rknn',
             '--expected-override-source', 'camera_override',
+            '--cookie', 'satoken=test-cookie',
+            '--auth-header-name', 'access-token',
+            '--auth-header-value', 'test-access-token',
             '--output-dir', 'tmp/out',
             '--timeout-sec', '20',
             '--fail-fast',
@@ -35,9 +38,27 @@ class ValidateRolloutReadinessTests(unittest.TestCase):
         self.assertEqual(args.expected_backend_type, 'rk3588_rknn')
         self.assertEqual(args.expected_override_source, 'camera_override')
         self.assertEqual(args.output_dir, 'tmp/out')
+        self.assertEqual(args.cookie, 'satoken=test-cookie')
+        self.assertEqual(args.auth_header_name, 'access-token')
+        self.assertEqual(args.auth_header_value, 'test-access-token')
         self.assertEqual(args.timeout_sec, 20)
         self.assertTrue(args.fail_fast)
         self.assertTrue(args.dry_run)
+
+
+    def test_api_client_get_includes_cookie_header(self):
+        client = validate_rollout_readiness.ApiClient('http://127.0.0.1:8080', cookie='satoken=test-cookie', auth_header_name='access-token', auth_header_value='test-access-token')
+        captured = {}
+
+        def fake_send(request):
+            captured['headers'] = {key.lower(): value for key, value in request.header_items()}
+            return {'code': 0, '_http_status': 200}
+
+        client._send = fake_send
+        client.get('/api/inference/health')
+
+        self.assertEqual(captured['headers'].get('cookie'), 'satoken=test-cookie')
+        self.assertEqual(captured['headers'].get('access-token'), 'test-access-token')
 
     def test_dry_run_writes_passing_summary(self):
         with tempfile.TemporaryDirectory() as temp_dir:

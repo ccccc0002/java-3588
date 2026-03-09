@@ -38,16 +38,19 @@ class StepResult:
 
 
 class ApiClient:
-    def __init__(self, base_url: str, timeout_sec: int = 10):
+    def __init__(self, base_url: str, timeout_sec: int = 10, cookie: str = "", auth_header_name: str = "", auth_header_value: str = ""):
         self.base_url = base_url.rstrip("/")
         self.timeout_sec = timeout_sec
+        self.cookie = cookie
+        self.auth_header_name = auth_header_name
+        self.auth_header_value = auth_header_value
 
     def post_json(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             self.base_url + path,
             data=data,
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers=self._headers("application/json"),
             method="POST",
         )
         return self._send(request)
@@ -62,10 +65,20 @@ class ApiClient:
         request = urllib.request.Request(
             self.base_url + path,
             data=data,
-            headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+            headers=self._headers("application/x-www-form-urlencoded"),
             method="POST",
         )
         return self._send(request)
+
+    def _headers(self, content_type: Optional[str] = None) -> Dict[str, str]:
+        headers = {"Accept": "application/json"}
+        if content_type:
+            headers["Content-Type"] = content_type
+        if self.cookie:
+            headers["Cookie"] = self.cookie
+        if self.auth_header_name and self.auth_header_value:
+            headers[self.auth_header_name] = self.auth_header_value
+        return headers
 
     def _send(self, request: urllib.request.Request) -> Dict[str, Any]:
         try:
@@ -199,6 +212,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--interval-sec", type=int, default=5)
     parser.add_argument("--max-iterations", type=int, default=None)
     parser.add_argument("--output-dir", default="scripts/testing/out/stability-soak")
+    parser.add_argument("--cookie", default="")
+    parser.add_argument("--auth-header-name", default="")
+    parser.add_argument("--auth-header-value", default="")
     parser.add_argument("--timeout-sec", type=int, default=10)
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -443,7 +459,9 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None) -> 
     recorder = EventRecorder(Path(args.output_dir))
     started_at = utc_now()
     deadline = time.time() + max(args.duration_sec, 0)
-    client_impl = client if client is not None else (DryRunClient() if args.dry_run else ApiClient(args.base_url, args.timeout_sec))
+    client_impl = client if client is not None else (
+        DryRunClient() if args.dry_run else ApiClient(args.base_url, args.timeout_sec, args.cookie, args.auth_header_name, args.auth_header_value)
+    )
 
     iterations_completed = 0
     total_events = 0
