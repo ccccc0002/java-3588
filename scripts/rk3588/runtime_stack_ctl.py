@@ -5,19 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
-import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
-from urllib import error, request
+from typing import Dict, Optional
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+import java_app_ctl
 import runtime_bridge_ctl
 
 
@@ -35,93 +32,47 @@ def default_config() -> StackControllerConfig:
     repo_root = SCRIPT_DIR.parent.parent
     return StackControllerConfig(
         repo_root=repo_root,
-        app_start_script=repo_root / 'runtime' / 'start-app-18082.sh',
+        app_start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Java-App.sh',
         app_health_url='http://127.0.0.1:18082/api/inference/health',
     )
 
 
-def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
-    req = request.Request(health_url, headers={'Accept': 'application/json'}, method='GET')
-    try:
-        with request.urlopen(req, timeout=timeout) as resp:
-            payload = json.loads(resp.read().decode('utf-8'))
-            return {'http_status': int(resp.status), 'payload': payload}
-    except error.HTTPError as exc:
-        try:
-            payload = json.loads(exc.read().decode('utf-8'))
-        except Exception:
-            payload = {'message': str(exc)}
-        return {'http_status': int(exc.code), 'payload': payload}
-    except Exception as exc:
-        return {'http_status': 0, 'payload': {'message': str(exc)}}
-
-
-def wait_for_app_health(config: StackControllerConfig) -> Dict[str, Any]:
-    deadline = time.time() + max(0.1, config.app_wait_seconds)
-    last = {'http_status': 0, 'payload': {'message': 'health check not started'}}
-    while time.time() < deadline:
-        last = fetch_health(config.app_health_url)
-        if int(last.get('http_status', 0)) == 200:
-            return last
-        time.sleep(max(0.01, config.app_poll_interval))
-    return last
-
-
-def start_app(config: StackControllerConfig) -> Dict[str, Any]:
-    if not config.app_start_script.exists():
-        return {'status': 'missing_start_script', 'script': str(config.app_start_script)}
-    process = subprocess.Popen(
-        ['bash', str(config.app_start_script)],
-        cwd=str(config.repo_root),
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
+def build_app_config(config: StackControllerConfig) -> java_app_ctl.AppControllerConfig:
+    return java_app_ctl.AppControllerConfig(
+        repo_root=config.repo_root,
+        runtime_dir=config.repo_root / 'runtime',
+        start_script=config.app_start_script,
+        health_url=config.app_health_url,
+        wait_seconds=config.app_wait_seconds,
+        poll_interval=config.app_poll_interval,
+        stop_pattern=config.app_stop_pattern,
     )
-    health = wait_for_app_health(config)
-    if int(health.get('http_status', 0)) == 200:
-        return {'status': 'started', 'pid': process.pid, 'health': health, 'script': str(config.app_start_script)}
-    return {'status': 'app_unhealthy', 'pid': process.pid, 'health': health, 'script': str(config.app_start_script)}
 
 
-def stop_app(config: StackControllerConfig) -> Dict[str, Any]:
-    completed = subprocess.run(['pkill', '-f', config.app_stop_pattern], capture_output=True, text=True)
-    if completed.returncode in (0, 1):
-        return {'status': 'stopped', 'pattern': config.app_stop_pattern, 'exit_code': completed.returncode}
-    return {'status': 'stop_failed', 'pattern': config.app_stop_pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr}
-
-
-def app_status(config: StackControllerConfig) -> Dict[str, Any]:
-    health = fetch_health(config.app_health_url)
-    if int(health.get('http_status', 0)) == 200:
-        return {'status': 'running', 'health': health, 'script': str(config.app_start_script)}
-    return {'status': 'down', 'health': health, 'script': str(config.app_start_script)}
-
-
-def start_stack(config: StackControllerConfig, bridge_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-    app = start_app(config)
-    if app.get('status') != 'started':
+def start_stack(config: StackControllerConfig, bridge_env: Optional[Dict[str, str]] = None) -> Dict[str, object]:
+    app = java_app_ctl.start_app(build_app_config(config))
+    if app.get('status') not in {'started', 'already_running'}:
         return {'status': 'app_unhealthy', 'app': app, 'bridge': {'status': 'skipped'}}
     bridge = runtime_bridge_ctl.start_bridge(runtime_bridge_ctl.default_config(), extra_env=bridge_env)
     status = 'started' if bridge.get('status') in {'started', 'already_running', 'running'} else 'bridge_unhealthy'
     return {'status': status, 'app': app, 'bridge': bridge}
 
 
-def stop_stack(config: StackControllerConfig) -> Dict[str, Any]:
+def stop_stack(config: StackControllerConfig) -> Dict[str, object]:
     bridge = runtime_bridge_ctl.stop_bridge(runtime_bridge_ctl.default_config())
-    app = stop_app(config)
+    app = java_app_ctl.stop_app(build_app_config(config))
     status = 'stopped' if app.get('status') == 'stopped' and bridge.get('status') in {'stopped', 'not_running', 'killed'} else 'partial'
     return {'status': status, 'app': app, 'bridge': bridge}
 
 
-def status_stack(config: StackControllerConfig) -> Dict[str, Any]:
-    app = app_status(config)
+def status_stack(config: StackControllerConfig) -> Dict[str, object]:
+    app = java_app_ctl.status_app(build_app_config(config))
     bridge = runtime_bridge_ctl.status_bridge(runtime_bridge_ctl.default_config())
     status = 'running' if app.get('status') == 'running' and bridge.get('status') == 'running' else 'degraded'
     return {'status': status, 'app': app, 'bridge': bridge}
 
 
-def restart_stack(config: StackControllerConfig, bridge_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+def restart_stack(config: StackControllerConfig, bridge_env: Optional[Dict[str, str]] = None) -> Dict[str, object]:
     stop_stack(config)
     return start_stack(config, bridge_env=bridge_env)
 
