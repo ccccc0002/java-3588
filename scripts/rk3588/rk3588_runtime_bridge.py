@@ -21,6 +21,7 @@ if str(SCRIPT_DIR) not in sys.path:
 from plugin_runtime import EXPECTED_PLUGIN_RUNTIME, PluginPackageManager, PluginRuntimeError
 
 BRIDGE_VERSION = '0.3.0'
+AUTH_ERROR_CODES = {'invalid_token', 'token_invalid', 'token_expired', 'unauthorized', 'access_denied'}
 
 
 class RuntimeBridgeError(RuntimeError):
@@ -66,7 +67,7 @@ class RuntimeApiClient:
         if self.config.runtime_bootstrap_token:
             headers[self.config.bootstrap_header_name] = self.config.runtime_bootstrap_token
         status_code, payload = self._request_json('POST', '/api/v1/auth/token', payload=payload, headers=headers, authorize=False)
-        data = unwrap_envelope(payload)
+        data = unwrap_envelope(payload, 'runtime auth token')
         token = str(data.get('token', '')).strip()
         if status_code >= 400 or not token:
             raise RuntimeBridgeError('failed to issue runtime token', status_code=status_code or 502)
@@ -74,14 +75,14 @@ class RuntimeApiClient:
 
     def get_runtime_snapshot(self) -> Dict[str, Any]:
         _, payload = self._request_json('GET', '/api/v1/runtime/snapshot', authorize=True)
-        data = unwrap_envelope(payload)
+        data = unwrap_envelope(payload, 'runtime snapshot')
         if not isinstance(data, dict):
             raise RuntimeBridgeError('runtime snapshot response is invalid')
         return data
 
     def get_inference_plan(self, budget: float) -> Dict[str, Any]:
         _, payload = self._request_json('POST', '/api/v1/inference/plan', payload={'budget': budget}, authorize=True)
-        data = unwrap_envelope(payload)
+        data = unwrap_envelope(payload, 'inference plan')
         if not isinstance(data, dict):
             raise RuntimeBridgeError('inference plan response is invalid')
         return data
@@ -96,22 +97,34 @@ class RuntimeApiClient:
     ) -> Tuple[int, Dict[str, Any]]:
         url = self.config.runtime_url.rstrip('/') + path
         body = None if payload is None else json.dumps(payload).encode('utf-8')
-        req_headers = {'Accept': 'application/json'}
-        if body is not None:
-            req_headers['Content-Type'] = 'application/json'
-        if headers:
-            req_headers.update(headers)
-        if authorize:
-            token = self.token_provider.get_token() if self.token_provider is not None else self.issue_token()
-            req_headers['Authorization'] = f'Bearer {token}'
-        req = request.Request(url=url, data=body, headers=req_headers, method=method)
-        try:
-            with self.http_open(req, timeout=self.config.timeout_sec) as resp:
-                return int(resp.status), self._decode_json(resp.read())
-        except error.HTTPError as exc:
-            return int(exc.code), self._decode_json(exc.read())
-        except error.URLError as exc:
-            raise RuntimeBridgeError(f'upstream request failed: {exc.reason}') from exc
+        retryable_auth = authorize and self.token_provider is not None
+        attempts = 2 if retryable_auth else 1
+        for attempt in range(attempts):
+            req_headers = {'Accept': 'application/json'}
+            if body is not None:
+                req_headers['Content-Type'] = 'application/json'
+            if headers:
+                req_headers.update(headers)
+            if authorize:
+                token = self.token_provider.get_token() if self.token_provider is not None else self.issue_token()
+                req_headers['Authorization'] = f'Bearer {token}'
+            req = request.Request(url=url, data=body, headers=req_headers, method=method)
+            try:
+                with self.http_open(req, timeout=self.config.timeout_sec) as resp:
+                    status_code = int(resp.status)
+                    response_payload = self._decode_json(resp.read())
+            except error.HTTPError as exc:
+                status_code = int(exc.code)
+                response_payload = self._decode_json(exc.read())
+            except error.URLError as exc:
+                raise RuntimeBridgeError(f'upstream request failed: {exc.reason}') from exc
+
+            if retryable_auth and is_auth_error_response(status_code, response_payload):
+                self.token_provider.invalidate()
+                if attempt + 1 < attempts:
+                    continue
+            return status_code, response_payload
+        return 502, build_error_payload('I5002', 'unreachable auth retry state')
 
     @staticmethod
     def _decode_json(raw: bytes) -> Dict[str, Any]:
@@ -297,9 +310,29 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def unwrap_envelope(payload: Dict[str, Any]) -> Dict[str, Any]:
+def extract_error_details(payload: Dict[str, Any]) -> Tuple[str, str]:
+    error_payload = payload.get('error') if isinstance(payload, dict) else None
+    if isinstance(error_payload, dict):
+        code = str(error_payload.get('code', '')).strip()
+        message = str(error_payload.get('message', '')).strip()
+        return code, message
+    return '', ''
+
+
+def is_auth_error_response(status_code: int, payload: Dict[str, Any]) -> bool:
+    error_code, _ = extract_error_details(payload)
+    if error_code in AUTH_ERROR_CODES:
+        return True
+    return status_code in (401, 403)
+
+
+def unwrap_envelope(payload: Dict[str, Any], context: str = 'upstream request') -> Dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeBridgeError('upstream payload is invalid')
+    if payload.get('success') is False:
+        error_code, message = extract_error_details(payload)
+        status_code = 401 if error_code in AUTH_ERROR_CODES else 502
+        raise RuntimeBridgeError(message or f'{context} failed', status_code=status_code)
     if isinstance(payload.get('data'), dict):
         return dict(payload['data'])
     return payload

@@ -1,4 +1,4 @@
-﻿import importlib.util
+import importlib.util
 import pathlib
 import sys
 import unittest
@@ -54,6 +54,102 @@ class FakePluginManager:
             'latency_ms': 23,
         }
 
+
+
+class FakeResponse:
+    def __init__(self, status, payload):
+        self.status = status
+        self._payload = payload
+
+    def read(self):
+        import json
+        return json.dumps(self._payload).encode('utf-8')
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class RuntimeApiClientTests(unittest.TestCase):
+    def test_runtime_snapshot_retries_when_cached_token_is_invalid(self):
+        calls = []
+        token_counter = {'count': 0}
+
+        def http_open(req, timeout=None):
+            calls.append((req.full_url, req.get_method(), req.headers.get('Authorization', '')))
+            if req.full_url.endswith('/api/v1/runtime/snapshot'):
+                authorization = req.headers.get('Authorization', '')
+                if authorization == 'Bearer stale-token':
+                    return FakeResponse(200, {
+                        'success': False,
+                        'data': None,
+                        'error': {'code': 'invalid_token', 'message': 'token invalid or expired'},
+                        'meta': {},
+                    })
+                if authorization == 'Bearer refreshed-token':
+                    return FakeResponse(200, {
+                        'success': True,
+                        'data': {'device_count': 1, 'ready_stream_count': 1},
+                        'error': None,
+                        'meta': {},
+                    })
+            if req.full_url.endswith('/api/v1/auth/token'):
+                token_counter['count'] += 1
+                return FakeResponse(200, {
+                    'success': True,
+                    'data': {'token': 'refreshed-token'},
+                    'error': None,
+                    'meta': {},
+                })
+            raise AssertionError(f'unexpected request: {req.full_url}')
+
+        client = rk3588_runtime_bridge.RuntimeApiClient(
+            rk3588_runtime_bridge.RuntimeBridgeConfig(runtime_url='http://runtime.example'),
+            http_open=http_open,
+        )
+        provider = rk3588_runtime_bridge.TokenProvider(client)
+        provider._cached_token = 'stale-token'
+        client.set_token_provider(provider)
+
+        payload = client.get_runtime_snapshot()
+
+        self.assertEqual({'device_count': 1, 'ready_stream_count': 1}, payload)
+        self.assertEqual(1, token_counter['count'])
+        self.assertEqual(
+            [
+                ('http://runtime.example/api/v1/runtime/snapshot', 'GET', 'Bearer stale-token'),
+                ('http://runtime.example/api/v1/auth/token', 'POST', ''),
+                ('http://runtime.example/api/v1/runtime/snapshot', 'GET', 'Bearer refreshed-token'),
+            ],
+            calls,
+        )
+
+    def test_runtime_snapshot_raises_when_auth_error_cannot_be_recovered(self):
+        def http_open(req, timeout=None):
+            if req.full_url.endswith('/api/v1/runtime/snapshot'):
+                return FakeResponse(200, {
+                    'success': False,
+                    'data': None,
+                    'error': {'code': 'invalid_token', 'message': 'token invalid or expired'},
+                    'meta': {},
+                })
+            raise AssertionError(f'unexpected request: {req.full_url}')
+
+        client = rk3588_runtime_bridge.RuntimeApiClient(
+            rk3588_runtime_bridge.RuntimeBridgeConfig(
+                runtime_url='http://runtime.example',
+                runtime_token='fixed-token',
+            ),
+            http_open=http_open,
+        )
+
+        with self.assertRaises(rk3588_runtime_bridge.RuntimeBridgeError) as context:
+            client.get_runtime_snapshot()
+
+        self.assertEqual(401, context.exception.status_code)
+        self.assertIn('token invalid or expired', str(context.exception))
 
 class RuntimeBridgeServiceTests(unittest.TestCase):
     def test_token_provider_caches_token(self):
