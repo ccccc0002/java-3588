@@ -234,6 +234,41 @@
         }
 
         // 增加告警列表
+        window.resolveAlarmLabels = function(json) {
+            var labelsZh = json['alertLabelsZh'];
+            if(Array.isArray(labelsZh) && labelsZh.length > 0) {
+                return labelsZh;
+            }
+
+            var labels = json['alertLabels'];
+            if(Array.isArray(labels) && labels.length > 0) {
+                return labels;
+            }
+
+            return [];
+        }
+        window.resolveAlarmType = function(json) {
+            var labels = window.resolveAlarmLabels(json);
+            var count = parseInt(json['alertCount'], 10);
+            var algorithmName = json['algorithmName'] || '';
+            if(labels.length > 0) {
+                algorithmName = labels.join(' / ');
+            }
+            if(!isNaN(count) && count > 1) {
+                return algorithmName + ' x' + count;
+            }
+            return algorithmName;
+        }
+        window.buildAlarmTemplateData = function(json) {
+            return {
+                'cameraName': json['cameraName'],
+                'algorithmName': window.resolveAlarmType(json),
+                'wareName': json['wareName'],
+                'alarmTime': json['alarmTime'],
+                'params': json['params'],
+                'id': json['id']
+            };
+        }
         window.addAlarm = function(json) {
             // 增加统计数量
             var $algorithmId = json['algorithmId'];
@@ -248,17 +283,12 @@
             $('#alarm-counter').text(cameraCounterOldVal + 1);
 
             //
-            var $id = json['id'];
-            var $cameraName = json['cameraName'];
-            var $algorithmName = json['algorithmName'];
-            var $alarmTime = json['alarmTime'];
-            var $params = json['params'];
-            var $wareName = json['wareName'];
+            var $templateData = window.buildAlarmTemplateData(json);
             var $liLen = $('#alarm-ul-list li').length;
             if($liLen >= 3) { // 显示4个
                 $('#alarm-ul-list li:last-child').remove();
             }
-            var $html = template('alarm-item-tpl', { 'cameraName': $cameraName, 'algorithmName': $algorithmName, 'wareName': $wareName, 'alarmTime': $alarmTime, 'params': $params, 'id': $id });
+            var $html = template('alarm-item-tpl', $templateData);
             $('#alarm-ul-list').prepend($html);
         }
 
