@@ -1,4 +1,4 @@
-import importlib.util
+﻿import importlib.util
 import pathlib
 import sys
 import unittest
@@ -32,6 +32,26 @@ class FakeRuntimeClient:
     def get_inference_plan(self, budget):
         self.plan_calls += 1
         return {'budget': budget, **self.plan_payload}
+
+
+class FakePluginManager:
+    def has_plugins(self):
+        return True
+
+    def inventory(self):
+        return {'plugins': [{'plugin_id': 'yolov8n'}], 'errors': {}}
+
+    def resolve(self, request_payload):
+        return 'yolov8n'
+
+    def execute(self, package, request_payload, plan):
+        return {
+            'detections': [{'label': 'person', 'label_zh': '人员', 'alert': False}],
+            'alerts': [{'label': 'bus', 'label_zh': '公交车', 'alert': True}],
+            'plugin_meta': {'plugin_id': 'yolov8n', 'alert_label_count': 1},
+            'attributes': {'detection_count': 1, 'alert_detection_count': 1},
+            'latency_ms': 23,
+        }
 
 
 class RuntimeBridgeServiceTests(unittest.TestCase):
@@ -88,6 +108,27 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['detections'], [])
         self.assertEqual(payload['plan_summary']['ready_stream_count'], 1)
         self.assertEqual(payload['plan_summary']['budget'], 12.5)
+
+    def test_infer_propagates_plugin_alerts(self):
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeRuntimeClient(),
+            token_provider=None,
+            plugin_manager=FakePluginManager(),
+        )
+        request = {
+            'trace_id': 'trace-plugin',
+            'camera_id': 1,
+            'model_id': 1,
+            'frame': {'source': 'test://frame'},
+        }
+
+        status_code, payload = service.handle_infer(request)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(payload['detections'][0]['label_zh'], '人员')
+        self.assertEqual(payload['alerts'][0]['label'], 'bus')
+        self.assertEqual(payload['plugin']['alert_label_count'], 1)
+        self.assertEqual(payload['attributes']['alert_detection_count'], 1)
 
     def test_infer_can_echo_roi_as_detection_placeholders(self):
         service = rk3588_runtime_bridge.RuntimeBridgeService(

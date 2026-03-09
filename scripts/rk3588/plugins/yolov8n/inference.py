@@ -1,5 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -37,6 +38,10 @@ def load(package_context):
     return {
         'session': session,
         'labels': labels,
+        'label_aliases_zh': load_label_aliases_zh(package_context),
+        'enabled_class_ids': normalize_int_set(package_context.config.get('enabled_class_ids')),
+        'enabled_labels': normalize_text_set(package_context.config.get('enabled_labels')),
+        'alert_labels': normalize_text_set(package_context.config.get('alert_labels')),
         'input_size': input_size,
         'obj_threshold': float(package_context.config.get('obj_threshold', 0.25)),
         'nms_threshold': float(package_context.config.get('nms_threshold', 0.45)),
@@ -87,10 +92,53 @@ def resolve_model_path(package_context):
 
 
 def load_labels(package_context):
+    inline_labels = package_context.config.get('class_names')
+    normalized_inline = normalize_text_list(inline_labels)
+    if normalized_inline:
+        return normalized_inline
     labels_path = resolve_optional_path(package_context, package_context.config.get('labels_path'))
     if labels_path is None or not labels_path.exists():
         return []
     return [line.strip() for line in labels_path.read_text(encoding='utf-8-sig').splitlines() if line.strip()]
+
+
+def load_label_aliases_zh(package_context):
+    aliases = {}
+    aliases_path = resolve_optional_path(package_context, package_context.config.get('label_aliases_zh_path'))
+    if aliases_path is not None and aliases_path.exists():
+        payload = json.loads(aliases_path.read_text(encoding='utf-8-sig'))
+        if isinstance(payload, dict):
+            aliases.update({str(key).strip(): str(value).strip() for key, value in payload.items() if str(key).strip() and str(value).strip()})
+    inline_aliases = package_context.config.get('label_aliases_zh')
+    if isinstance(inline_aliases, dict):
+        aliases.update({str(key).strip(): str(value).strip() for key, value in inline_aliases.items() if str(key).strip() and str(value).strip()})
+    return aliases
+
+
+def normalize_text_list(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        candidates = value.split(',')
+    elif isinstance(value, (list, tuple, set)):
+        candidates = list(value)
+    else:
+        return []
+    return [str(item).strip() for item in candidates if str(item).strip()]
+
+
+def normalize_text_set(value):
+    return set(normalize_text_list(value))
+
+
+def normalize_int_set(value):
+    normalized = set()
+    for item in normalize_text_list(value):
+        try:
+            normalized.add(int(item))
+        except ValueError:
+            continue
+    return normalized
 
 
 def load_frame_bgr(request_payload, package_context, runtime_state=None):

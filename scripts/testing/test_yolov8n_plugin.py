@@ -1,17 +1,27 @@
-import importlib.util
+﻿import importlib.util
 import pathlib
 import sys
 import tempfile
 import unittest
 from typing import Tuple
 
-MODULE_PATH = pathlib.Path(__file__).resolve().parent.parent / 'rk3588' / 'plugins' / 'yolov8n' / 'inference.py'
-SPEC = importlib.util.spec_from_file_location('rk3588_yolov8n_inference', MODULE_PATH)
-if SPEC is None or SPEC.loader is None:
-    raise RuntimeError(f'failed to load module from {MODULE_PATH}')
-yolov8n_inference = importlib.util.module_from_spec(SPEC)
-sys.modules['rk3588_yolov8n_inference'] = yolov8n_inference
-SPEC.loader.exec_module(yolov8n_inference)
+ROOT = pathlib.Path(__file__).resolve().parent.parent / 'rk3588' / 'plugins' / 'yolov8n'
+INFERENCE_MODULE_PATH = ROOT / 'inference.py'
+POSTPROCESS_MODULE_PATH = ROOT / 'postprocess.py'
+
+
+def load_module(module_name: str, path: pathlib.Path):
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f'failed to load module from {path}')
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+yolov8n_inference = load_module('rk3588_yolov8n_inference', INFERENCE_MODULE_PATH)
+yolov8n_postprocess = load_module('rk3588_yolov8n_postprocess', POSTPROCESS_MODULE_PATH)
 
 
 class FakeContext:
@@ -85,6 +95,22 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
             self.assertEqual(resolved, override_model)
 
+    def test_load_labels_prefers_class_names_from_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'class_names': ['person', 'bus'],
+                    'labels_path': 'config/missing.txt',
+                },
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+
+            labels = yolov8n_inference.load_labels(context)
+
+            self.assertEqual(labels, ['person', 'bus'])
+
     def test_load_frame_bgr_uses_default_test_image_for_test_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
@@ -119,7 +145,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
             original_read_stream_opencv = yolov8n_inference.decode_impl.read_stream_frame_opencv
             original_read_stream_ffmpeg = yolov8n_inference.decode_impl.read_stream_frame_ffmpeg
             try:
-                def fail_opencv(source):
+                def fail_opencv(source, stream_manager=None):
                     raise RuntimeError('opencv stream open failed')
 
                 def ok_ffmpeg(source):
@@ -224,6 +250,90 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertEqual(len(created), 1)
         self.assertEqual(created[0].release_count, 1)
         self.assertEqual(runtime_state['stream_manager'].session_count(), 0)
+
+    def test_postprocess_maps_zh_labels_filters_enabled_classes_and_alert_labels(self):
+        original_decode_outputs = yolov8n_postprocess.decode_outputs
+        original_restore_boxes = yolov8n_postprocess.restore_boxes
+        try:
+            yolov8n_postprocess.decode_outputs = lambda outputs, obj_threshold, nms_threshold, input_size: (
+                yolov8n_postprocess.np.array([
+                    [0.0, 0.0, 10.0, 10.0],
+                    [20.0, 20.0, 30.0, 30.0],
+                    [40.0, 40.0, 50.0, 50.0],
+                ], dtype=yolov8n_postprocess.np.float32),
+                yolov8n_postprocess.np.array([0, 5, 2], dtype=yolov8n_postprocess.np.int32),
+                yolov8n_postprocess.np.array([0.9, 0.8, 0.7], dtype=yolov8n_postprocess.np.float32),
+            )
+            yolov8n_postprocess.restore_boxes = lambda boxes, prep_meta: boxes
+            runtime_state = {
+                'input_size': (640, 640),
+                'labels': ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus'],
+                'label_aliases_zh': {
+                    'person': '人员',
+                    'bus': '公交车',
+                },
+                'enabled_class_ids': set(),
+                'enabled_labels': {'person', '公交车'},
+                'alert_labels': {'公交车'},
+            }
+            raw_outputs = {
+                'outputs': [object(), object()],
+                'obj_threshold': 0.25,
+                'nms_threshold': 0.45,
+                'prep_meta': {},
+                'source_meta': {'source_kind': 'stream', 'resolved_source': 'rtsp://demo/stream'},
+                'model_path': '/tmp/demo.rknn',
+                'plan_ready_stream_count': 0,
+            }
+
+            result = yolov8n_postprocess.postprocess(raw_outputs, {}, {}, None, runtime_state)
+        finally:
+            yolov8n_postprocess.decode_outputs = original_decode_outputs
+            yolov8n_postprocess.restore_boxes = original_restore_boxes
+
+        self.assertEqual([item['label'] for item in result['detections']], ['person', 'bus'])
+        self.assertEqual([item['label_zh'] for item in result['detections']], ['人员', '公交车'])
+        self.assertEqual([item['alert'] for item in result['detections']], [False, True])
+        self.assertEqual([item['label'] for item in result['alerts']], ['bus'])
+        self.assertEqual(result['attributes']['alert_detection_count'], 1)
+        self.assertEqual(result['attributes']['detection_count'], 2)
+
+    def test_postprocess_defaults_all_detections_to_alert_when_filter_is_empty(self):
+        original_decode_outputs = yolov8n_postprocess.decode_outputs
+        original_restore_boxes = yolov8n_postprocess.restore_boxes
+        try:
+            yolov8n_postprocess.decode_outputs = lambda outputs, obj_threshold, nms_threshold, input_size: (
+                yolov8n_postprocess.np.array([[0.0, 0.0, 10.0, 10.0]], dtype=yolov8n_postprocess.np.float32),
+                yolov8n_postprocess.np.array([0], dtype=yolov8n_postprocess.np.int32),
+                yolov8n_postprocess.np.array([0.9], dtype=yolov8n_postprocess.np.float32),
+            )
+            yolov8n_postprocess.restore_boxes = lambda boxes, prep_meta: boxes
+            runtime_state = {
+                'input_size': (640, 640),
+                'labels': ['person'],
+                'label_aliases_zh': {'person': '人员'},
+                'enabled_class_ids': set(),
+                'enabled_labels': set(),
+                'alert_labels': set(),
+            }
+            raw_outputs = {
+                'outputs': [object()],
+                'obj_threshold': 0.25,
+                'nms_threshold': 0.45,
+                'prep_meta': {},
+                'source_meta': {'source_kind': 'image', 'resolved_source': 'test://frame'},
+                'model_path': '/tmp/demo.rknn',
+                'plan_ready_stream_count': 0,
+            }
+
+            result = yolov8n_postprocess.postprocess(raw_outputs, {}, {}, None, runtime_state)
+        finally:
+            yolov8n_postprocess.decode_outputs = original_decode_outputs
+            yolov8n_postprocess.restore_boxes = original_restore_boxes
+
+        self.assertEqual(result['detections'][0]['label_zh'], '人员')
+        self.assertTrue(result['detections'][0]['alert'])
+        self.assertEqual(len(result['alerts']), 1)
 
     def test_prepare_image_input_letterboxes_to_640_square(self):
         with tempfile.TemporaryDirectory() as tmp:

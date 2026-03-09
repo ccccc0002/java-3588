@@ -8,5 +8,13 @@
   "fallback_model_path": "model/yolov8.placeholder.rknn",
   "default_test_image_path": "model/bus.jpg",
   "labels_path": "config/coco_80_labels_list.txt",
+  "class_names": [],
+  "label_aliases_zh": {
+    "person": "人员",
+    "bus": "公交车"
+  },
+  "enabled_class_ids": [],
+  "enabled_labels": [],
+  "alert_labels": [],
   "stream_decode_backend": "opencv"
 }
