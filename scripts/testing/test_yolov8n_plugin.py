@@ -75,6 +75,62 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(meta['source_kind'], 'default_test_image')
             self.assertEqual(meta['resolved_source'], str(image_path.resolve()))
 
+
+    def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'stream_decode_backend': 'auto',
+                },
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+            sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
+            original_read_stream_opencv = yolov8n_inference.decode_impl.read_stream_frame_opencv
+            original_read_stream_ffmpeg = yolov8n_inference.decode_impl.read_stream_frame_ffmpeg
+            try:
+                def fail_opencv(source):
+                    raise RuntimeError('opencv stream open failed')
+                def ok_ffmpeg(source):
+                    return sample
+                yolov8n_inference.decode_impl.read_stream_frame_opencv = fail_opencv
+                yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = ok_ffmpeg
+                image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': 'rtsp://demo/stream'}}, context)
+            finally:
+                yolov8n_inference.decode_impl.read_stream_frame_opencv = original_read_stream_opencv
+                yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = original_read_stream_ffmpeg
+
+            self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
+            self.assertEqual(meta['source_kind'], 'stream')
+            self.assertEqual(meta['decoder_backend'], 'ffmpeg')
+
+
+    def test_load_frame_bgr_uses_stream_decoder_for_local_video_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            video_path = root / 'clips' / 'sample.mp4'
+            video_path.parent.mkdir(parents=True, exist_ok=True)
+            video_path.write_bytes(b'fake-video')
+            context = FakeContext(
+                root_dir=root,
+                config={'stream_decode_backend': 'auto'},
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+            sample = yolov8n_inference.np.zeros((4, 5, 3), dtype=yolov8n_inference.np.uint8)
+            original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
+            try:
+                def fake_read_stream_frame(source, preferred_backend='auto'):
+                    return sample, 'opencv'
+                yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
+                image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': str(video_path)}}, context)
+            finally:
+                yolov8n_inference.decode_impl.read_stream_frame = original_read_stream_frame
+
+            self.assertEqual(tuple(image_bgr.shape[:2]), (4, 5))
+            self.assertEqual(meta['source_kind'], 'video_file')
+            self.assertEqual(meta['decoder_backend'], 'opencv')
+
     def test_prepare_image_input_letterboxes_to_640_square(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)

@@ -1,19 +1,27 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import sys
-import urllib.request
 from pathlib import Path
-from urllib.parse import urlparse
 
-import cv2
 import numpy as np
 
 PLUGIN_DIR = Path(__file__).resolve().parent
 RK3588_SCRIPT_DIR = PLUGIN_DIR.parent.parent
 if str(RK3588_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(RK3588_SCRIPT_DIR))
+if str(PLUGIN_DIR) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_DIR))
 
+import decode as decode_impl
+import preprocess as preprocess_impl
 from rknn_plugin_support import RKNNLiteSession
+
+read_image_bgr = decode_impl.read_image_bgr
+read_stream_frame_opencv = decode_impl.read_stream_frame_opencv
+read_stream_frame_ffmpeg = decode_impl.read_stream_frame_ffmpeg
+resolve_optional_path = decode_impl.resolve_optional_path
+normalize_input_size = preprocess_impl.normalize_input_size
+prepare_image_input = preprocess_impl.prepare_image_input
 
 
 def load(package_context):
@@ -80,123 +88,4 @@ def load_labels(package_context):
 
 
 def load_frame_bgr(request_payload, package_context):
-    frame = request_payload.get('frame') if isinstance(request_payload.get('frame'), dict) else {}
-    direct_path = first_non_blank(frame.get('image_path'), frame.get('path'), frame.get('local_path'))
-    if direct_path:
-        resolved = resolve_source_path(package_context, direct_path)
-        return read_image_bgr(resolved), {'source_kind': 'image_path', 'resolved_source': str(resolved)}
-
-    source = str(frame.get('source', '')).strip()
-    if source == 'test://frame':
-        fallback = resolve_optional_path(package_context, package_context.config.get('default_test_image_path'))
-        if fallback is None or not fallback.exists():
-            raise RuntimeError('default_test_image_path is not configured or missing')
-        return read_image_bgr(fallback), {'source_kind': 'default_test_image', 'resolved_source': str(fallback.resolve())}
-    if not source:
-        raise RuntimeError('frame.source is required')
-    if source.startswith('file://'):
-        resolved = Path(source[7:]).expanduser().resolve()
-        return read_image_bgr(resolved), {'source_kind': 'file_url', 'resolved_source': str(resolved)}
-    if source.startswith('http://') or source.startswith('https://'):
-        return read_image_url(source), {'source_kind': 'http_url', 'resolved_source': source}
-    if is_stream_source(source):
-        return read_stream_frame(source), {'source_kind': 'stream', 'resolved_source': source}
-    resolved = resolve_source_path(package_context, source)
-    return read_image_bgr(resolved), {'source_kind': 'filesystem', 'resolved_source': str(resolved)}
-
-
-def read_image_url(source):
-    with urllib.request.urlopen(source, timeout=10) as response:
-        payload = response.read()
-    array = np.frombuffer(payload, dtype=np.uint8)
-    image = cv2.imdecode(array, cv2.IMREAD_COLOR)
-    if image is None:
-        raise RuntimeError(f'failed to decode image url: {source}')
-    return image
-
-
-def read_stream_frame(source):
-    capture = cv2.VideoCapture(source)
-    try:
-        if not capture.isOpened():
-            raise RuntimeError(f'failed to open stream source: {source}')
-        ok, frame = capture.read()
-        if not ok or frame is None:
-            raise RuntimeError(f'failed to read frame from stream source: {source}')
-        return frame
-    finally:
-        capture.release()
-
-
-def read_image_bgr(path):
-    resolved = Path(path).resolve()
-    payload = np.fromfile(str(resolved), dtype=np.uint8)
-    image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
-    if image is None:
-        raise RuntimeError(f'failed to read image file: {path}')
-    return image
-
-
-def prepare_image_input(image_bgr, input_size):
-    target_w, target_h = input_size
-    src_h, src_w = image_bgr.shape[:2]
-    scale = min(target_w / float(src_w), target_h / float(src_h))
-    resized_w = max(1, int(round(src_w * scale)))
-    resized_h = max(1, int(round(src_h * scale)))
-    resized = cv2.resize(image_bgr, (resized_w, resized_h), interpolation=cv2.INTER_LINEAR)
-    canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
-    pad_left = (target_w - resized_w) // 2
-    pad_top = (target_h - resized_h) // 2
-    canvas[pad_top:pad_top + resized_h, pad_left:pad_left + resized_w] = resized
-    rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
-    batched = np.expand_dims(rgb, axis=0)
-    return batched, {
-        'original_width': src_w,
-        'original_height': src_h,
-        'scale': scale,
-        'pad_left': pad_left,
-        'pad_top': pad_top,
-        'resized_width': resized_w,
-        'resized_height': resized_h,
-        'input_width': target_w,
-        'input_height': target_h,
-    }
-
-
-def normalize_input_size(value):
-    if isinstance(value, (list, tuple)) and len(value) == 2:
-        width = int(value[0])
-        height = int(value[1])
-        if width > 0 and height > 0:
-            return (width, height)
-    return (640, 640)
-
-
-def resolve_optional_path(package_context, value):
-    text = str(value or '').strip()
-    if not text:
-        return None
-    candidate = Path(text).expanduser()
-    if candidate.is_absolute():
-        return candidate.resolve()
-    return (package_context.root_dir / candidate).resolve()
-
-
-def resolve_source_path(package_context, value):
-    resolved = resolve_optional_path(package_context, value)
-    if resolved is None:
-        raise RuntimeError('frame source path is blank')
-    return resolved
-
-
-def is_stream_source(source):
-    parsed = urlparse(source)
-    return parsed.scheme.lower() in {'rtsp', 'rtmp', 'udp'}
-
-
-def first_non_blank(*values):
-    for value in values:
-        text = str(value or '').strip()
-        if text:
-            return text
-    return ''
+    return decode_impl.load_frame_bgr(request_payload, package_context)
