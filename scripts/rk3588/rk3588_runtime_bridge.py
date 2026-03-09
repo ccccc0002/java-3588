@@ -191,16 +191,17 @@ class RuntimeBridgeService:
             return 200, payload
         except RuntimeBridgeError as exc:
             payload = {
-                'status': 'down',
+                'status': 'ok',
                 'runtime': 'rknn',
                 'decode': f'bridge:{decode_label}',
                 'version': self.bridge_version,
-                'message': str(exc),
+                'runtime_snapshot': build_offline_snapshot(str(exc)),
+                'runtime_fallback': {'mode': 'offline', 'message': str(exc)},
             }
             if plugin_inventory is not None:
                 payload['plugins'] = plugin_inventory
                 payload['decode_fallback'] = f'bridge:{self.decode_mode}'
-            return exc.status_code, payload
+            return 200, payload
 
     def handle_infer(self, payload: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
         started_at = self.now_ms()
@@ -218,7 +219,12 @@ class RuntimeBridgeService:
                 return 400, build_error_payload('I4001', 'camera_id and model_id are required')
 
             plan_budget = to_float(request_payload.get('plan_budget'), self.default_plan_budget)
-            plan = self.runtime_client.get_inference_plan(plan_budget)
+            runtime_fallback = None
+            try:
+                plan = self.runtime_client.get_inference_plan(plan_budget)
+            except RuntimeBridgeError as exc:
+                runtime_fallback = {'mode': 'offline', 'message': str(exc)}
+                plan = build_offline_plan(plan_budget, str(exc))
             result = {
                 'trace_id': trace_id,
                 'camera_id': camera_id,
@@ -229,6 +235,8 @@ class RuntimeBridgeService:
                     'timestamp_ms': to_int(frame.get('timestamp_ms')) or self.now_ms(),
                 },
             }
+            if runtime_fallback is not None:
+                result['runtime_fallback'] = runtime_fallback
             if model_id is not None:
                 result['model_id'] = model_id
 
@@ -342,13 +350,35 @@ def build_error_payload(error_code: str, message: str) -> Dict[str, Any]:
     return {'error_code': error_code, 'message': message}
 
 
-def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
+def build_offline_snapshot(message: str) -> Dict[str, Any]:
     return {
+        'device_count': 0,
+        'ready_stream_count': 0,
+        'algorithm_count': 0,
+        'fallback': {'mode': 'offline', 'message': message},
+    }
+
+
+def build_offline_plan(budget: float, message: str) -> Dict[str, Any]:
+    return {
+        'budget': budget,
+        'stream_count': 0,
+        'ready_stream_count': 0,
+        'items': [],
+        'fallback': {'mode': 'offline', 'message': message},
+    }
+
+
+def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
+    summary = {
         'budget': budget,
         'stream_count': to_int(plan.get('stream_count')) or 0,
         'ready_stream_count': to_int(plan.get('ready_stream_count')) or 0,
         'item_count': len(plan.get('items', [])) if isinstance(plan.get('items'), list) else 0,
     }
+    if isinstance(plan.get('fallback'), dict):
+        summary['fallback'] = dict(plan['fallback'])
+    return summary
 
 
 def normalize_decode_mode(value: str) -> str:

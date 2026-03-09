@@ -56,6 +56,15 @@ class FakePluginManager:
 
 
 
+class FakeFailingRuntimeClient:
+    def get_runtime_snapshot(self):
+        raise rk3588_runtime_bridge.RuntimeBridgeError('runtime unavailable', status_code=502)
+
+    def get_inference_plan(self, budget):
+        raise rk3588_runtime_bridge.RuntimeBridgeError('runtime unavailable', status_code=502)
+
+
+
 class FakeResponse:
     def __init__(self, status, payload):
         self.status = status
@@ -260,6 +269,41 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(status_code, 400)
         self.assertEqual(payload['error_code'], 'I4001')
         self.assertIn('frame.source', payload['message'])
+
+    def test_health_falls_back_to_offline_snapshot_when_runtime_is_unavailable(self):
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeFailingRuntimeClient(),
+            token_provider=None,
+            plugin_manager=FakePluginManager(),
+        )
+
+        status_code, payload = service.handle_health()
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(payload['status'], 'ok')
+        self.assertEqual(payload['runtime_fallback']['mode'], 'offline')
+        self.assertEqual(payload['runtime_snapshot']['device_count'], 0)
+
+    def test_infer_uses_offline_plan_when_runtime_is_unavailable(self):
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeFailingRuntimeClient(),
+            token_provider=None,
+            plugin_manager=FakePluginManager(),
+        )
+        request = {
+            'trace_id': 'trace-offline',
+            'camera_id': 1,
+            'model_id': 1,
+            'frame': {'source': 'test://frame'},
+        }
+
+        status_code, payload = service.handle_infer(request)
+
+        self.assertEqual(status_code, 200)
+        self.assertEqual(payload['runtime_fallback']['mode'], 'offline')
+        self.assertEqual(payload['plan_summary']['ready_stream_count'], 0)
+        self.assertEqual(payload['plan_summary']['fallback']['mode'], 'offline')
+        self.assertEqual(payload['plugin']['plugin_id'], 'yolov8n')
 
 
 if __name__ == '__main__':
