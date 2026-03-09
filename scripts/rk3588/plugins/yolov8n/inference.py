@@ -42,13 +42,15 @@ def load(package_context):
         'nms_threshold': float(package_context.config.get('nms_threshold', 0.45)),
         'model_path': str(model_path),
         'default_test_image_path': resolve_optional_path(package_context, package_context.config.get('default_test_image_path')),
+        'stream_manager': decode_impl.create_stream_manager(package_context),
     }
 
 
 def infer(request_payload, runtime_plan, package_context, runtime_state):
-    image_bgr, source_meta = load_frame_bgr(request_payload, package_context)
+    image_bgr, source_meta = load_frame_bgr(request_payload, package_context, runtime_state)
     input_image, prep_meta = prepare_image_input(image_bgr, runtime_state['input_size'])
     outputs = runtime_state['session'].infer(inputs=[input_image])
+    stream_manager = runtime_state.get('stream_manager') if isinstance(runtime_state, dict) else None
     return {
         'outputs': outputs,
         'source_meta': source_meta,
@@ -58,10 +60,14 @@ def infer(request_payload, runtime_plan, package_context, runtime_state):
         'nms_threshold': runtime_state['nms_threshold'],
         'model_path': runtime_state['model_path'],
         'plan_ready_stream_count': runtime_plan.get('ready_stream_count', 0),
+        'active_stream_session_count': stream_manager.session_count() if stream_manager is not None else 0,
     }
 
 
 def cleanup(runtime_state, package_context):
+    stream_manager = runtime_state.get('stream_manager') if isinstance(runtime_state, dict) else None
+    if stream_manager is not None:
+        stream_manager.close()
     session = runtime_state.get('session') if isinstance(runtime_state, dict) else None
     if session is not None:
         session.release()
@@ -87,5 +93,5 @@ def load_labels(package_context):
     return [line.strip() for line in labels_path.read_text(encoding='utf-8-sig').splitlines() if line.strip()]
 
 
-def load_frame_bgr(request_payload, package_context):
-    return decode_impl.load_frame_bgr(request_payload, package_context)
+def load_frame_bgr(request_payload, package_context, runtime_state=None):
+    return decode_impl.load_frame_bgr(request_payload, package_context, runtime_state)

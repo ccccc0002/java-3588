@@ -1,4 +1,4 @@
-﻿import importlib.util
+import importlib.util
 import pathlib
 import sys
 import tempfile
@@ -19,6 +19,36 @@ class FakeContext:
         self.root_dir = root_dir
         self.config = config
         self.model_path = model_path
+
+
+class FakeCapture:
+    def __init__(self, source: str, frames=None):
+        self.source = source
+        self.frames = list(frames or [1])
+        self.read_index = 0
+        self.set_calls = []
+        self.release_count = 0
+
+    def isOpened(self):
+        return True
+
+    def read(self):
+        if self.read_index >= len(self.frames):
+            return False, None
+        value = self.frames[self.read_index]
+        self.read_index += 1
+        frame = yolov8n_inference.np.full((2, 3, 3), value, dtype=yolov8n_inference.np.uint8)
+        return True, frame
+
+    def release(self):
+        self.release_count += 1
+
+    def set(self, prop, value):
+        self.set_calls.append((prop, value))
+        if prop == yolov8n_inference.decode_impl.cv2.CAP_PROP_POS_FRAMES and value == 0:
+            self.read_index = 0
+            return True
+        return True
 
 
 def write_png(path: pathlib.Path, width: int, height: int, rgb: Tuple[int, int, int]) -> None:
@@ -75,7 +105,6 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(meta['source_kind'], 'default_test_image')
             self.assertEqual(meta['resolved_source'], str(image_path.resolve()))
 
-
     def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
@@ -92,8 +121,10 @@ class YoloV8nInferenceTests(unittest.TestCase):
             try:
                 def fail_opencv(source):
                     raise RuntimeError('opencv stream open failed')
+
                 def ok_ffmpeg(source):
                     return sample
+
                 yolov8n_inference.decode_impl.read_stream_frame_opencv = fail_opencv
                 yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = ok_ffmpeg
                 image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': 'rtsp://demo/stream'}}, context)
@@ -104,7 +135,6 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
             self.assertEqual(meta['source_kind'], 'stream')
             self.assertEqual(meta['decoder_backend'], 'ffmpeg')
-
 
     def test_load_frame_bgr_uses_stream_decoder_for_local_video_file(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -120,8 +150,9 @@ class YoloV8nInferenceTests(unittest.TestCase):
             sample = yolov8n_inference.np.zeros((4, 5, 3), dtype=yolov8n_inference.np.uint8)
             original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
             try:
-                def fake_read_stream_frame(source, preferred_backend='auto'):
+                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None):
                     return sample, 'opencv'
+
                 yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
                 image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': str(video_path)}}, context)
             finally:
@@ -130,6 +161,69 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(tuple(image_bgr.shape[:2]), (4, 5))
             self.assertEqual(meta['source_kind'], 'video_file')
             self.assertEqual(meta['decoder_backend'], 'opencv')
+
+    def test_stream_session_manager_reuses_capture_for_same_source(self):
+        created = []
+        original_video_capture = yolov8n_inference.decode_impl.cv2.VideoCapture
+        original_ffmpeg = yolov8n_inference.decode_impl.read_stream_frame_ffmpeg
+        try:
+            def fake_video_capture(source):
+                capture = FakeCapture(source, frames=[1, 2, 3])
+                created.append(capture)
+                return capture
+
+            yolov8n_inference.decode_impl.cv2.VideoCapture = fake_video_capture
+            yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = lambda source: self.fail('ffmpeg fallback should not be used')
+            manager = yolov8n_inference.decode_impl.StreamSessionManager(now_fn=lambda: 100.0, ttl_sec=60.0)
+
+            first_frame, first_backend = yolov8n_inference.decode_impl.read_stream_frame(
+                'rtsp://demo/stream',
+                preferred_backend='opencv',
+                stream_manager=manager,
+            )
+            second_frame, second_backend = yolov8n_inference.decode_impl.read_stream_frame(
+                'rtsp://demo/stream',
+                preferred_backend='opencv',
+                stream_manager=manager,
+            )
+        finally:
+            yolov8n_inference.decode_impl.cv2.VideoCapture = original_video_capture
+            yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = original_ffmpeg
+            if 'manager' in locals():
+                manager.close()
+
+        self.assertEqual(len(created), 1)
+        self.assertEqual(first_backend, 'opencv')
+        self.assertEqual(second_backend, 'opencv')
+        self.assertEqual(int(first_frame[0, 0, 0]), 1)
+        self.assertEqual(int(second_frame[0, 0, 0]), 2)
+
+    def test_stream_session_manager_cleanup_releases_cached_capture(self):
+        created = []
+        original_video_capture = yolov8n_inference.decode_impl.cv2.VideoCapture
+        try:
+            def fake_video_capture(source):
+                capture = FakeCapture(source, frames=[9])
+                created.append(capture)
+                return capture
+
+            yolov8n_inference.decode_impl.cv2.VideoCapture = fake_video_capture
+            runtime_state = {
+                'stream_manager': yolov8n_inference.decode_impl.StreamSessionManager(now_fn=lambda: 100.0, ttl_sec=60.0),
+            }
+            yolov8n_inference.decode_impl.read_stream_frame(
+                'rtsp://demo/stream',
+                preferred_backend='opencv',
+                stream_manager=runtime_state['stream_manager'],
+            )
+
+            yolov8n_inference.cleanup(runtime_state, None)
+        finally:
+            yolov8n_inference.decode_impl.cv2.VideoCapture = original_video_capture
+
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].release_count, 1)
+        self.assertEqual(runtime_state['stream_manager'].session_count(), 0)
 
     def test_prepare_image_input_letterboxes_to_640_square(self):
         with tempfile.TemporaryDirectory() as tmp:
