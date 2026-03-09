@@ -1,0 +1,17 @@
+﻿{
+  "schema_version": "rknn.plugin.v1",
+  "plugin_id": "yolov8n",
+  "version": "0.1.0",
+  "runtime": "rk3588_rknn",
+  "capabilities": ["inference", "object_detection", "yolov8"],
+  "entrypoints": {
+    "load": "inference.py:load",
+    "infer": "inference.py:infer",
+    "postprocess": "postprocess.py:postprocess",
+    "cleanup": "inference.py:cleanup"
+  },
+  "assets": {
+    "config": "config/plugin.json",
+    "model": "model/yolov8.rknn"
+  }
+}

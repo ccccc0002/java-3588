@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import platform
 from typing import Any, Optional
 
 
@@ -34,9 +35,10 @@ class RKNNLiteSession:
         resolved_core_mask = resolve_core_mask(RKNNLite, core_mask)
         if resolved_core_mask is not None:
             init_kwargs['core_mask'] = resolved_core_mask
-        if target:
+        on_board_linux = platform.system() == 'Linux' and platform.machine() == 'aarch64'
+        if target and not on_board_linux:
             init_kwargs['target'] = target
-        if device_id:
+        if device_id and not on_board_linux:
             init_kwargs['device_id'] = device_id
 
         ret = engine.init_runtime(**init_kwargs)
