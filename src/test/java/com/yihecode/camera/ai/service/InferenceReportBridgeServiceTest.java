@@ -125,6 +125,10 @@ class InferenceReportBridgeServiceTest {
         ReportMessage reportMessage = JSON.parseObject(reportSocketCaptor.getValue(), ReportMessage.class);
         assertTrue(reportMessage.getParams().contains("bus"));
         assertFalse(reportMessage.getParams().contains("person"));
+        assertEquals("trace-alert-persist", reportMessage.getTraceId());
+        assertEquals(1, reportMessage.getAlertCount());
+        assertFalse(reportMessage.getAlertLabelsZh().isEmpty());
+        assertFalse(String.valueOf(reportMessage.getAlertLabelsZh().get(0)).trim().isEmpty());
 
         ArgumentCaptor<String> messageSocketCaptor = ArgumentCaptor.forClass(String.class);
         verify(messageWebsocket).sendToAll(messageSocketCaptor.capture());

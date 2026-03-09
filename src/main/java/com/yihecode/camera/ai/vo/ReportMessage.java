@@ -2,8 +2,10 @@ package com.yihecode.camera.ai.vo;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * 描述：摄像头告警描框
+ * 描述：摄像头告警描述框
  *
  * @author zhoumingxing
  * @mail 465769438@qq.com
@@ -39,4 +41,12 @@ public class ReportMessage {
     private String id;
 
     private String webUrl;
+
+    private String traceId;
+
+    private Integer alertCount;
+
+    private List<String> alertLabels;
+
+    private List<String> alertLabelsZh;
 }

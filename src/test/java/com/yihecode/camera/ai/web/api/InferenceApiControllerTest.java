@@ -2610,6 +2610,71 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void dispatch_shouldExposeAlertsAndEventsInResultPayload() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("trace_id", "trace-plugin-alert-payload");
+        body.put("camera_id", 132L);
+        body.put("model_id", 232L);
+        body.put("plugin_registration_id", "face-detector:1.0.0");
+        Map<String, Object> frameMeta = new HashMap<>();
+        frameMeta.put("timestamp_ms", 2222L);
+        body.put("frame_meta", frameMeta);
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("backend_hint", "rk3588_rknn");
+        pluginRoute.put("plugin", Map.of(
+                "registration_id", "face-detector:1.0.0",
+                "runtime", "rk3588_rknn",
+                "health_url", "http://plugin-a:19090/health"
+        ));
+
+        Map<String, Object> idempotentData = new HashMap<>();
+        idempotentData.put("enabled", true);
+        idempotentData.put("duplicate", false);
+        idempotentData.put("status", "fresh");
+        idempotentData.put("trace_id", "trace-plugin-alert-payload");
+        idempotentData.put("camera_id", 132L);
+        idempotentData.put("timestamp_ms", 2222L);
+
+        InferenceResult infer = new InferenceResult();
+        infer.setTraceId("trace-plugin-alert-payload");
+        infer.setCameraId(132L);
+        infer.setLatencyMs(6L);
+        infer.setBackendType("rk3588_rknn");
+        infer.setAttempt(1);
+        infer.setDetections(Arrays.asList(Map.of("label", "person")));
+        infer.setAlerts(Arrays.asList(Map.of("label", "bus", "label_zh", "???")));
+        infer.setEvents(Arrays.asList(Map.of("event_type", "vision.alert", "label", "bus")));
+
+        when(pluginRouteResolverService.hasSelector(body)).thenReturn(true);
+        when(pluginRouteResolverService.resolve(body)).thenReturn(pluginRoute);
+        when(pluginInferenceDispatchService.isDispatchable(pluginRoute)).thenReturn(true);
+        when(pluginInferenceDispatchService.infer(any(), eq(pluginRoute))).thenReturn(infer);
+        when(inferenceRoutingService.currentBackendType()).thenReturn("legacy");
+        when(inferenceRoutingService.backendTypeForCamera(132L, "rk3588_rknn")).thenReturn("rk3588_rknn");
+        when(inferenceIdempotencyService.checkAndMark("trace-plugin-alert-payload", 132L, 2222L)).thenReturn(idempotentData);
+        when(inferenceReportBridgeService.persistAndBroadcast(eq(132L), eq(232L), eq(infer), eq("trace-plugin-alert-payload")))
+                .thenReturn(Map.of("status", "ok", "persisted", true, "broadcasted", true, "alert_count", 1, "event_count", 1));
+
+        JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        Map<String, Object> resultMap = (Map<String, Object>) data.get("result");
+        List<Map<String, Object>> alerts = (List<Map<String, Object>>) resultMap.get("alerts");
+        List<Map<String, Object>> events = (List<Map<String, Object>>) resultMap.get("events");
+        assertEquals("bus", alerts.get(0).get("label"));
+        assertEquals("vision.alert", events.get(0).get("event_type"));
+        Map<String, Object> report = (Map<String, Object>) data.get("report");
+        assertEquals(1, ((Number) report.get("alert_count")).intValue());
+        assertEquals(1, ((Number) report.get("event_count")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void dispatch_shouldFallbackToBackend_whenPluginRouteIsNotDispatchable() {
         Map<String, Object> body = new HashMap<>();
         body.put("trace_id", "trace-plugin-fallback-1");

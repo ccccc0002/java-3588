@@ -152,6 +152,10 @@ public class InferenceReportBridgeService {
             reportMessage.setWareName(wareHouseName);
             reportMessage.setId(String.valueOf(report.getId()));
             reportMessage.setWebUrl(configService.getByValTag("webUrl"));
+            reportMessage.setTraceId(traceId);
+            reportMessage.setAlertCount(alarmPayload.size());
+            reportMessage.setAlertLabels(extractAlertLabels(alarmPayload, "label"));
+            reportMessage.setAlertLabelsZh(extractAlertLabels(alarmPayload, "label_zh"));
             reportWebsocket.sendToAll(JSON.toJSONString(reportMessage));
             ret.put("broadcasted", true);
         } catch (Exception e) {
