@@ -1,0 +1,7 @@
+{
+  "execution_mode": "mock",
+  "default_label": "object",
+  "default_score": 0.75,
+  "core_mask": "auto",
+  "target_platform": "rk3588"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "rknn.plugin.v1",
+  "plugin_id": "roi-passthrough",
+  "version": "0.1.0",
+  "runtime": "rk3588_rknn",
+  "capabilities": ["inference", "demo"],
+  "entrypoints": {
+    "load": "inference.py:load",
+    "infer": "inference.py:infer",
+    "postprocess": "postprocess.py:postprocess",
+    "cleanup": "inference.py:cleanup"
+  },
+  "assets": {
+    "config": "config/plugin.json",
+    "model": "model/placeholder.rknn"
+  }
+}

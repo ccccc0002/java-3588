@@ -9,11 +9,18 @@ import sys
 import time
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 from urllib import error, request
 
 
-BRIDGE_VERSION = '0.2.0'
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from plugin_runtime import EXPECTED_PLUGIN_RUNTIME, PluginPackageManager, PluginRuntimeError
+
+BRIDGE_VERSION = '0.3.0'
 
 
 class RuntimeBridgeError(RuntimeError):
@@ -34,6 +41,9 @@ class RuntimeBridgeConfig:
     default_plan_budget: float = 10.0
     decode_mode: str = 'stub'
     bridge_version: str = BRIDGE_VERSION
+    plugins_root: str = ''
+    default_plugin_id: str = ''
+    expected_plugin_runtime: str = EXPECTED_PLUGIN_RUNTIME
 
 
 class RuntimeApiClient:
@@ -140,6 +150,7 @@ class RuntimeBridgeService:
         decode_mode: str = 'stub',
         default_plan_budget: float = 10.0,
         now_ms: Optional[Callable[[], int]] = None,
+        plugin_manager: Optional[PluginPackageManager] = None,
     ):
         self.runtime_client = runtime_client
         self.token_provider = token_provider
@@ -147,27 +158,39 @@ class RuntimeBridgeService:
         self.decode_mode = normalize_decode_mode(decode_mode)
         self.default_plan_budget = default_plan_budget
         self.now_ms = now_ms or (lambda: int(time.time() * 1000))
+        self.plugin_manager = plugin_manager
 
     def handle_health(self) -> Tuple[int, Dict[str, Any]]:
+        plugin_inventory = self.plugin_manager.inventory() if self.plugin_manager is not None else None
+        decode_label = 'plugin' if self.plugin_manager is not None and self.plugin_manager.has_plugins() else self.decode_mode
         try:
             snapshot = self.runtime_client.get_runtime_snapshot()
-            return 200, {
+            payload = {
                 'status': 'ok',
                 'runtime': 'rknn',
-                'decode': f'bridge:{self.decode_mode}',
+                'decode': f'bridge:{decode_label}',
                 'version': self.bridge_version,
                 'runtime_snapshot': snapshot,
             }
+            if plugin_inventory is not None:
+                payload['plugins'] = plugin_inventory
+                payload['decode_fallback'] = f'bridge:{self.decode_mode}'
+            return 200, payload
         except RuntimeBridgeError as exc:
-            return exc.status_code, {
+            payload = {
                 'status': 'down',
                 'runtime': 'rknn',
-                'decode': f'bridge:{self.decode_mode}',
+                'decode': f'bridge:{decode_label}',
                 'version': self.bridge_version,
                 'message': str(exc),
             }
+            if plugin_inventory is not None:
+                payload['plugins'] = plugin_inventory
+                payload['decode_fallback'] = f'bridge:{self.decode_mode}'
+            return exc.status_code, payload
 
     def handle_infer(self, payload: Dict[str, Any]) -> Tuple[int, Dict[str, Any]]:
+        started_at = self.now_ms()
         try:
             request_payload = payload if isinstance(payload, dict) else {}
             frame = request_payload.get('frame') if isinstance(request_payload.get('frame'), dict) else {}
@@ -183,13 +206,10 @@ class RuntimeBridgeService:
 
             plan_budget = to_float(request_payload.get('plan_budget'), self.default_plan_budget)
             plan = self.runtime_client.get_inference_plan(plan_budget)
-            detections = self._build_detections(request_payload)
             result = {
                 'trace_id': trace_id,
                 'camera_id': camera_id,
-                'latency_ms': max(1, int(self.now_ms() - self.now_ms() + 1)),
-                'detections': detections,
-                'backend_type': 'rk3588_rknn',
+                'backend_type': EXPECTED_PLUGIN_RUNTIME,
                 'plan_summary': summarize_plan(plan, plan_budget),
                 'frame': {
                     'source': source,
@@ -198,7 +218,24 @@ class RuntimeBridgeService:
             }
             if model_id is not None:
                 result['model_id'] = model_id
+
+            package = self.plugin_manager.resolve(request_payload) if self.plugin_manager is not None else None
+            if package is not None:
+                plugin_output = self.plugin_manager.execute(package, request_payload, plan)
+                result['detections'] = plugin_output.get('detections', [])
+                result['latency_ms'] = max(1, to_int(plugin_output.get('latency_ms')) or (self.now_ms() - started_at))
+                result['plugin'] = plugin_output.get('plugin_meta', {})
+                if isinstance(plugin_output.get('frame'), dict):
+                    result['frame'].update(plugin_output['frame'])
+                if isinstance(plugin_output.get('attributes'), dict):
+                    result['attributes'] = plugin_output['attributes']
+                return 200, result
+
+            result['detections'] = self._build_detections(request_payload)
+            result['latency_ms'] = max(1, self.now_ms() - started_at)
             return 200, result
+        except PluginRuntimeError as exc:
+            return exc.status_code, build_error_payload('I5002', str(exc))
         except RuntimeBridgeError as exc:
             return exc.status_code, build_error_payload('I5002', str(exc))
 
@@ -320,6 +357,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--plan-budget', type=float, default=10.0)
     parser.add_argument('--decode-mode', default='stub')
     parser.add_argument('--bridge-version', default=BRIDGE_VERSION)
+    parser.add_argument('--plugins-root', default=str(SCRIPT_DIR / 'plugins'))
+    parser.add_argument('--default-plugin-id', default='')
+    parser.add_argument('--expected-plugin-runtime', default=EXPECTED_PLUGIN_RUNTIME)
     return parser.parse_args(argv)
 
 
@@ -335,16 +375,25 @@ def build_service(args: argparse.Namespace) -> RuntimeBridgeService:
         default_plan_budget=args.plan_budget,
         decode_mode=args.decode_mode,
         bridge_version=args.bridge_version,
+        plugins_root=args.plugins_root,
+        default_plugin_id=args.default_plugin_id,
+        expected_plugin_runtime=args.expected_plugin_runtime,
     )
     client = RuntimeApiClient(config)
     token_provider = TokenProvider(client) if not config.runtime_token else None
     client.set_token_provider(token_provider)
+    plugin_manager = PluginPackageManager(
+        plugins_root=config.plugins_root,
+        expected_runtime=config.expected_plugin_runtime,
+        default_plugin_id=config.default_plugin_id,
+    )
     return RuntimeBridgeService(
         runtime_client=client,
         token_provider=token_provider,
         bridge_version=config.bridge_version,
         decode_mode=config.decode_mode,
         default_plan_budget=config.default_plan_budget,
+        plugin_manager=plugin_manager,
     )
 
 
@@ -352,7 +401,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     BridgeRequestHandler.service = build_service(args)
     server = ThreadingHTTPServer((args.listen_host, args.listen_port), BridgeRequestHandler)
-    print(json.dumps({'listen_host': args.listen_host, 'listen_port': args.listen_port, 'runtime_url': args.runtime_url, 'decode_mode': normalize_decode_mode(args.decode_mode)}, ensure_ascii=True))
+    print(json.dumps({'listen_host': args.listen_host, 'listen_port': args.listen_port, 'runtime_url': args.runtime_url, 'decode_mode': normalize_decode_mode(args.decode_mode), 'plugins_root': args.plugins_root, 'default_plugin_id': args.default_plugin_id}, ensure_ascii=True))
     try:
         server.serve_forever()
     except KeyboardInterrupt:

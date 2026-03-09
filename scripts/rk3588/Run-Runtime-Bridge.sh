@@ -15,7 +15,10 @@ BOOTSTRAP_HEADER_NAME="${BOOTSTRAP_HEADER_NAME:-X-Bootstrap-Token}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-5}"
 PLAN_BUDGET="${PLAN_BUDGET:-10}"
 DECODE_MODE="${DECODE_MODE:-stub}"
-BRIDGE_VERSION="${BRIDGE_VERSION:-0.2.0}"
+PLUGINS_ROOT="${PLUGINS_ROOT:-${REPO_ROOT}/scripts/rk3588/plugins}"
+DEFAULT_PLUGIN_ID="${DEFAULT_PLUGIN_ID:-roi-passthrough}"
+EXPECTED_PLUGIN_RUNTIME="${EXPECTED_PLUGIN_RUNTIME:-rk3588_rknn}"
+BRIDGE_VERSION="${BRIDGE_VERSION:-0.3.0}"
 
 exec python3 "${REPO_ROOT}/scripts/rk3588/rk3588_runtime_bridge.py" \
   --listen-host "${LISTEN_HOST}" \
@@ -29,4 +32,7 @@ exec python3 "${REPO_ROOT}/scripts/rk3588/rk3588_runtime_bridge.py" \
   --timeout-sec "${TIMEOUT_SEC}" \
   --plan-budget "${PLAN_BUDGET}" \
   --decode-mode "${DECODE_MODE}" \
+  --plugins-root "${PLUGINS_ROOT}" \
+  --default-plugin-id "${DEFAULT_PLUGIN_ID}" \
+  --expected-plugin-runtime "${EXPECTED_PLUGIN_RUNTIME}" \
   --bridge-version "${BRIDGE_VERSION}"
