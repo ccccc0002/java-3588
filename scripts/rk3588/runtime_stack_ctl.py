@@ -25,6 +25,7 @@ class StackControllerConfig:
     app_health_url: str
     app_wait_seconds: float = 20.0
     app_poll_interval: float = 1.0
+    app_stop_wait_seconds: float = 10.0
     app_stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar.*18082'
 
 
@@ -45,6 +46,7 @@ def build_app_config(config: StackControllerConfig) -> java_app_ctl.AppControlle
         health_url=config.app_health_url,
         wait_seconds=config.app_wait_seconds,
         poll_interval=config.app_poll_interval,
+        stop_wait_seconds=config.app_stop_wait_seconds,
         stop_pattern=config.app_stop_pattern,
     )
 
@@ -73,7 +75,9 @@ def status_stack(config: StackControllerConfig) -> Dict[str, object]:
 
 
 def restart_stack(config: StackControllerConfig, bridge_env: Optional[Dict[str, str]] = None) -> Dict[str, object]:
-    stop_stack(config)
+    stopped = stop_stack(config)
+    if stopped.get('status') != 'stopped':
+        return {'status': 'restart_blocked', 'app': stopped.get('app', {}), 'bridge': stopped.get('bridge', {}), 'stop': stopped}
     return start_stack(config, bridge_env=bridge_env)
 
 
@@ -85,6 +89,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--app-health-url', default='')
     parser.add_argument('--app-wait-seconds', type=float, default=20.0)
     parser.add_argument('--app-poll-interval', type=float, default=1.0)
+    parser.add_argument('--app-stop-wait-seconds', type=float, default=10.0)
     parser.add_argument('--app-stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar.*18082')
     parser.add_argument('--bridge-env', action='append', default=[])
     return parser.parse_args(argv)
@@ -101,6 +106,7 @@ def build_config(args: argparse.Namespace) -> StackControllerConfig:
         app_health_url=app_health_url,
         app_wait_seconds=args.app_wait_seconds,
         app_poll_interval=args.app_poll_interval,
+        app_stop_wait_seconds=args.app_stop_wait_seconds,
         app_stop_pattern=args.app_stop_pattern,
     )
 

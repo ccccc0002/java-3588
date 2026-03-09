@@ -135,6 +135,34 @@ class RuntimeStackControllerTests(unittest.TestCase):
             start_app_mock.assert_called_once()
             start_bridge_mock.assert_not_called()
 
+    def test_restart_stack_blocks_when_stop_is_partial(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = runtime_stack_ctl.StackControllerConfig(
+                repo_root=repo_root,
+                app_start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Java-App.sh',
+                app_health_url='http://127.0.0.1:18082/api/inference/health',
+            )
+            partial_stop = {
+                'status': 'partial',
+                'app': {'status': 'stop_pending_exit'},
+                'bridge': {'status': 'stopped'},
+            }
+            with mock.patch.object(
+                runtime_stack_ctl,
+                'stop_stack',
+                return_value=partial_stop,
+            ) as stop_stack_mock, mock.patch.object(runtime_stack_ctl, 'start_stack') as start_stack_mock:
+                result = runtime_stack_ctl.restart_stack(
+                    config,
+                    bridge_env={'RUNTIME_BOOTSTRAP_TOKEN': 'demo'},
+                )
+
+            self.assertEqual('restart_blocked', result['status'])
+            self.assertEqual('stop_pending_exit', result['app']['status'])
+            stop_stack_mock.assert_called_once_with(config)
+            start_stack_mock.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

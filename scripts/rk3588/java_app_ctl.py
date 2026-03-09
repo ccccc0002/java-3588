@@ -21,6 +21,7 @@ class AppControllerConfig:
     health_url: str
     wait_seconds: float = 20.0
     poll_interval: float = 1.0
+    stop_wait_seconds: float = 10.0
     stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar.*18082'
 
 
@@ -34,6 +35,14 @@ def default_config() -> AppControllerConfig:
         start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Java-App.sh',
         health_url='http://127.0.0.1:18082/api/inference/health',
     )
+
+
+def resolve_start_script(config: AppControllerConfig) -> Path:
+    managed_env = config.runtime_dir / 'config' / 'java-app.env'
+    fallback_script = config.runtime_dir / 'start-app-18082.sh'
+    if config.start_script.name == 'Run-Java-App.sh' and not managed_env.exists() and fallback_script.exists():
+        return fallback_script
+    return config.start_script
 
 
 def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
@@ -63,14 +72,26 @@ def wait_for_health(config: AppControllerConfig) -> Dict[str, Any]:
     return last
 
 
+def wait_for_down(config: AppControllerConfig) -> Dict[str, Any]:
+    deadline = time.time() + max(0.1, config.stop_wait_seconds)
+    last = {'http_status': 200, 'payload': {'message': 'shutdown check not started'}}
+    while time.time() < deadline:
+        last = fetch_health(config.health_url)
+        if int(last.get('http_status', 0)) != 200:
+            return last
+        time.sleep(max(0.01, config.poll_interval))
+    return last
+
+
 def start_app(config: AppControllerConfig) -> Dict[str, Any]:
+    script_path = resolve_start_script(config)
     current = fetch_health(config.health_url)
     if int(current.get('http_status', 0)) == 200:
-        return {'status': 'already_running', 'health': current, 'script': str(config.start_script)}
-    if not config.start_script.exists():
-        return {'status': 'missing_start_script', 'script': str(config.start_script)}
+        return {'status': 'already_running', 'health': current, 'script': str(script_path)}
+    if not script_path.exists():
+        return {'status': 'missing_start_script', 'script': str(script_path)}
     process = subprocess.Popen(
-        ['bash', str(config.start_script)],
+        ['bash', str(script_path)],
         cwd=str(config.repo_root),
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
@@ -79,27 +100,44 @@ def start_app(config: AppControllerConfig) -> Dict[str, Any]:
     )
     health = wait_for_health(config)
     if int(health.get('http_status', 0)) == 200:
-        return {'status': 'started', 'pid': process.pid, 'health': health, 'script': str(config.start_script)}
-    return {'status': 'app_unhealthy', 'pid': process.pid, 'health': health, 'script': str(config.start_script)}
+        return {'status': 'started', 'pid': process.pid, 'health': health, 'script': str(script_path)}
+    return {'status': 'app_unhealthy', 'pid': process.pid, 'health': health, 'script': str(script_path)}
 
 
 def stop_app(config: AppControllerConfig) -> Dict[str, Any]:
     completed = subprocess.run(['pkill', '-f', config.stop_pattern], capture_output=True, text=True)
     if completed.returncode in (0, 1):
-        return {'status': 'stopped', 'pattern': config.stop_pattern, 'exit_code': completed.returncode}
+        health = wait_for_down(config)
+        if int(health.get('http_status', 0)) != 200:
+            return {
+                'status': 'stopped',
+                'pattern': config.stop_pattern,
+                'exit_code': completed.returncode,
+                'health': health,
+            }
+        return {
+            'status': 'stop_pending_exit',
+            'pattern': config.stop_pattern,
+            'exit_code': completed.returncode,
+            'health': health,
+        }
     return {'status': 'stop_failed', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr}
 
 
 def status_app(config: AppControllerConfig) -> Dict[str, Any]:
+    script_path = resolve_start_script(config)
     health = fetch_health(config.health_url)
     if int(health.get('http_status', 0)) == 200:
-        return {'status': 'running', 'health': health, 'script': str(config.start_script)}
-    return {'status': 'down', 'health': health, 'script': str(config.start_script)}
+        return {'status': 'running', 'health': health, 'script': str(script_path)}
+    return {'status': 'down', 'health': health, 'script': str(script_path)}
 
 
 def restart_app(config: AppControllerConfig) -> Dict[str, Any]:
-    stop_app(config)
-    return start_app(config)
+    stopped = stop_app(config)
+    if stopped.get('status') != 'stopped':
+        return {'status': 'restart_blocked', 'stop': stopped}
+    started = start_app(config)
+    return {'status': started.get('status', 'unknown'), 'stop': stopped, 'start': started}
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
@@ -111,6 +149,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--health-url', default='')
     parser.add_argument('--wait-seconds', type=float, default=20.0)
     parser.add_argument('--poll-interval', type=float, default=1.0)
+    parser.add_argument('--stop-wait-seconds', type=float, default=10.0)
     parser.add_argument('--stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar.*18082')
     return parser.parse_args(argv)
 
@@ -128,6 +167,7 @@ def build_config(args: argparse.Namespace) -> AppControllerConfig:
         health_url=health_url,
         wait_seconds=args.wait_seconds,
         poll_interval=args.poll_interval,
+        stop_wait_seconds=args.stop_wait_seconds,
         stop_pattern=args.stop_pattern,
     )
 
