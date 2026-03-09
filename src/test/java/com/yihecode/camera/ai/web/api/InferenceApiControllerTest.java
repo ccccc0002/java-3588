@@ -348,6 +348,8 @@ class InferenceApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals("rk3588_rknn", data.get("backend_type"));
         Map<String, Object> circuit = (Map<String, Object>) data.get("circuit");
+        assertEquals("rk3588_rknn", circuit.get("backend_type"));
+        assertEquals("rk3588_rknn", circuit.get("route_backend_type"));
         assertEquals(false, circuit.get("circuit_open"));
     }
 
@@ -368,6 +370,8 @@ class InferenceApiControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertEquals("rk3588_rknn", data.get("backend_type"));
         Map<String, Object> circuit = (Map<String, Object>) data.get("circuit");
+        assertEquals("rk3588_rknn", circuit.get("backend_type"));
+        assertEquals("rk3588_rknn", circuit.get("route_backend_type"));
         assertEquals(true, circuit.get("reset"));
     }
 
@@ -1352,6 +1356,13 @@ class InferenceApiControllerTest {
     @Test
     @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldUseExplicitDeadLetterIdsWhenProvided() {
+        Map<String, Object> item52 = new HashMap<>();
+        item52.put("dead_letter_id", 52L);
+        Map<String, Object> item51 = new HashMap<>();
+        item51.put("dead_letter_id", 51L);
+        when(inferenceDeadLetterService.findById(52L)).thenReturn(item52);
+        when(inferenceDeadLetterService.findById(51L)).thenReturn(item51);
+
         JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "52,51,52", null, null, null, null, null);
 
         assertEquals(0, result.getCode());
@@ -1401,6 +1412,12 @@ class InferenceApiControllerTest {
     @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldClampExplicitIdsByConfiguredMax() {
         when(configService.getByValTag("infer_dead_letter_replay_batch_max_limit")).thenReturn("2");
+        Map<String, Object> item71 = new HashMap<>();
+        item71.put("dead_letter_id", 71L);
+        Map<String, Object> item72 = new HashMap<>();
+        item72.put("dead_letter_id", 72L);
+        when(inferenceDeadLetterService.findById(71L)).thenReturn(item71);
+        when(inferenceDeadLetterService.findById(72L)).thenReturn(item72);
 
         JsonResult result = inferenceApiController.deadLetterReplayBatch(null, 5, 0, 1, 1, null, 1, "71,72,73", null, null, null, null, null);
 
@@ -1509,6 +1526,12 @@ class InferenceApiControllerTest {
         ids.add(91L);
         ids.add(92L);
         body.put("dead_letter_ids", ids);
+        Map<String, Object> item92 = new HashMap<>();
+        item92.put("dead_letter_id", 92L);
+        Map<String, Object> item91 = new HashMap<>();
+        item91.put("dead_letter_id", 91L);
+        when(inferenceDeadLetterService.findById(92L)).thenReturn(item92);
+        when(inferenceDeadLetterService.findById(91L)).thenReturn(item91);
 
         JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 5, 0, 1, 1, null, 1, null, null, null, null, null, null);
 
@@ -1678,6 +1701,26 @@ class InferenceApiControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldReportRequestedWindowSizeWhenStrictResumeExpectedTotalMissingForExplicitIds() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+        body.put("dead_letter_ids", Arrays.asList(901L, 902L));
+        body.put("dry_run", 1);
+
+        when(inferenceDeadLetterService.findById(901L)).thenReturn(null);
+        when(inferenceDeadLetterService.findById(902L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals("INFER_DL_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED", data.get("error_code"));
+        assertEquals(2, ((Number) data.get("actual_total_selected_count")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void deadLetterReplayBatch_shouldFailWhenStrictResumeEnabledWithoutExpectedTotal() {
         Map<String, Object> body = new HashMap<>();
         body.put("strict_resume", 1);
@@ -1723,6 +1766,28 @@ class InferenceApiControllerTest {
         assertEquals(2, ((Number) data.get("actual_total_selected_count")).intValue());
         assertEquals(0, ((Number) data.get("effective_offset")).intValue());
         assertEquals(2, ((Number) data.get("effective_limit")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deadLetterReplayBatch_shouldFailWhenExplicitIdsMissingUnderStrictResume() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("strict_resume", 1);
+        body.put("expected_total_selected_count", 2);
+        body.put("dead_letter_ids", Arrays.asList(841L, 842L));
+        body.put("dry_run", 1);
+
+        when(inferenceDeadLetterService.findById(841L)).thenReturn(null);
+        when(inferenceDeadLetterService.findById(842L)).thenReturn(null);
+
+        JsonResult result = inferenceApiController.deadLetterReplayBatch(body, 2, 0, 1, 1, null, 1, null, null, null, null, null, null);
+
+        assertTrue(result.getCode() != 0);
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("strict_resume"));
+        assertEquals(2, ((Number) data.get("expected_total_selected_count")).intValue());
+        assertEquals(0, ((Number) data.get("actual_total_selected_count")).intValue());
+        assertEquals("INFER_DL_REPLAY_BATCH_STRICT_RESUME_TOTAL_SELECTED_COUNT_MISMATCH", data.get("error_code"));
     }
 
     @Test

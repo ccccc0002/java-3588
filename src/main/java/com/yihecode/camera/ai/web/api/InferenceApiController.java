@@ -47,7 +47,7 @@ public class InferenceApiController {
     private static final String ERROR_CODE_REPLAY_IN_PROGRESS = "INFER_DL_REPLAY_IN_PROGRESS";
     private static final String ERROR_CODE_REPLAY_EXECUTION = "INFER_DL_REPLAY_EXECUTION_ERROR";
     private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED";
-    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH";
+    private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_TOTAL_SELECTED_COUNT_MISMATCH";
     private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_WINDOW_FINGERPRINT_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_WINDOW_FINGERPRINT_MISMATCH";
     private static final String ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH = "INFER_DL_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH";
 
@@ -316,7 +316,7 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("backend_type", inferenceRoutingService.currentBackendType());
-            data.put("circuit", inferenceRoutingService.circuitStatus(traceId));
+            data.put("circuit", normalizeCircuitPayload(inferenceRoutingService.circuitStatus(traceId)));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference circuit status api failed, trace_id={}", traceId, e);
@@ -335,7 +335,7 @@ public class InferenceApiController {
             Map<String, Object> data = new HashMap<>();
             data.put("trace_id", traceId);
             data.put("backend_type", inferenceRoutingService.currentBackendType());
-            data.put("circuit", inferenceRoutingService.resetCircuit(traceId));
+            data.put("circuit", normalizeCircuitPayload(inferenceRoutingService.resetCircuit(traceId)));
             return JsonResultUtils.success(data);
         } catch (Exception e) {
             log.error("inference circuit reset api failed, trace_id={}", traceId, e);
@@ -740,9 +740,10 @@ public class InferenceApiController {
             if (explicitIdsMode) {
                 sourceCandidates = new ArrayList<>();
                 for (Long itemId : selectedIds) {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("dead_letter_id", itemId);
-                    sourceCandidates.add(item);
+                    Map<String, Object> item = inferenceDeadLetterService.findById(itemId);
+                    if (item != null) {
+                        sourceCandidates.add(item);
+                    }
                 }
             } else if (selectedBackendType == null && selectedPluginId == null && selectedPluginRegistrationId == null && selectedErrorType == null) {
                 sourceCandidates = inferenceDeadLetterService.latest(fetchLimit, onlyRetryable, onlyExhausted);
@@ -752,6 +753,10 @@ public class InferenceApiController {
             }
 
             int totalSelectedCount = sourceCandidates.size();
+            int strictResumeWindowCount = totalSelectedCount;
+            if (explicitIdsMode && expectedTotalSelectedCount == null) {
+                strictResumeWindowCount = selectedIds.size();
+            }
             String actualWindowFingerprint = computeReplayBatchWindowFingerprint(sourceCandidates);
             int appliedOffset = Math.min(effectiveOffset, totalSelectedCount);
             String selectionSource = explicitIdsMode ? "explicit_ids" : "latest";
@@ -768,26 +773,11 @@ public class InferenceApiController {
                     data.put("trace_id", traceId);
                     data.put("strict_resume", true);
                     data.put("expected_total_selected_count", null);
-                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("actual_total_selected_count", strictResumeWindowCount);
                     data.put("effective_limit", effectiveLimit);
                     data.put("effective_offset", appliedOffset);
                     data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_EXPECTED_TOTAL_REQUIRED);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: expected_total_selected_count required when strict_resume enabled", data);
-                }
-                if (!expectedTotalSelectedCount.equals(totalSelectedCount)) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("trace_id", traceId);
-                    data.put("strict_resume", true);
-                    data.put("expected_total_selected_count", expectedTotalSelectedCount);
-                    data.put("actual_total_selected_count", totalSelectedCount);
-                    data.put("expected_window_fingerprint", expectedWindowFingerprint);
-                    data.put("actual_window_fingerprint", actualWindowFingerprint);
-                    data.put("expected_resume_token", expectedResumeToken);
-                    data.put("actual_resume_token", actualResumeToken);
-                    data.put("effective_limit", effectiveLimit);
-                    data.put("effective_offset", appliedOffset);
-                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH);
-                    return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
                 }
                 if (StrUtil.isNotBlank(expectedWindowFingerprint) && !expectedWindowFingerprint.equals(actualWindowFingerprint)) {
                     Map<String, Object> data = new HashMap<>();
@@ -818,6 +808,21 @@ public class InferenceApiController {
                     data.put("effective_offset", appliedOffset);
                     data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_TOKEN_MISMATCH);
                     return JsonResultUtils.fail("inference dead-letter replay batch failed: resume token changed", data);
+                }
+                if (!expectedTotalSelectedCount.equals(totalSelectedCount)) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("trace_id", traceId);
+                    data.put("strict_resume", true);
+                    data.put("expected_total_selected_count", expectedTotalSelectedCount);
+                    data.put("actual_total_selected_count", totalSelectedCount);
+                    data.put("expected_window_fingerprint", expectedWindowFingerprint);
+                    data.put("actual_window_fingerprint", actualWindowFingerprint);
+                    data.put("expected_resume_token", expectedResumeToken);
+                    data.put("actual_resume_token", actualResumeToken);
+                    data.put("effective_limit", effectiveLimit);
+                    data.put("effective_offset", appliedOffset);
+                    data.put("error_code", ERROR_CODE_REPLAY_BATCH_STRICT_RESUME_COUNT_MISMATCH);
+                    return JsonResultUtils.fail("inference dead-letter replay batch failed: selected window changed", data);
                 }
             }
 
@@ -1696,6 +1701,19 @@ public class InferenceApiController {
         SourceParseStats created = new SourceParseStats();
         stats.sourceStats.put(sourceName, created);
         return created;
+    }
+
+    private Map<String, Object> normalizeCircuitPayload(Map<String, Object> circuit) {
+        Map<String, Object> normalized = circuit == null ? new HashMap<>() : new HashMap<>(circuit);
+        String backendType = trimToNull(firstString(normalized.get("backend_type"), firstString(normalized.get("backend"), null, null), null));
+        if (StrUtil.isNotBlank(backendType)) {
+            normalized.put("backend_type", backendType);
+        }
+        String routeBackendType = trimToNull(firstString(normalized.get("route_backend_type"), firstString(normalized.get("route_backend"), backendType, null), null));
+        if (StrUtil.isNotBlank(routeBackendType)) {
+            normalized.put("route_backend_type", routeBackendType);
+        }
+        return normalized;
     }
 
     private boolean toBooleanFlag(Object value, boolean defaultValue) {
