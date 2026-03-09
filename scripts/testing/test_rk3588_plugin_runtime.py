@@ -106,6 +106,8 @@ class PluginRuntimeTests(unittest.TestCase):
             self.assertEqual(first['plugin_meta']['load_count'], 1)
             self.assertEqual(second['plugin_meta']['load_count'], 1)
             self.assertEqual(second['plugin_meta']['plan_ready_stream_count'], 2)
+            self.assertEqual(first['alerts'], [])
+            self.assertEqual(first['events'], [])
 
     def test_plugin_manager_records_invalid_plugin_errors(self):
         with tempfile.TemporaryDirectory() as tmp:

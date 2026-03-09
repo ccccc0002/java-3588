@@ -1,15 +1,31 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+PLUGIN_DIR = Path(__file__).resolve().parent
+RK3588_SCRIPT_DIR = PLUGIN_DIR.parent.parent
+if str(RK3588_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(RK3588_SCRIPT_DIR))
+
+import plugin_sdk
 from rknn_plugin_support import RKNNLiteSession
 
 
 def load(package_context):
     execution_mode = str(package_context.config.get('execution_mode', 'mock')).strip().lower()
+    detection_config = plugin_sdk.load_detection_config(package_context)
     state = {
         'execution_mode': execution_mode,
         'default_label': str(package_context.config.get('default_label', 'object')),
         'default_score': float(package_context.config.get('default_score', 0.75)),
         'session': None,
+        'labels': detection_config['labels'],
+        'label_aliases_zh': detection_config['label_aliases_zh'],
+        'enabled_class_ids': detection_config['enabled_class_ids'],
+        'enabled_labels': detection_config['enabled_labels'],
+        'alert_labels': detection_config['alert_labels'],
+        'event_type': detection_config['event_type'],
     }
     if execution_mode == 'rknn_lite':
         state['session'] = RKNNLiteSession.open(
@@ -31,6 +47,7 @@ def infer(request_payload, runtime_plan, package_context, runtime_state):
         return {
             'mode': 'rknn_lite',
             'outputs': outputs,
+            'source_meta': {'source_kind': 'tensor', 'resolved_source': 'frame.tensor'},
             'plan_ready_stream_count': runtime_plan.get('ready_stream_count', 0),
         }
 
@@ -39,9 +56,10 @@ def infer(request_payload, runtime_plan, package_context, runtime_state):
         if not isinstance(item, dict):
             continue
         candidates.append({
-            'label': str(item.get('label', f"roi-{index}")),
+            'label': str(item.get('label', f'roi-{index}')),
             'score': float(item.get('score', runtime_state.get('default_score', 0.75))),
             'bbox': list(item.get('bbox', [0, 0, 0, 0])),
+            'class_id': item.get('class_id'),
         })
     if not candidates:
         candidates.append({
@@ -49,9 +67,14 @@ def infer(request_payload, runtime_plan, package_context, runtime_state):
             'score': runtime_state.get('default_score', 0.75),
             'bbox': [0, 0, 0, 0],
         })
+    frame = request_payload.get('frame') if isinstance(request_payload.get('frame'), dict) else {}
     return {
         'mode': 'mock',
         'candidates': candidates,
+        'source_meta': {
+            'source_kind': 'roi',
+            'resolved_source': str(frame.get('source', 'test://frame') or 'test://frame'),
+        },
         'plan_ready_stream_count': runtime_plan.get('ready_stream_count', 0),
     }
 

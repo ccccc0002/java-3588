@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Compatibility bridge that exposes /health and /v1/infer for the Java RK3588 client."""
 
 from __future__ import annotations
@@ -225,6 +225,8 @@ class RuntimeBridgeService:
                 result['detections'] = plugin_output.get('detections', [])
                 if isinstance(plugin_output.get('alerts'), list):
                     result['alerts'] = plugin_output.get('alerts', [])
+                if isinstance(plugin_output.get('events'), list):
+                    result['events'] = plugin_output.get('events', [])
                 result['latency_ms'] = max(1, to_int(plugin_output.get('latency_ms')) or (self.now_ms() - started_at))
                 result['plugin'] = plugin_output.get('plugin_meta', {})
                 if isinstance(plugin_output.get('frame'), dict):

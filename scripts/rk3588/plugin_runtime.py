@@ -232,12 +232,21 @@ class PluginPackageManager:
 def normalize_postprocess_result(value: Any) -> Dict[str, Any]:
     if isinstance(value, dict):
         result = dict(value)
-        detections = result.get('detections')
-        result['detections'] = detections if isinstance(detections, list) else []
-        return result
-    if isinstance(value, list):
-        return {'detections': value}
-    return {'detections': []}
+    elif isinstance(value, list):
+        result = {'detections': value}
+    else:
+        result = {'detections': []}
+    detections = result.get('detections')
+    alerts = result.get('alerts')
+    events = result.get('events')
+    plugin_meta = result.get('plugin_meta')
+    attributes = result.get('attributes')
+    result['detections'] = detections if isinstance(detections, list) else []
+    result['alerts'] = alerts if isinstance(alerts, list) else []
+    result['events'] = events if isinstance(events, list) else []
+    result['plugin_meta'] = plugin_meta if isinstance(plugin_meta, dict) else {}
+    result['attributes'] = attributes if isinstance(attributes, dict) else {}
+    return result
 
 
 def normalize_capabilities(value: Any) -> list[str]:

@@ -48,6 +48,7 @@ class FakePluginManager:
         return {
             'detections': [{'label': 'person', 'label_zh': '人员', 'alert': False}],
             'alerts': [{'label': 'bus', 'label_zh': '公交车', 'alert': True}],
+            'events': [{'event_type': 'vision.alert', 'label': 'bus', 'label_zh': '公交车'}],
             'plugin_meta': {'plugin_id': 'yolov8n', 'alert_label_count': 1},
             'attributes': {'detection_count': 1, 'alert_detection_count': 1},
             'latency_ms': 23,
@@ -127,6 +128,7 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertEqual(payload['detections'][0]['label_zh'], '人员')
         self.assertEqual(payload['alerts'][0]['label'], 'bus')
+        self.assertEqual(payload['events'][0]['event_type'], 'vision.alert')
         self.assertEqual(payload['plugin']['alert_label_count'], 1)
         self.assertEqual(payload['attributes']['alert_detection_count'], 1)
 

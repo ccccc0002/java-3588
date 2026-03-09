@@ -16,5 +16,6 @@
   "enabled_class_ids": [],
   "enabled_labels": [],
   "alert_labels": [],
+  "alert_event_type": "vision.alert",
   "stream_decode_backend": "opencv"
 }

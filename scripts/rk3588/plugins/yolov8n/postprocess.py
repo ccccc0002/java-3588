@@ -1,6 +1,16 @@
 ﻿from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import numpy as np
+
+PLUGIN_DIR = Path(__file__).resolve().parent
+RK3588_SCRIPT_DIR = PLUGIN_DIR.parent.parent
+if str(RK3588_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(RK3588_SCRIPT_DIR))
+
+import plugin_sdk
 
 
 def postprocess(raw_outputs, request_payload, runtime_plan, package_context, runtime_state):
@@ -12,38 +22,25 @@ def postprocess(raw_outputs, request_payload, runtime_plan, package_context, run
     )
     prep_meta = raw_outputs.get('prep_meta') or {}
     source_meta = raw_outputs.get('source_meta') or {}
-    labels = runtime_state.get('labels') or raw_outputs.get('labels') or []
-    label_aliases_zh = normalize_label_aliases(runtime_state.get('label_aliases_zh'))
-    enabled_class_ids = normalize_int_set(runtime_state.get('enabled_class_ids'))
-    enabled_labels = normalize_text_set(runtime_state.get('enabled_labels'))
-    alert_labels = normalize_text_set(runtime_state.get('alert_labels'))
-
-    detections = []
-    alerts = []
     restored = restore_boxes(boxes, prep_meta)
+    detections = []
+    labels = runtime_state.get('labels') or raw_outputs.get('labels') or []
     for index in range(len(restored)):
         class_id = int(classes[index])
-        label = resolve_label(labels, class_id)
-        label_zh = resolve_label_zh(label_aliases_zh, class_id, label)
-        if not is_detection_enabled(class_id, label, label_zh, enabled_class_ids, enabled_labels):
-            continue
-        alert = is_alert_detection(class_id, label, label_zh, alert_labels)
-        bbox = [float(v) for v in restored[index].tolist()]
-        detection = {
+        label = labels[class_id] if 0 <= class_id < len(labels) else f'class-{class_id}'
+        detections.append({
             'label': label,
-            'label_zh': label_zh,
             'score': float(scores[index]),
-            'bbox': bbox,
+            'bbox': [float(v) for v in restored[index].tolist()],
             'class_id': class_id,
-            'alert': alert,
-        }
-        detections.append(detection)
-        if alert:
-            alerts.append(detection)
-    return {
-        'detections': detections,
-        'alerts': alerts,
-        'plugin_meta': {
+        })
+    return plugin_sdk.finalize_detections(
+        detections=detections,
+        request_payload=request_payload,
+        package_context=package_context,
+        runtime_state=runtime_state,
+        source_meta=source_meta,
+        plugin_meta={
             'model_path': raw_outputs.get('model_path'),
             'source_kind': source_meta.get('source_kind'),
             'resolved_source': source_meta.get('resolved_source'),
@@ -51,74 +48,11 @@ def postprocess(raw_outputs, request_payload, runtime_plan, package_context, run
             'active_stream_session_count': raw_outputs.get('active_stream_session_count', 0),
             'obj_threshold': float(raw_outputs.get('obj_threshold', 0.25)),
             'nms_threshold': float(raw_outputs.get('nms_threshold', 0.45)),
-            'alert_label_count': len(alert_labels),
         },
-        'attributes': {
+        attributes={
             'raw_output_count': len(raw_outputs.get('outputs') or []),
-            'detection_count': len(detections),
-            'alert_detection_count': len(alerts),
         },
-    }
-
-
-def resolve_label(labels, class_id):
-    if 0 <= class_id < len(labels):
-        text = str(labels[class_id]).strip()
-        if text:
-            return text
-    return f'class-{class_id}'
-
-
-def resolve_label_zh(label_aliases_zh, class_id, label):
-    class_key = str(class_id)
-    return label_aliases_zh.get(label) or label_aliases_zh.get(class_key) or label
-
-
-def is_detection_enabled(class_id, label, label_zh, enabled_class_ids, enabled_labels):
-    if not enabled_class_ids and not enabled_labels:
-        return True
-    if class_id in enabled_class_ids:
-        return True
-    return bool(match_text_filter(class_id, label, label_zh, enabled_labels))
-
-
-def is_alert_detection(class_id, label, label_zh, alert_labels):
-    if not alert_labels:
-        return True
-    return bool(match_text_filter(class_id, label, label_zh, alert_labels))
-
-
-def match_text_filter(class_id, label, label_zh, filters):
-    candidates = {str(class_id), str(label).strip(), str(label_zh).strip()}
-    return candidates & set(filters or set())
-
-
-def normalize_label_aliases(value):
-    if not isinstance(value, dict):
-        return {}
-    return {str(key).strip(): str(item).strip() for key, item in value.items() if str(key).strip() and str(item).strip()}
-
-
-def normalize_text_set(value):
-    if value is None:
-        return set()
-    if isinstance(value, str):
-        items = value.split(',')
-    elif isinstance(value, (list, tuple, set)):
-        items = list(value)
-    else:
-        return set()
-    return {str(item).strip() for item in items if str(item).strip()}
-
-
-def normalize_int_set(value):
-    normalized = set()
-    for item in normalize_text_set(value):
-        try:
-            normalized.add(int(item))
-        except ValueError:
-            continue
-    return normalized
+    )
 
 
 def decode_outputs(outputs, obj_threshold, nms_threshold, input_size):
