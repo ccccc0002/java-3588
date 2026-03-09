@@ -12,6 +12,6 @@
   },
   "assets": {
     "config": "config/plugin.json",
-    "model": "model/yolov8.rknn"
+    "model": "model/yolov8.placeholder.rknn"
   }
 }

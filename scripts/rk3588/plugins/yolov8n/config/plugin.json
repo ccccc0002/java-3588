@@ -5,7 +5,7 @@
   "obj_threshold": 0.25,
   "nms_threshold": 0.45,
   "rknn_model_path": "/home/zql/ks/java-rk3588/yolov8.rknn",
-  "fallback_model_path": "model/yolov8.rknn",
+  "fallback_model_path": "model/yolov8.placeholder.rknn",
   "default_test_image_path": "model/bus.jpg",
   "labels_path": "config/coco_80_labels_list.txt",
   "stream_decode_backend": "opencv"
