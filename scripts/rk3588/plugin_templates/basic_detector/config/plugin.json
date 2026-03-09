@@ -1,0 +1,13 @@
+﻿{
+  "execution_mode": "mock",
+  "default_label": "object",
+  "default_score": 0.75,
+  "class_names": [],
+  "label_aliases_zh": {},
+  "enabled_class_ids": [],
+  "enabled_labels": [],
+  "alert_labels": [],
+  "alert_event_type": "vision.alert",
+  "core_mask": "auto",
+  "target_platform": "rk3588"
+}

@@ -18,6 +18,17 @@ public class InferenceResult {
 
     private List<Map<String, Object>> detections;
 
+    /**
+     * Explicit alert payload from plugin/runtime. When this field is non-null, it controls
+     * whether alarm persistence and broadcast should happen.
+     */
+    private List<Map<String, Object>> alerts;
+
+    /**
+     * Structured alert events emitted by plugin/runtime for downstream bridge usage.
+     */
+    private List<Map<String, Object>> events;
+
     private String backendType;
 
     private Integer attempt;
@@ -30,8 +41,21 @@ public class InferenceResult {
         data.put("camera_id", cameraId);
         data.put("latency_ms", latencyMs);
         data.put("detections", detections == null ? new ArrayList<>() : detections);
+        data.put("alerts", alerts == null ? new ArrayList<>() : alerts);
+        data.put("events", events == null ? new ArrayList<>() : events);
         data.put("backend_type", backendType);
         data.put("attempt", attempt);
         return data;
+    }
+
+    public boolean hasExplicitAlerts() {
+        return alerts != null;
+    }
+
+    public List<Map<String, Object>> resolveAlarmPayload() {
+        if (alerts != null) {
+            return alerts;
+        }
+        return detections == null ? new ArrayList<>() : detections;
     }
 }

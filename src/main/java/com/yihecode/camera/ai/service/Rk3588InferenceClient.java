@@ -194,6 +194,8 @@ public class Rk3588InferenceClient implements InferenceClient {
         result.setCameraId(firstLong(obj.getLong("camera_id"), request.getCameraId()));
         result.setLatencyMs(firstLong(obj.getLong("latency_ms"), 0L));
         result.setDetections(toDetectionList(obj.get("detections")));
+        result.setAlerts(obj.containsKey("alerts") ? toDetectionList(obj.get("alerts")) : null);
+        result.setEvents(obj.containsKey("events") ? toDetectionList(obj.get("events")) : null);
         result.setBackendType(getBackendType());
         result.setAttempt(attempt);
         result.setRawBody(body);

@@ -21,10 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -70,10 +73,14 @@ public class InferenceReportBridgeService {
             return ret;
         }
 
-        List<Map<String, Object>> detections = inferenceResult.getDetections();
-        if (detections == null || detections.isEmpty()) {
+        List<Map<String, Object>> alarmPayload = inferenceResult.resolveAlarmPayload();
+        boolean explicitAlerts = inferenceResult.hasExplicitAlerts();
+        ret.put("alerts_explicit", explicitAlerts);
+        ret.put("alert_count", alarmPayload == null ? 0 : alarmPayload.size());
+        ret.put("event_count", inferenceResult.getEvents() == null ? 0 : inferenceResult.getEvents().size());
+        if (alarmPayload == null || alarmPayload.isEmpty()) {
             ret.put("status", "skipped");
-            ret.put("reason", "empty detections");
+            ret.put("reason", explicitAlerts ? "empty alerts" : "empty detections");
             return ret;
         }
 
@@ -91,7 +98,7 @@ public class InferenceReportBridgeService {
             return ret;
         }
 
-        String params = JSON.toJSONString(detections);
+        String params = JSON.toJSONString(alarmPayload);
 
         int display = 0;
         Float intervalTime = camera.getIntervalTime();
@@ -154,11 +161,15 @@ public class InferenceReportBridgeService {
         try {
             Message messageVo = new Message();
             messageVo.setType(MessageType.REPORT.getType());
-            messageVo.setContent(camera.getName() + " alarm: " + algorithm.getName());
+            messageVo.setContent(buildMessageContent(camera, algorithm, alarmPayload));
 
             Map<String, Object> dataMap = new HashMap<>();
             dataMap.put("reportId", report.getId());
             dataMap.put("cameraName", camera.getName());
+            dataMap.put("alertCount", alarmPayload.size());
+            dataMap.put("alertLabels", extractAlertLabels(alarmPayload, "label"));
+            dataMap.put("alertLabelsZh", extractAlertLabels(alarmPayload, "label_zh"));
+            dataMap.put("traceId", traceId);
             messageVo.setData(dataMap);
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -174,5 +185,35 @@ public class InferenceReportBridgeService {
 
         ret.put("status", "ok");
         return ret;
+    }
+
+    private String buildMessageContent(Camera camera, Algorithm algorithm, List<Map<String, Object>> alarmPayload) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(camera.getName()).append(" alarm: ").append(algorithm.getName());
+        List<String> labelsZh = extractAlertLabels(alarmPayload, "label_zh");
+        if (!labelsZh.isEmpty()) {
+            builder.append(" [").append(String.join(", ", labelsZh)).append("]");
+        }
+        return builder.toString();
+    }
+
+    private List<String> extractAlertLabels(List<Map<String, Object>> alarmPayload, String key) {
+        Set<String> labels = new LinkedHashSet<>();
+        if (alarmPayload == null) {
+            return new ArrayList<>();
+        }
+        for (Map<String, Object> item : alarmPayload) {
+            if (item == null) {
+                continue;
+            }
+            String value = String.valueOf(item.get(key) == null ? "" : item.get(key)).trim();
+            if (StrUtil.isBlank(value) && "label_zh".equals(key)) {
+                value = String.valueOf(item.get("label") == null ? "" : item.get("label")).trim();
+            }
+            if (StrUtil.isNotBlank(value)) {
+                labels.add(value);
+            }
+        }
+        return new ArrayList<>(labels);
     }
 }

@@ -203,6 +203,30 @@ class Rk3588InferenceClientTest {
         assertTrue(payload.getJSONObject("decode") == null);
     }
 
+
+    @Test
+    void infer_shouldParseAlertsAndEvents_whenResponseContainsThem() {
+        when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");
+        when(configService.getByValTag("infer_timeout_ms")).thenReturn("1000");
+        when(configService.getByValTag("infer_retry_count")).thenReturn("1");
+        when(inferenceHttpGateway.postJson(eq("http://rkhost:18080/v1/infer"), eq(1000), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-alerts\",\"camera_id\":504,\"latency_ms\":9,\"detections\":[{\"label\":\"person\"}],\"alerts\":[{\"label\":\"bus\",\"label_zh\":\"???\"}],\"events\":[{\"event_type\":\"vision.alert\",\"label\":\"bus\"}]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-alerts");
+        request.setCameraId(504L);
+        request.setModelId(903L);
+        request.setFrameMeta(new HashMap<>());
+
+        InferenceResult result = rk3588InferenceClient.infer(request);
+
+        assertNotNull(result.getAlerts());
+        assertEquals(1, result.getAlerts().size());
+        assertEquals("bus", result.getAlerts().get(0).get("label"));
+        assertNotNull(result.getEvents());
+        assertEquals("vision.alert", result.getEvents().get(0).get("event_type"));
+    }
+
     @Test
     void infer_shouldConvertSingleDetectionObjectToList() {
         when(configService.getByValTag("infer_service_url")).thenReturn("http://rkhost:18080");

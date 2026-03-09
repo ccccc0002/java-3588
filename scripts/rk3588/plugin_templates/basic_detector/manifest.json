@@ -1,0 +1,17 @@
+﻿{
+  "schema_version": "rknn.plugin.v1",
+  "plugin_id": "basic-detector-template",
+  "version": "0.1.0",
+  "runtime": "rk3588_rknn",
+  "capabilities": ["inference", "template", "object_detection"],
+  "entrypoints": {
+    "load": "inference.py:load",
+    "infer": "inference.py:infer",
+    "postprocess": "postprocess.py:postprocess",
+    "cleanup": "inference.py:cleanup"
+  },
+  "assets": {
+    "config": "config/plugin.json",
+    "model": "model/placeholder.rknn"
+  }
+}

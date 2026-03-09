@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +88,36 @@ class PluginInferenceDispatchServiceTest {
     }
 
     @Test
+    void infer_shouldParseAlertsAndEvents_whenPluginReturnsThem() {
+        when(configService.getByValTag("plugin_infer_timeout_ms")).thenReturn("2500");
+        when(inferenceHttpGateway.postJson(eq("http://plugin-b:19090/v1/infer"), eq(2500), anyString()))
+                .thenReturn(InferenceHttpResponse.of(200, "{\"trace_id\":\"trace-plugin-alerts\",\"camera_id\":702,\"latency_ms\":7,\"detections\":[{\"label\":\"person\"}],\"alerts\":[{\"label\":\"bus\",\"label_zh\":\"公交车\"}],\"events\":[{\"event_type\":\"vision.alert\",\"label\":\"bus\"}]}"));
+
+        InferenceRequest request = new InferenceRequest();
+        request.setTraceId("trace-plugin-alerts");
+        request.setCameraId(702L);
+        request.setModelId(802L);
+        request.setFrameMeta(new HashMap<>());
+
+        Map<String, Object> pluginRoute = new HashMap<>();
+        pluginRoute.put("requested", true);
+        pluginRoute.put("matched", true);
+        pluginRoute.put("available", true);
+        pluginRoute.put("plugin", Map.of(
+                "runtime", "rk3588_rknn",
+                "health_url", "http://plugin-b:19090/health"
+        ));
+
+        InferenceResult result = pluginInferenceDispatchService.infer(request, pluginRoute);
+
+        assertNotNull(result.getAlerts());
+        assertEquals(1, result.getAlerts().size());
+        assertEquals("bus", result.getAlerts().get(0).get("label"));
+        assertNotNull(result.getEvents());
+        assertEquals("vision.alert", result.getEvents().get(0).get("event_type"));
+    }
+
+    @Test
     void infer_shouldThrow_whenPluginResponseIsInvalid() {
         when(inferenceHttpGateway.postJson(eq("http://plugin-a:19090/v1/infer"), eq(3000), anyString()))
                 .thenReturn(InferenceHttpResponse.of(200, "not-json"));
@@ -107,6 +137,7 @@ class PluginInferenceDispatchServiceTest {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> pluginInferenceDispatchService.infer(request, pluginRoute));
         assertTrue(ex.getMessage().contains("invalid plugin inference response body"));
     }
+
     @Test
     void infer_shouldPreferExplicitInferUrl_overHealthUrlDerivedPath() {
         when(inferenceHttpGateway.postJson(eq("http://plugin-c:29090/custom-infer"), eq(3000), anyString()))
@@ -133,6 +164,7 @@ class PluginInferenceDispatchServiceTest {
         assertEquals("trace-plugin-explicit", result.getTraceId());
         verify(inferenceHttpGateway).postJson(eq("http://plugin-c:29090/custom-infer"), eq(3000), anyString());
     }
+
     @Test
     void infer_shouldRetryWhenFirstAttemptThrows_thenSucceed() {
         when(configService.getByValTag("plugin_infer_retry_count")).thenReturn("2");
