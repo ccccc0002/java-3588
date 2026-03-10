@@ -99,12 +99,50 @@ class RuntimeApiControllerTests(unittest.TestCase):
                 stop_wait_seconds=1,
                 stop_pattern='java-rk3588-0.0.1-SNAPSHOT.jar',
             )
-            with mock.patch.object(runtime_api_ctl.subprocess, 'run', return_value=mock.Mock(returncode=0, stdout='', stderr='')) as run_mock, \
+            with mock.patch.object(
+                runtime_api_ctl.subprocess,
+                'run',
+                side_effect=[mock.Mock(returncode=0, stdout='', stderr=''), mock.Mock(returncode=1, stdout='', stderr='')],
+            ) as run_mock, \
                  mock.patch.object(runtime_api_ctl, 'fetch_health', side_effect=[{'http_status': 200, 'payload': {'success': True}}, {'http_status': 0, 'payload': {'message': 'connection refused'}}]):
                 result = runtime_api_ctl.stop_runtime_api(config)
 
             self.assertEqual('stopped', result['status'])
-            run_mock.assert_called_once_with(['pkill', '-f', 'java-rk3588-0.0.1-SNAPSHOT.jar'], capture_output=True, text=True)
+            self.assertEqual(
+                [
+                    mock.call(['pkill', '-f', 'java-rk3588-0.0.1-SNAPSHOT.jar'], capture_output=True, text=True),
+                    mock.call(['pkill', '-f', 'runtime_api_fallback.py'], capture_output=True, text=True),
+                ],
+                run_mock.call_args_list,
+            )
+
+    def test_start_runtime_api_falls_back_to_python_backend_when_java_unhealthy(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            runtime_dir = repo_root / 'runtime'
+            script_path = repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh'
+            script_path.parent.mkdir(parents=True, exist_ok=True)
+            script_path.write_text('#!/usr/bin/env bash\n', encoding='utf-8')
+            config = runtime_api_ctl.RuntimeApiControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=runtime_dir,
+                start_script=script_path,
+                health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+                wait_seconds=5,
+                poll_interval=0.01,
+                stop_pattern='java-rk3588-0.0.1-SNAPSHOT.jar',
+            )
+            java_process = mock.Mock(pid=1111)
+            fallback_process = mock.Mock(pid=2222)
+
+            with mock.patch.object(runtime_api_ctl, 'fetch_health', return_value={'http_status': 0, 'payload': {}}), \
+                 mock.patch.object(runtime_api_ctl, 'wait_for_health', side_effect=[{'http_status': 0, 'payload': {'message': 'down'}}, {'http_status': 200, 'payload': {'success': True}}]), \
+                 mock.patch.object(runtime_api_ctl.subprocess, 'Popen', side_effect=[java_process, fallback_process]) as popen_mock:
+                result = runtime_api_ctl.start_runtime_api(config, extra_env={'RUNTIME_BOOTSTRAP_TOKEN': 'edge-demo-bootstrap'})
+
+            self.assertEqual('started', result['status'])
+            self.assertEqual('python_fallback', result['backend'])
+            self.assertEqual('python_fallback', popen_mock.call_args_list[1].kwargs['env']['RUNTIME_API_BACKEND'])
 
     def test_build_config_parses_env_arguments(self):
         args = runtime_api_ctl.parse_args(['start', '--env', 'RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap', '--env', 'JAVA_BIN=/usr/bin/java'])

@@ -76,9 +76,9 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         }
 
         if (camera == null || camera.getId() == null) {
-            return base + "/" + app + "/{cameraId}.flv";
+            return base + "/" + app + "/{cameraId}.live.flv";
         }
-        return base + "/" + app + "/" + camera.getId() + ".flv";
+        return base + "/" + app + "/" + camera.getId() + ".live.flv";
     }
 
     private String buildLegacyPlayUrl(Integer videoPort) {

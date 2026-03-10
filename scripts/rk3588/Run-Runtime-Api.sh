@@ -8,8 +8,16 @@ RUNTIME_CONFIG_FILE="${RUNTIME_CONFIG_FILE:-${RUNTIME_DIR}/config/application-rk
 FALLBACK_SCRIPT="${FALLBACK_SCRIPT:-${RUNTIME_DIR}/start-runtime-18081.sh}"
 APP_JAR="${APP_JAR:-${REPO_ROOT}/target/java-rk3588-0.0.1-SNAPSHOT.jar}"
 JAVA_BIN="${JAVA_BIN:-java}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+FALLBACK_API_SCRIPT="${FALLBACK_API_SCRIPT:-${REPO_ROOT}/scripts/rk3588/runtime_api_fallback.py}"
 LOG_DIR="${LOG_DIR:-${RUNTIME_DIR}/logs}"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/app-18081-managed.log}"
+RUNTIME_API_BACKEND="${RUNTIME_API_BACKEND:-java}"
+RUNTIME_API_HOST="${RUNTIME_API_HOST:-127.0.0.1}"
+RUNTIME_API_PORT="${RUNTIME_API_PORT:-18081}"
+RUNTIME_BRIDGE_HEALTH_URL="${RUNTIME_BRIDGE_HEALTH_URL:-http://127.0.0.1:19080/health}"
+RUNTIME_BRIDGE_TIMEOUT_SEC="${RUNTIME_BRIDGE_TIMEOUT_SEC:-5}"
+RUNTIME_TOKEN_TTL_SEC="${RUNTIME_TOKEN_TTL_SEC:-3600}"
 
 JAVA_OPTS="${JAVA_OPTS:-}"
 RUNTIME_BOOTSTRAP_TOKEN="${RUNTIME_BOOTSTRAP_TOKEN:-}"
@@ -19,6 +27,21 @@ if [[ -n "${RUNTIME_BOOTSTRAP_TOKEN}" ]]; then
 fi
 
 mkdir -p "${LOG_DIR}"
+
+if [[ "${RUNTIME_API_BACKEND}" == "python_fallback" ]]; then
+  if [[ ! -f "${FALLBACK_API_SCRIPT}" ]]; then
+    echo "missing python fallback script: ${FALLBACK_API_SCRIPT}" >&2
+    exit 1
+  fi
+  exec "${PYTHON_BIN}" "${FALLBACK_API_SCRIPT}" \
+    --host "${RUNTIME_API_HOST}" \
+    --port "${RUNTIME_API_PORT}" \
+    --bootstrap-token "${RUNTIME_BOOTSTRAP_TOKEN}" \
+    --bridge-health-url "${RUNTIME_BRIDGE_HEALTH_URL}" \
+    --bridge-timeout-sec "${RUNTIME_BRIDGE_TIMEOUT_SEC}" \
+    --token-ttl-sec "${RUNTIME_TOKEN_TTL_SEC}" \
+    >>"${LOG_FILE}" 2>&1
+fi
 
 if [[ ! -f "${APP_JAR}" ]]; then
   echo "missing app jar: ${APP_JAR}" >&2

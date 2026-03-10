@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Control the Java runtime API process on port 18081."""
+"""Control the Runtime API process on port 18081."""
 
 from __future__ import annotations
 
@@ -14,6 +14,10 @@ from typing import Any, Dict, Optional, Tuple
 from urllib import error, request
 
 
+PYTHON_FALLBACK_BACKEND = 'python_fallback'
+PYTHON_FALLBACK_PATTERN = 'runtime_api_fallback.py'
+
+
 @dataclass(frozen=True)
 class RuntimeApiControllerConfig:
     repo_root: Path
@@ -24,6 +28,7 @@ class RuntimeApiControllerConfig:
     poll_interval: float = 1.0
     stop_wait_seconds: float = 10.0
     stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar'
+    fallback_stop_pattern: str = PYTHON_FALLBACK_PATTERN
     env_path: Optional[Path] = None
 
     def __post_init__(self) -> None:
@@ -117,19 +122,8 @@ def wait_for_down(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
     return last
 
 
-def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-    current = fetch_health(config.health_url)
-    if int(current.get('http_status', 0)) == 200:
-        return {'status': 'already_running', 'health': current, 'script': str(config.start_script)}
-    if not config.start_script.exists():
-        return {'status': 'missing_start_script', 'script': str(config.start_script)}
-    persisted_env = load_persisted_env(config.env_path)
-    if extra_env:
-        persisted_env.update({str(key): str(value) for key, value in extra_env.items() if str(key).strip()})
-        write_persisted_env(config.env_path, persisted_env)
-    child_env = os.environ.copy()
-    child_env.update(persisted_env)
-    process = subprocess.Popen(
+def launch_runtime_api(config: RuntimeApiControllerConfig, child_env: Dict[str, str]) -> subprocess.Popen[Any]:
+    return subprocess.Popen(
         ['bash', str(config.start_script)],
         cwd=str(config.repo_root),
         env=child_env,
@@ -138,20 +132,92 @@ def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Di
         stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    health = wait_for_health(config)
-    if int(health.get('http_status', 0)) == 200:
-        return {'status': 'started', 'pid': process.pid, 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
-    return {'status': 'runtime_unhealthy', 'pid': process.pid, 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+
+
+def resolve_requested_backend(persisted_env: Dict[str, str]) -> str:
+    return str(persisted_env.get('RUNTIME_API_BACKEND', '')).strip().lower()
+
+
+def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    current = fetch_health(config.health_url)
+    if int(current.get('http_status', 0)) == 200:
+        return {'status': 'already_running', 'health': current, 'script': str(config.start_script)}
+    if not config.start_script.exists():
+        return {'status': 'missing_start_script', 'script': str(config.start_script)}
+
+    persisted_env = load_persisted_env(config.env_path)
+    if extra_env:
+        persisted_env.update({str(key): str(value) for key, value in extra_env.items() if str(key).strip()})
+        write_persisted_env(config.env_path, persisted_env)
+
+    requested_backend = resolve_requested_backend(persisted_env)
+    base_env = os.environ.copy()
+    base_env.update(persisted_env)
+
+    def attempt(backend: str) -> Dict[str, Any]:
+        child_env = dict(base_env)
+        if backend == PYTHON_FALLBACK_BACKEND:
+            child_env['RUNTIME_API_BACKEND'] = PYTHON_FALLBACK_BACKEND
+        else:
+            child_env.pop('RUNTIME_API_BACKEND', None)
+        process = launch_runtime_api(config, child_env)
+        health = wait_for_health(config)
+        if int(health.get('http_status', 0)) == 200:
+            return {
+                'status': 'started',
+                'pid': process.pid,
+                'backend': backend or 'java',
+                'health': health,
+                'script': str(config.start_script),
+                'env_path': str(config.env_path),
+            }
+        return {
+            'status': 'runtime_unhealthy',
+            'pid': process.pid,
+            'backend': backend or 'java',
+            'health': health,
+            'script': str(config.start_script),
+            'env_path': str(config.env_path),
+        }
+
+    if requested_backend == PYTHON_FALLBACK_BACKEND:
+        return attempt(PYTHON_FALLBACK_BACKEND)
+
+    java_result = attempt('java')
+    if java_result.get('status') == 'started':
+        return java_result
+    fallback_result = attempt(PYTHON_FALLBACK_BACKEND)
+    if fallback_result.get('status') == 'started':
+        return fallback_result
+    return {
+        'status': 'runtime_unhealthy',
+        'backend': PYTHON_FALLBACK_BACKEND,
+        'java_attempt': java_result,
+        'fallback_attempt': fallback_result,
+        'script': str(config.start_script),
+        'env_path': str(config.env_path),
+        'health': fallback_result.get('health', java_result.get('health', {})),
+    }
 
 
 def stop_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
-    completed = subprocess.run(['pkill', '-f', config.stop_pattern], capture_output=True, text=True)
-    if completed.returncode in (0, 1):
-        health = wait_for_down(config)
-        if int(health.get('http_status', 0)) != 200:
-            return {'status': 'stopped', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'health': health}
-        return {'status': 'stop_pending_exit', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'health': health}
-    return {'status': 'stop_failed', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr}
+    patterns = [config.stop_pattern, config.fallback_stop_pattern]
+    stop_results = []
+    for pattern in patterns:
+        completed = subprocess.run(['pkill', '-f', pattern], capture_output=True, text=True)
+        stop_results.append({'pattern': pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr})
+        if completed.returncode not in (0, 1):
+            return {
+                'status': 'stop_failed',
+                'pattern': pattern,
+                'exit_code': completed.returncode,
+                'stderr': completed.stderr,
+                'results': stop_results,
+            }
+    health = wait_for_down(config)
+    if int(health.get('http_status', 0)) != 200:
+        return {'status': 'stopped', 'patterns': patterns, 'results': stop_results, 'health': health}
+    return {'status': 'stop_pending_exit', 'patterns': patterns, 'results': stop_results, 'health': health}
 
 
 def status_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
@@ -170,7 +236,7 @@ def restart_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Control Java runtime API application')
+    parser = argparse.ArgumentParser(description='Control Runtime API application')
     parser.add_argument('command', choices=['start', 'stop', 'status', 'restart'])
     parser.add_argument('--repo-root', default='')
     parser.add_argument('--runtime-dir', default='')

@@ -50,7 +50,7 @@ class RuntimeApiServiceTest {
         when(inferenceDeadLetterService.stats()).thenReturn(Collections.singletonMap("queue_size", 4));
         when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
         stubMediaConfig();
-        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.flv");
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
         when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
 
         Map<String, Object> snapshot = runtimeApiService.buildRuntimeSnapshot();
@@ -74,7 +74,7 @@ class RuntimeApiServiceTest {
         assertEquals(1, streams.size());
         assertEquals(1L, streams.get(0).get("camera_id"));
         assertEquals("rtsp://cam-1", streams.get(0).get("rtsp_url"));
-        assertEquals("http://zlm.example/live/1.flv", streams.get(0).get("play_url"));
+        assertEquals("http://zlm.example/live/1.live.flv", streams.get(0).get("play_url"));
         assertEquals("rtmp://127.0.0.1:1935/live/1", streams.get(0).get("push_url"));
     }
 
@@ -82,7 +82,7 @@ class RuntimeApiServiceTest {
     void buildInferencePlan_shouldReturnBudgetAndActiveItems() {
         when(cameraService.listActives()).thenReturn(List.of(camera(1L, "cam-1", "rtsp://cam-1"), camera(2L, "cam-2", "rtsp://cam-2")));
         when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
-        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.flv");
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
         when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
         stubMediaConfig();
 
@@ -95,7 +95,7 @@ class RuntimeApiServiceTest {
         assertEquals(2, items.size());
         assertEquals(1L, items.get(0).get("camera_id"));
         assertEquals(Boolean.TRUE, items.get(0).get("ready"));
-        assertEquals("http://zlm.example/live/1.flv", items.get(0).get("play_url"));
+        assertEquals("http://zlm.example/live/1.live.flv", items.get(0).get("play_url"));
         assertEquals("rtmp://127.0.0.1:1935/live/1", items.get(0).get("push_url"));
         assertEquals(Boolean.FALSE, items.get(1).get("ready"));
         assertEquals("", items.get(1).get("play_url"));
@@ -110,7 +110,7 @@ class RuntimeApiServiceTest {
         when(inferenceDeadLetterService.stats()).thenReturn(Collections.singletonMap("queue_size", 0));
         when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
         stubMediaConfig();
-        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.flv");
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
         when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
 
         Map<String, Object> snapshot = runtimeApiService.buildRuntimeSnapshot();
