@@ -56,5 +56,45 @@ class RuntimeApiFallbackTests(unittest.TestCase):
         self.assertEqual({}, snapshot['media'])
 
 
+    def test_health_payload_does_not_fetch_bridge_snapshot(self):
+        config = runtime_api_fallback.RuntimeApiFallbackConfig(
+            bootstrap_token='edge-demo-bootstrap',
+            bridge_health_url='http://127.0.0.1:19080/health',
+        )
+        service = runtime_api_fallback.RuntimeApiFallbackService(
+            config,
+            http_open=lambda req, timeout=0: (_ for _ in ()).throw(RuntimeError('should not be called')),
+        )
+
+        payload = service.build_health_payload()
+
+        self.assertEqual('python_fallback', payload['backend'])
+        self.assertEqual(0, payload['stream_count'])
+        self.assertEqual('http://127.0.0.1:19080/health', payload['bridge_health_url'])
+
+
+
+    def test_build_runtime_snapshot_reads_snapshot_seed(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            snapshot_path = pathlib.Path(temp_dir) / 'runtime-api-fallback-snapshot.json'
+            snapshot_path.write_text(json.dumps({
+                'streams': [{'camera_id': '1', 'play_url': 'http://127.0.0.1:1987/live/1.live.flv', 'push_url': 'rtmp://127.0.0.1:19350/live/1', 'ready': True}],
+                'media': {'server_type': 'zlm'},
+                'stream_count': 1,
+                'ready_stream_count': 1,
+            }), encoding='utf-8')
+            config = runtime_api_fallback.RuntimeApiFallbackConfig(
+                bootstrap_token='edge-demo-bootstrap',
+                snapshot_path=snapshot_path,
+            )
+            service = runtime_api_fallback.RuntimeApiFallbackService(config)
+
+            snapshot = service.build_runtime_snapshot()
+
+            self.assertEqual(1, snapshot['stream_count'])
+            self.assertEqual('http://127.0.0.1:1987/live/1.live.flv', snapshot['streams'][0]['play_url'])
+
+
+
 if __name__ == '__main__':
     unittest.main()

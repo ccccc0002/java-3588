@@ -60,7 +60,8 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertTrue(result['readable'])
 
     def test_run_stack_smoke_combines_runtime_api_bridge_and_zlm_checks(self):
-        with mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}) as token_mock, \
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'python_fallback'}}) as runtime_health_mock, \
+             mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}) as token_mock, \
              mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}], 'stream_count': 1}}) as snapshot_mock, \
              mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {'ready_stream_count': 1}}) as plan_mock, \
              mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}) as bridge_health_mock, \
@@ -73,14 +74,17 @@ class RuntimeStackSmokeTests(unittest.TestCase):
                 bootstrap_token='edge-demo-bootstrap',
                 plugin_id='yolov8n',
                 source='test://frame',
+                expected_runtime_api_backend='python_fallback',
             )
 
+        self.assertEqual('python_fallback', result['runtime_api']['health']['backend'])
         self.assertEqual('token-1', result['runtime_api']['token']['token'])
         self.assertEqual(1, result['runtime_api']['snapshot']['stream_count'])
         self.assertEqual(1, result['runtime_api']['plan']['ready_stream_count'])
         self.assertEqual('ok', result['bridge']['health']['status'])
         self.assertEqual(1, result['bridge']['infer']['detection_count'])
         self.assertTrue(result['zlm']['play_check']['readable'])
+        runtime_health_mock.assert_called_once()
         token_mock.assert_called_once()
         snapshot_mock.assert_called_once()
         plan_mock.assert_called_once()
@@ -88,6 +92,17 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         infer_mock.assert_called_once()
         validate_mock.assert_called_once()
         play_mock.assert_called_once_with('http://127.0.0.1:1987/live/1.live.flv')
+
+
+    def test_run_stack_smoke_rejects_unexpected_runtime_backend(self):
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}):
+            with self.assertRaisesRegex(RuntimeError, 'runtime_api backend mismatch'):
+                runtime_stack_smoke.run_stack_smoke(
+                    runtime_api_url='http://127.0.0.1:18081',
+                    bridge_url='http://127.0.0.1:19080',
+                    bootstrap_token='edge-demo-bootstrap',
+                    expected_runtime_api_backend='python_fallback',
+                )
 
 
 if __name__ == '__main__':

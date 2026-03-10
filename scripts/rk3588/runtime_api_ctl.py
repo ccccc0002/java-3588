@@ -30,10 +30,13 @@ class RuntimeApiControllerConfig:
     stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar'
     fallback_stop_pattern: str = PYTHON_FALLBACK_PATTERN
     env_path: Optional[Path] = None
+    snapshot_seed_path: Optional[Path] = None
 
     def __post_init__(self) -> None:
         if self.env_path is None:
             object.__setattr__(self, 'env_path', self.runtime_dir / 'runtime-api.env')
+        if self.snapshot_seed_path is None:
+            object.__setattr__(self, 'snapshot_seed_path', self.runtime_dir / 'runtime-api-fallback-snapshot.json')
 
 
 def default_config() -> RuntimeApiControllerConfig:
@@ -100,6 +103,26 @@ def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
         return {'http_status': 0, 'payload': {'message': str(exc)}}
 
 
+def extract_backend_from_health(health: Dict[str, Any]) -> str:
+    payload = health.get('payload') if isinstance(health, dict) else {}
+    if not isinstance(payload, dict):
+        return ''
+    data = payload.get('data') if isinstance(payload.get('data'), dict) else {}
+    backend = str(data.get('backend', '')).strip()
+    if backend:
+        return backend
+    return str(payload.get('backend', '')).strip()
+
+
+def enrich_runtime_result(result: Dict[str, Any], default_backend: str = '') -> Dict[str, Any]:
+    enriched = dict(result)
+    health = enriched.get('health') if isinstance(enriched.get('health'), dict) else {}
+    backend = extract_backend_from_health(health) or str(default_backend or '').strip()
+    if backend:
+        enriched['backend'] = backend
+    return enriched
+
+
 def wait_for_health(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
     deadline = time.time() + max(0.1, config.wait_seconds)
     last = {'http_status': 0, 'payload': {'message': 'health check not started'}}
@@ -122,6 +145,60 @@ def wait_for_down(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
     return last
 
 
+def derive_runtime_api_base_url(health_url: str) -> str:
+    marker = '/api/v1/runtime/health'
+    if health_url.endswith(marker):
+        return health_url[:-len(marker)]
+    return health_url.rsplit('/api/', 1)[0] if '/api/' in health_url else health_url.rstrip('/')
+
+
+def request_json(url: str, method: str = 'GET', headers: Optional[Dict[str, str]] = None, payload: Optional[Dict[str, Any]] = None, timeout: float = 5.0) -> Dict[str, Any]:
+    body = None if payload is None else json.dumps(payload, ensure_ascii=True).encode('utf-8')
+    request_headers = {'Accept': 'application/json'}
+    if body is not None:
+        request_headers['Content-Type'] = 'application/json'
+    if headers:
+        request_headers.update(headers)
+    req = request.Request(url, data=body, headers=request_headers, method=method)
+    with request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+
+def resolve_bootstrap_token(env_values: Dict[str, str]) -> str:
+    return str(env_values.get('RUNTIME_BOOTSTRAP_TOKEN', '')).strip()
+
+
+def export_runtime_snapshot_seed(config: RuntimeApiControllerConfig, env_values: Dict[str, str]) -> Dict[str, Any]:
+    bootstrap_token = resolve_bootstrap_token(env_values)
+    if not bootstrap_token:
+        return {'status': 'skipped', 'reason': 'missing_bootstrap_token'}
+    base_url = derive_runtime_api_base_url(config.health_url)
+    token_payload = request_json(
+        base_url + '/api/v1/auth/token',
+        method='POST',
+        headers={'X-Bootstrap-Token': bootstrap_token},
+        payload={'user_id': 'runtime-api-ctl', 'role': 'admin'},
+        timeout=max(2.0, config.poll_interval * 10),
+    )
+    token = str(((token_payload.get('data') or {}) if isinstance(token_payload, dict) else {}).get('token', '')).strip()
+    if not token:
+        return {'status': 'skipped', 'reason': 'missing_token'}
+    snapshot_payload = request_json(
+        base_url + '/api/v1/runtime/snapshot',
+        method='GET',
+        headers={'Authorization': f'Bearer {token}'},
+        timeout=max(2.0, config.poll_interval * 10),
+    )
+    snapshot_data = snapshot_payload.get('data') if isinstance(snapshot_payload.get('data'), dict) else {}
+    config.snapshot_seed_path.parent.mkdir(parents=True, exist_ok=True)
+    config.snapshot_seed_path.write_text(json.dumps(snapshot_data, ensure_ascii=True), encoding='utf-8')
+    return {
+        'status': 'exported',
+        'snapshot_seed_path': str(config.snapshot_seed_path),
+        'stream_count': len(snapshot_data.get('streams', [])) if isinstance(snapshot_data.get('streams'), list) else 0,
+    }
+
+
 def launch_runtime_api(config: RuntimeApiControllerConfig, child_env: Dict[str, str]) -> subprocess.Popen[Any]:
     return subprocess.Popen(
         ['bash', str(config.start_script)],
@@ -141,7 +218,7 @@ def resolve_requested_backend(persisted_env: Dict[str, str]) -> str:
 def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     current = fetch_health(config.health_url)
     if int(current.get('http_status', 0)) == 200:
-        return {'status': 'already_running', 'health': current, 'script': str(config.start_script)}
+        return enrich_runtime_result({'status': 'already_running', 'health': current, 'script': str(config.start_script)}, default_backend='java')
     if not config.start_script.exists():
         return {'status': 'missing_start_script', 'script': str(config.start_script)}
 
@@ -163,22 +240,22 @@ def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Di
         process = launch_runtime_api(config, child_env)
         health = wait_for_health(config)
         if int(health.get('http_status', 0)) == 200:
-            return {
+            return enrich_runtime_result({
                 'status': 'started',
                 'pid': process.pid,
                 'backend': backend or 'java',
                 'health': health,
                 'script': str(config.start_script),
                 'env_path': str(config.env_path),
-            }
-        return {
+            }, default_backend=backend or 'java')
+        return enrich_runtime_result({
             'status': 'runtime_unhealthy',
             'pid': process.pid,
             'backend': backend or 'java',
             'health': health,
             'script': str(config.start_script),
             'env_path': str(config.env_path),
-        }
+        }, default_backend=backend or 'java')
 
     if requested_backend == PYTHON_FALLBACK_BACKEND:
         return attempt(PYTHON_FALLBACK_BACKEND)
@@ -223,16 +300,33 @@ def stop_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
 def status_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
     health = fetch_health(config.health_url)
     if int(health.get('http_status', 0)) == 200:
-        return {'status': 'running', 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+        return enrich_runtime_result({'status': 'running', 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}, default_backend='java')
     return {'status': 'down', 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
 
 
 def restart_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    persisted_env = load_persisted_env(config.env_path)
+    if extra_env:
+        persisted_env.update({str(key): str(value) for key, value in extra_env.items() if str(key).strip()})
+    seed_export = None
+    if resolve_requested_backend(persisted_env) == PYTHON_FALLBACK_BACKEND:
+        current = fetch_health(config.health_url)
+        if int(current.get('http_status', 0)) == 200 and extract_backend_from_health(current) != PYTHON_FALLBACK_BACKEND:
+            try:
+                seed_export = export_runtime_snapshot_seed(config, persisted_env)
+            except Exception as exc:
+                seed_export = {'status': 'failed', 'message': str(exc)}
     stopped = stop_runtime_api(config)
     if stopped.get('status') != 'stopped':
-        return {'status': 'restart_blocked', 'stop': stopped}
+        result = {'status': 'restart_blocked', 'stop': stopped}
+        if seed_export is not None:
+            result['seed_export'] = seed_export
+        return result
     started = start_runtime_api(config, extra_env=extra_env)
-    return {'status': started.get('status', 'unknown'), 'stop': stopped, 'start': started}
+    result = {'status': started.get('status', 'unknown'), 'stop': stopped, 'start': started}
+    if seed_export is not None:
+        result['seed_export'] = seed_export
+    return result
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:

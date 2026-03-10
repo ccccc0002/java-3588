@@ -39,6 +39,23 @@ def _json_request(url: str, headers: Optional[Dict[str, str]] = None, body: Opti
     return response_payload if isinstance(response_payload, dict) else {'payload': response_payload}
 
 
+def get_runtime_health(runtime_api_url: str, timeout_sec: float = 10.0, http_open=None) -> Dict[str, Any]:
+    return _json_request(
+        url=runtime_api_url.rstrip('/') + '/api/v1/runtime/health',
+        headers={'Accept': 'application/json'},
+        timeout_sec=timeout_sec,
+        http_open=http_open,
+    )
+
+
+def extract_runtime_api_backend(health_payload: Dict[str, Any]) -> str:
+    data = health_payload.get('data') if isinstance(health_payload.get('data'), dict) else {}
+    backend = str(data.get('backend', '')).strip()
+    if backend:
+        return backend
+    return 'java'
+
+
 def issue_runtime_token(runtime_api_url: str, bootstrap_token: str, user_id: str = 'edge-user', role: str = 'admin', timeout_sec: float = 10.0, http_open=None) -> Dict[str, Any]:
     return _json_request(
         url=runtime_api_url.rstrip('/') + '/api/v1/auth/token',
@@ -103,7 +120,15 @@ def run_stack_smoke(
     model_id: int = 1,
     budget: float = 10.0,
     timeout_sec: float = 30.0,
+    expected_runtime_api_backend: str = '',
 ) -> Dict[str, Any]:
+    runtime_health = get_runtime_health(runtime_api_url, timeout_sec=timeout_sec)
+    runtime_backend = extract_runtime_api_backend(runtime_health)
+    if expected_runtime_api_backend and runtime_backend != expected_runtime_api_backend:
+        raise RuntimeError(
+            f'runtime_api backend mismatch: expected={expected_runtime_api_backend} actual={runtime_backend}'
+        )
+
     token_payload = issue_runtime_token(runtime_api_url, bootstrap_token, timeout_sec=timeout_sec)
     token = str(((token_payload.get('data') or {}) if isinstance(token_payload, dict) else {}).get('token', '')).strip()
     if not token:
@@ -135,6 +160,7 @@ def run_stack_smoke(
 
     return {
         'runtime_api': {
+            'health': {'backend': runtime_backend, 'status': ((runtime_health.get('data') or {}) if isinstance(runtime_health, dict) else {}).get('status', '')},
             'token': {'token': token},
             'snapshot': {
                 'stream_count': int(snapshot_data.get('stream_count', len(streams) or 0)),
@@ -172,6 +198,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument('--model-id', type=int, default=1)
     parser.add_argument('--budget', type=float, default=10.0)
     parser.add_argument('--timeout-sec', type=float, default=30.0)
+    parser.add_argument('--expect-runtime-api-backend', default='')
     return parser.parse_args(argv)
 
 
@@ -187,6 +214,7 @@ def main(argv=None) -> int:
         model_id=args.model_id,
         budget=args.budget,
         timeout_sec=args.timeout_sec,
+        expected_runtime_api_backend=args.expect_runtime_api_backend.strip(),
     )
     print(json.dumps(result, ensure_ascii=True))
     return 0

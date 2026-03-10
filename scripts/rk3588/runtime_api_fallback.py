@@ -9,12 +9,15 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Dict, Optional
 from urllib import error, request
 
 
 DEFAULT_BRIDGE_HEALTH_URL = 'http://127.0.0.1:19080/health'
+DEFAULT_RUNTIME_DIR = Path(__file__).resolve().parents[2] / 'runtime'
+DEFAULT_SNAPSHOT_PATH = DEFAULT_RUNTIME_DIR / 'runtime-api-fallback-snapshot.json'
 
 
 @dataclass
@@ -33,6 +36,7 @@ class RuntimeApiFallbackConfig:
     bridge_health_url: str = DEFAULT_BRIDGE_HEALTH_URL
     bridge_timeout_sec: float = 5.0
     token_ttl_sec: int = 3600
+    snapshot_path: Path = DEFAULT_SNAPSHOT_PATH
 
 
 class RuntimeApiFallbackHandler(BaseHTTPRequestHandler):
@@ -121,22 +125,20 @@ class RuntimeApiFallbackService:
         return is_authorized(self.state, authorization_header or '', now_ms=self.now_ms())
 
     def build_health_payload(self) -> Dict[str, Any]:
-        snapshot = self.build_runtime_snapshot()
         return {
             'status': 'ok',
             'backend': 'python_fallback',
             'runtime': 'fallback',
-            'stream_count': snapshot.get('stream_count', 0),
-            'ready_stream_count': snapshot.get('ready_stream_count', 0),
+            'stream_count': 0,
+            'ready_stream_count': 0,
             'bridge_health_url': self.config.bridge_health_url,
         }
 
     def build_runtime_snapshot(self) -> Dict[str, Any]:
-        return fetch_bridge_snapshot(
-            self.config.bridge_health_url,
-            timeout_sec=self.config.bridge_timeout_sec,
-            http_open=self.http_open,
-        )
+        snapshot = read_snapshot_seed(self.config.snapshot_path)
+        if snapshot is not None:
+            return snapshot
+        return empty_snapshot(f'snapshot seed missing: {self.config.snapshot_path}')
 
     def build_inference_plan(self, budget: float) -> Dict[str, Any]:
         snapshot = self.build_runtime_snapshot()
@@ -214,6 +216,18 @@ def extract_runtime_snapshot(payload: Dict[str, Any]) -> Dict[str, Any]:
     snapshot['push_queue_size'] = int(data.get('push_queue_size', 0) or 0)
     snapshot['backend'] = 'python_fallback'
     return snapshot
+
+
+def read_snapshot_seed(snapshot_path: Path) -> Optional[Dict[str, Any]]:
+    try:
+        payload = json.loads(Path(snapshot_path).read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        return None
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return extract_runtime_snapshot(payload)
 
 
 def fetch_bridge_snapshot(
@@ -306,6 +320,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--bridge-health-url', default=DEFAULT_BRIDGE_HEALTH_URL)
     parser.add_argument('--bridge-timeout-sec', type=float, default=5.0)
     parser.add_argument('--token-ttl-sec', type=int, default=3600)
+    parser.add_argument('--snapshot-path', default=str(DEFAULT_SNAPSHOT_PATH))
     return parser.parse_args(argv)
 
 
@@ -317,6 +332,7 @@ def build_config(args: argparse.Namespace) -> RuntimeApiFallbackConfig:
         bridge_health_url=str(args.bridge_health_url or DEFAULT_BRIDGE_HEALTH_URL),
         bridge_timeout_sec=max(0.1, float(args.bridge_timeout_sec)),
         token_ttl_sec=max(1, int(args.token_ttl_sec)),
+        snapshot_path=Path(str(args.snapshot_path or DEFAULT_SNAPSHOT_PATH)).resolve(),
     )
 
 

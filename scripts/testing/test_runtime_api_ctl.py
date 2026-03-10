@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import sys
 import tempfile
@@ -87,6 +88,30 @@ class RuntimeApiControllerTests(unittest.TestCase):
 
             self.assertEqual('down', result['status'])
 
+    def test_status_runtime_api_detects_python_fallback_backend(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = runtime_api_ctl.RuntimeApiControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=repo_root / 'runtime',
+                start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh',
+                health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+                stop_pattern='java-rk3588-0.0.1-SNAPSHOT.jar',
+            )
+            health_payload = {
+                'http_status': 200,
+                'payload': {
+                    'code': 0,
+                    'msg': 'OK',
+                    'data': {'status': 'ok', 'backend': 'python_fallback'},
+                },
+            }
+            with mock.patch.object(runtime_api_ctl, 'fetch_health', return_value=health_payload):
+                result = runtime_api_ctl.status_runtime_api(config)
+
+            self.assertEqual('running', result['status'])
+            self.assertEqual('python_fallback', result['backend'])
+
     def test_stop_runtime_api_waits_for_health_to_drop(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = pathlib.Path(temp_dir)
@@ -143,6 +168,49 @@ class RuntimeApiControllerTests(unittest.TestCase):
             self.assertEqual('started', result['status'])
             self.assertEqual('python_fallback', result['backend'])
             self.assertEqual('python_fallback', popen_mock.call_args_list[1].kwargs['env']['RUNTIME_API_BACKEND'])
+
+    def test_export_runtime_snapshot_seed_writes_snapshot_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            runtime_dir = repo_root / 'runtime'
+            config = runtime_api_ctl.RuntimeApiControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=runtime_dir,
+                start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh',
+                health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+            )
+            responses = [
+                {'data': {'token': 'token-1'}},
+                {'data': {'streams': [{'camera_id': '1'}], 'stream_count': 1}},
+            ]
+            with mock.patch.object(runtime_api_ctl, 'request_json', side_effect=responses):
+                result = runtime_api_ctl.export_runtime_snapshot_seed(config, {'RUNTIME_BOOTSTRAP_TOKEN': 'edge-demo-bootstrap'})
+
+            self.assertEqual('exported', result['status'])
+            self.assertEqual(1, result['stream_count'])
+            payload = json.loads(config.snapshot_seed_path.read_text(encoding='utf-8'))
+            self.assertEqual(1, payload['stream_count'])
+
+    def test_restart_runtime_api_exports_seed_before_switching_to_python_fallback(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = runtime_api_ctl.RuntimeApiControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=repo_root / 'runtime',
+                start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh',
+                health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+            )
+            with mock.patch.object(runtime_api_ctl, 'load_persisted_env', return_value={}),                  mock.patch.object(runtime_api_ctl, 'fetch_health', return_value={'http_status': 200, 'payload': {'success': True, 'data': {'status': 'ok'}}}),                  mock.patch.object(runtime_api_ctl, 'export_runtime_snapshot_seed', return_value={'status': 'exported'}) as export_mock,                  mock.patch.object(runtime_api_ctl, 'stop_runtime_api', return_value={'status': 'stopped'}) as stop_mock,                  mock.patch.object(runtime_api_ctl, 'start_runtime_api', return_value={'status': 'started', 'backend': 'python_fallback'}) as start_mock:
+                result = runtime_api_ctl.restart_runtime_api(
+                    config,
+                    extra_env={'RUNTIME_API_BACKEND': 'python_fallback', 'RUNTIME_BOOTSTRAP_TOKEN': 'edge-demo-bootstrap'},
+                )
+
+            self.assertEqual('started', result['status'])
+            self.assertEqual('exported', result['seed_export']['status'])
+            export_mock.assert_called_once()
+            stop_mock.assert_called_once_with(config)
+            start_mock.assert_called_once()
 
     def test_build_config_parses_env_arguments(self):
         args = runtime_api_ctl.parse_args(['start', '--env', 'RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap', '--env', 'JAVA_BIN=/usr/bin/java'])
