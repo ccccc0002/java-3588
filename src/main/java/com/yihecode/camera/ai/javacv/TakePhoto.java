@@ -1,94 +1,158 @@
 package com.yihecode.camera.ai.javacv;
 
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.bytedeco.javacv.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.util.Random;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 通过rtsp/rtmp/file等进行拍照取图
- *
- * @author zhoumingxing
- * @mail 465769438@qq.com
+ * Capture a snapshot from an RTSP stream using an external ffmpeg binary.
  */
 @Slf4j
 @Component
 public class TakePhoto {
 
-    /**
-     * 图片存储路径
-     */
     @Value("${uploadDir}")
     private String uploadDir;
 
-    /**
-     * 拍照 - 返回文件名
-     * @return
-     */
+    @Value("${media.ffmpeg.bin:ffmpeg}")
+    private String defaultFfmpegBin;
+
+    @Value("${takePhotoTimeoutSeconds:25}")
+    private long takePhotoTimeoutSeconds;
+
     public String take(String rtspUrl) {
-        FFmpegLogCallback.set();
-        FFmpegFrameGrabber grabber = null;
-        int frameNullCount = 0;
-        try {
-            //rtspUrl = "/Users/zhoumingxing/Downloads/video-h265.mkv";
-            grabber = new FFmpegFrameGrabber(rtspUrl);
-            grabber.setOption("time", "120000000");
-            grabber.setOption("rtsp_transport", "tcp");
-            grabber.setOption("rtsp_flags", "prefer_tcp");
-            //grabber.setFormat("h265");
-
-            grabber.startUnsafe();
-
-            // 从第5帧开始选取，前面几帧可能是灰色图
-            int frameIndex = new Random().nextInt((150 - 20) + 1) + 20;
-            int i = 0;
-            while(true) {
-                Frame frame = grabber.grabImage();
-                if(frame != null && frame.image != null) {
-                    i++;
-                    if(i >= frameIndex) {
-                        try {
-                            Java2DFrameConverter converter = new Java2DFrameConverter();
-                            String fileName = IdUtil.randomUUID() + ".jpg";
-                            BufferedImage bufferedImage = converter.getBufferedImage(frame);
-                            ImageIO.write(bufferedImage, "jpg", new File(uploadDir + fileName));
-                            return fileName;
-                        } catch (IOException E) {
-                            //
-                        }
-                    }
-                } else {
-                    frameNullCount++;
-                }
-
-                // 空帧，退出
-                if(frameNullCount > 10) {
-                    break;
-                }
-            }
-        } catch (FFmpegFrameGrabber.Exception e1) {
-            e1.printStackTrace();
-        } catch (FrameGrabber.Exception e2) {
-            e2.printStackTrace();
-        } catch (Exception e3) {
-            e3.printStackTrace();
-        } finally {
-            try {
-                if(grabber != null) {
-                    grabber.close();
-                }
-            } catch (Exception e) {
-
-            }
-        }
-        return null;
+        return take(rtspUrl, defaultFfmpegBin);
     }
 
+    public String take(String rtspUrl, String ffmpegBin) {
+        if (StrUtil.isBlank(rtspUrl)) {
+            return null;
+        }
+
+        File uploadDirectory = new File(uploadDir);
+        if (!uploadDirectory.exists() && !uploadDirectory.mkdirs()) {
+            log.warn("failed to create upload directory: {}", uploadDirectory.getAbsolutePath());
+            return null;
+        }
+
+        String fileName = IdUtil.fastSimpleUUID() + ".jpg";
+        File outputFile = new File(uploadDirectory, fileName);
+        boolean captured = captureSnapshot(resolveFfmpegBin(ffmpegBin), rtspUrl, outputFile);
+        if (!captured || !outputFile.isFile() || outputFile.length() <= 0) {
+            deleteQuietly(outputFile);
+            return null;
+        }
+        return fileName;
+    }
+
+    boolean captureSnapshot(String ffmpegBin, String rtspUrl, File outputFile) {
+        Process process = null;
+        CompletableFuture<String> outputFuture = null;
+        try {
+            process = startProcess(buildCaptureCommand(ffmpegBin, rtspUrl, outputFile));
+            Process currentProcess = process;
+            outputFuture = CompletableFuture.supplyAsync(() -> safeReadProcessOutput(currentProcess));
+            if (!process.waitFor(takePhotoTimeoutSeconds, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                log.warn("ffmpeg snapshot timed out for stream {}", rtspUrl);
+                return false;
+            }
+            int exitCode = process.exitValue();
+            String output = awaitProcessOutput(outputFuture);
+            if (exitCode != 0) {
+                log.warn("ffmpeg snapshot failed for stream {}, exitCode={}, output={}", rtspUrl, exitCode, output);
+                return false;
+            }
+            return true;
+        } catch (Exception ex) {
+            log.warn("ffmpeg snapshot command failed for stream {}", rtspUrl, ex);
+            return false;
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+            if (outputFuture != null && !outputFuture.isDone()) {
+                outputFuture.cancel(true);
+            }
+        }
+    }
+
+    List<String> buildCaptureCommand(String ffmpegBin, String rtspUrl, File outputFile) {
+        List<String> command = new ArrayList<>();
+        command.add(resolveFfmpegBin(ffmpegBin));
+        command.add("-hide_banner");
+        command.add("-loglevel");
+        command.add("error");
+        command.add("-y");
+        command.add("-rtsp_transport");
+        command.add("tcp");
+        command.add("-i");
+        command.add(rtspUrl);
+        command.add("-an");
+        command.add("-sn");
+        command.add("-frames:v");
+        command.add("1");
+        command.add("-q:v");
+        command.add("2");
+        command.add(outputFile.getAbsolutePath());
+        return command;
+    }
+
+    Process startProcess(List<String> command) throws IOException {
+        return new ProcessBuilder(command)
+                .redirectErrorStream(true)
+                .start();
+    }
+
+    String readProcessOutput(Process process) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return String.join("\n", lines);
+    }
+
+    private String safeReadProcessOutput(Process process) {
+        try {
+            return readProcessOutput(process);
+        } catch (IOException ex) {
+            return "failed to read ffmpeg output: " + ex.getMessage();
+        }
+    }
+
+    private String awaitProcessOutput(CompletableFuture<String> outputFuture) {
+        if (outputFuture == null) {
+            return "";
+        }
+        try {
+            return outputFuture.get(2, TimeUnit.SECONDS);
+        } catch (Exception ex) {
+            return "ffmpeg output unavailable: " + ex.getMessage();
+        }
+    }
+
+    private String resolveFfmpegBin(String ffmpegBin) {
+        return StrUtil.isBlank(ffmpegBin) ? defaultFfmpegBin : ffmpegBin;
+    }
+
+    private void deleteQuietly(File outputFile) {
+        if (outputFile != null && outputFile.exists() && !outputFile.delete()) {
+            log.warn("failed to delete incomplete snapshot file: {}", outputFile.getAbsolutePath());
+        }
+    }
 }

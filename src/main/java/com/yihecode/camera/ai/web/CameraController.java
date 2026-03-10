@@ -364,7 +364,7 @@ public class CameraController {
 //        }
 
         //
-        String fileName = takePhoto.take(rtspUrl);
+        String fileName = takePhoto.take(rtspUrl, resolveFfmpegBin());
         if(StrUtil.isBlank(fileName)) {
             return JsonResultUtils.fail("拍照失败，请确保视频流正常并重新尝试");
         }
@@ -689,6 +689,10 @@ public class CameraController {
         resMap.put("playUrl", mediaStreamUrlService.buildPlayUrl(camera, videoPlay.getVideoPort()));
         resMap.put("zlmMode", mediaStreamUrlService.isZlmMode() ? 1 : 0);
         return JsonResultUtils.success(resMap);
+    }
+    private String resolveFfmpegBin() {
+        String ffmpegBin = configService.getByValTag("media_ffmpeg_bin");
+        return StrUtil.isBlank(ffmpegBin) ? "ffmpeg" : ffmpegBin;
     }
 
 }

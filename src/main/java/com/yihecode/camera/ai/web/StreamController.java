@@ -213,6 +213,20 @@ public class StreamController {
         return JsonResultUtils.success(showAlgorithmList);
     }
 
+    @PostMapping({"/statics/counter"})
+    @ResponseBody
+    public JsonResult staticsCounter() {
+        long startMills = DateUtil.truncate(new Date(), DateField.DAY_OF_MONTH).getTime();
+        long endMills = DateUtil.truncate(DateUtil.offsetDay(new Date(), 1), DateField.DAY_OF_MONTH).getTime();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("counter", reportService.getCounter(startMills, endMills));
+        data.put("startMills", startMills);
+        data.put("endMills", endMills);
+        data.put("today", DateUtil.today());
+        return JsonResultUtils.success(data);
+    }
+
     @GetMapping("/select_play")
     public String selectPlayPage(ModelMap modelMap) {
         String videoPorts = configService.getByValTag("video_ports");
