@@ -1,4 +1,4 @@
-﻿{
+{
   "target_platform": "rk3588",
   "core_mask": "auto",
   "input_size": [640, 640],
@@ -10,12 +10,15 @@
   "labels_path": "config/coco_80_labels_list.txt",
   "class_names": [],
   "label_aliases_zh": {
-    "person": "人员",
-    "bus": "公交车"
+    "person": "\u4eba\u5458",
+    "bus": "\u516c\u4ea4\u8f66"
   },
   "enabled_class_ids": [],
   "enabled_labels": [],
   "alert_labels": [],
   "alert_event_type": "vision.alert",
-  "stream_decode_backend": "opencv"
+  "stream_decode_backend": "mpp",
+  "stream_decode_hwaccel": "rga",
+  "stream_decode_ffmpeg_bin": "../../../../runtime/toolchains/ffmpeg-rockchip/bin/ffmpeg",
+  "stream_decode_codec": "auto"
 }

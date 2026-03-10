@@ -79,10 +79,13 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
         self.assertEqual('mpp', payload['stream_decode_backend'])
         self.assertEqual('rga', payload['stream_decode_hwaccel'])
+        self.assertIn('stream_decode_ffmpeg_bin', payload)
         self.assertTrue((ROOT / payload['default_test_image_path']).exists())
         self.assertTrue((ROOT / payload['labels_path']).exists())
         self.assertTrue((ROOT / payload['fallback_model_path']).exists())
         self.assertIn('label_aliases_zh', payload)
+        self.assertEqual('人员', payload['label_aliases_zh']['person'])
+        self.assertEqual('公交车', payload['label_aliases_zh']['bus'])
         self.assertIn('alert_labels', payload)
 
     def test_resolve_model_path_prefers_existing_override(self):
@@ -137,10 +140,10 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 config={
                     'rknn_model_path': str(model_path),
                     'labels_path': 'config/labels.txt',
-                    'label_aliases_zh': {'person': '??', 'bus': '???'},
+                    'label_aliases_zh': {'person': '人员', 'bus': '公交车'},
                     'enabled_class_ids': ['0'],
-                    'enabled_labels': ['???'],
-                    'alert_labels': ['???'],
+                    'enabled_labels': ['公交车'],
+                    'alert_labels': ['公交车'],
                     'alert_event_type': 'vision.alert.custom',
                     'input_size': [640, 640],
                     'obj_threshold': 0.3,
@@ -173,10 +176,10 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 yolov8n_inference.decode_impl.create_stream_manager = original_create_stream_manager
 
             self.assertEqual(['person', 'bus'], runtime_state['labels'])
-            self.assertEqual({'person': '??', 'bus': '???'}, runtime_state['label_aliases_zh'])
+            self.assertEqual({'person': '人员', 'bus': '公交车'}, runtime_state['label_aliases_zh'])
             self.assertEqual({0}, runtime_state['enabled_class_ids'])
-            self.assertEqual({'???'}, runtime_state['enabled_labels'])
-            self.assertEqual({'???'}, runtime_state['alert_labels'])
+            self.assertEqual({'公交车'}, runtime_state['enabled_labels'])
+            self.assertEqual({'公交车'}, runtime_state['alert_labels'])
             self.assertEqual('vision.alert.custom', runtime_state['event_type'])
             self.assertEqual((640, 640), runtime_state['input_size'])
             self.assertEqual(0.3, runtime_state['obj_threshold'])
@@ -241,6 +244,43 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual('mpp', meta['decoder_backend'])
             self.assertEqual('mpp', meta['decoder_backend_requested'])
             self.assertEqual('rga', meta['decoder_hwaccel'])
+
+    def test_load_frame_bgr_resolves_stream_decode_ffmpeg_bin_from_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            ffmpeg_bin = root / 'toolchains' / 'ffmpeg-rockchip' / 'bin' / 'ffmpeg'
+            ffmpeg_bin.parent.mkdir(parents=True, exist_ok=True)
+            ffmpeg_bin.write_text('#!/bin/sh\n', encoding='utf-8')
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'stream_decode_backend': 'mpp',
+                    'stream_decode_ffmpeg_bin': 'toolchains/ffmpeg-rockchip/bin/ffmpeg',
+                },
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+            sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
+            original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
+            try:
+                captured = {}
+
+                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                    captured['preferred_backend'] = preferred_backend
+                    captured['ffmpeg_bin'] = ffmpeg_bin
+                    return sample, preferred_backend
+
+                yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
+                image_bgr, meta = yolov8n_inference.load_frame_bgr(
+                    {'frame': {'source': 'rtsp://demo/stream'}},
+                    context,
+                )
+            finally:
+                yolov8n_inference.decode_impl.read_stream_frame = original_read_stream_frame
+
+            self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
+            self.assertEqual('mpp', captured['preferred_backend'])
+            self.assertEqual(str(ffmpeg_bin.resolve()), captured['ffmpeg_bin'])
+            self.assertEqual(str(ffmpeg_bin.resolve()), meta['decoder_ffmpeg_bin'])
 
     def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -324,6 +364,41 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(meta['source_kind'], 'video_file')
             self.assertEqual(meta['decoder_backend'], 'opencv')
 
+    def test_read_stream_frame_resolves_ffmpeg_binary_before_mpp_decode(self):
+        sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
+        original_resolve = yolov8n_inference.decode_impl.resolve_ffmpeg_binary
+        original_ensure = yolov8n_inference.decode_impl.ensure_mpp_decode_support
+        original_read_stream_mpp = yolov8n_inference.decode_impl.read_stream_frame_mpp
+        try:
+            captured = {}
+            yolov8n_inference.decode_impl.resolve_ffmpeg_binary = lambda ffmpeg_bin='ffmpeg', repo_root=None, env=None, which_fn=None: '/resolved/ffmpeg-rockchip'
+
+            def fake_ensure(ffmpeg_bin='ffmpeg'):
+                captured['ensure_ffmpeg_bin'] = ffmpeg_bin
+                return None
+
+            def fake_read_stream_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                captured['mpp_ffmpeg_bin'] = ffmpeg_bin
+                return sample
+
+            yolov8n_inference.decode_impl.ensure_mpp_decode_support = fake_ensure
+            yolov8n_inference.decode_impl.read_stream_frame_mpp = fake_read_stream_mpp
+
+            frame, backend = yolov8n_inference.decode_impl.read_stream_frame(
+                'rtsp://demo/stream',
+                preferred_backend='mpp',
+                codec_hint='h265',
+            )
+        finally:
+            yolov8n_inference.decode_impl.resolve_ffmpeg_binary = original_resolve
+            yolov8n_inference.decode_impl.ensure_mpp_decode_support = original_ensure
+            yolov8n_inference.decode_impl.read_stream_frame_mpp = original_read_stream_mpp
+
+        self.assertEqual('mpp', backend)
+        self.assertEqual((6, 10, 3), tuple(frame.shape))
+        self.assertEqual('/resolved/ffmpeg-rockchip', captured['ensure_ffmpeg_bin'])
+        self.assertEqual('/resolved/ffmpeg-rockchip', captured['mpp_ffmpeg_bin'])
+
     def test_stream_session_manager_reuses_capture_for_same_source(self):
         created = []
         original_video_capture = yolov8n_inference.decode_impl.cv2.VideoCapture
@@ -401,9 +476,9 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 config={
                     'rknn_model_path': str(model_path),
                     'labels_path': 'config/labels.txt',
-                    'label_aliases_zh': {'person': '??', 'bus': '???'},
-                    'enabled_labels': ['??', '???'],
-                    'alert_labels': ['???'],
+                    'label_aliases_zh': {'person': '人员', 'bus': '公交车'},
+                    'enabled_labels': ['人员', '公交车'],
+                    'alert_labels': ['公交车'],
                     'alert_event_type': 'vision.alert.custom',
                     'input_size': [640, 640],
                 },
@@ -469,10 +544,10 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
             self.assertEqual((1, 640, 640, 3), infer_inputs['shape'])
             self.assertEqual(['person', 'bus'], [item['label'] for item in result['detections']])
-            self.assertEqual(['??', '???'], [item['label_zh'] for item in result['detections']])
+            self.assertEqual(['人员', '公交车'], [item['label_zh'] for item in result['detections']])
             self.assertEqual([False, True], [item['alert'] for item in result['detections']])
             self.assertEqual('vision.alert.custom', result['events'][0]['event_type'])
-            self.assertEqual('???', result['events'][0]['label_zh'])
+            self.assertEqual('公交车', result['events'][0]['label_zh'])
             self.assertEqual(1, result['plugin_meta']['active_stream_session_count'])
             self.assertTrue(cleanup_flags['session'])
             self.assertTrue(cleanup_flags['stream'])
@@ -578,4 +653,5 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 
