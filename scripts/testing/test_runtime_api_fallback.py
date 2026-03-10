@@ -96,5 +96,27 @@ class RuntimeApiFallbackTests(unittest.TestCase):
 
 
 
+    def test_build_runtime_snapshot_reads_relaxed_snapshot_seed(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            snapshot_path = pathlib.Path(temp_dir) / 'runtime-api-fallback-snapshot.json'
+            snapshot_path.write_text(
+                '{sessions: {}, streams: [{camera_id: 1, camera_name: rtsp-camera-245, rtsp_url: rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream, play_url: http://127.0.0.1:1987/live/1.live.flv, push_url: rtmp://127.0.0.1:19350/live/1, ready: true}], media: {server_type: zlm, decode_backend: mpp, decode_hwaccel: rga}, stream_count: 1, ready_stream_count: 1}',
+                encoding='utf-8',
+            )
+            config = runtime_api_fallback.RuntimeApiFallbackConfig(
+                bootstrap_token='edge-demo-bootstrap',
+                snapshot_path=snapshot_path,
+            )
+            service = runtime_api_fallback.RuntimeApiFallbackService(config)
+
+            snapshot = service.build_runtime_snapshot()
+
+            self.assertEqual(1, snapshot['stream_count'])
+            self.assertEqual('rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream', snapshot['streams'][0]['rtsp_url'])
+            self.assertEqual('http://127.0.0.1:1987/live/1.live.flv', snapshot['streams'][0]['play_url'])
+            self.assertTrue(snapshot['streams'][0]['ready'])
+            self.assertEqual('mpp', snapshot['media']['decode_backend'])
+
 if __name__ == '__main__':
     unittest.main()
+

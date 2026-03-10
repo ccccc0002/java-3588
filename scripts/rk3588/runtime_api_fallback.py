@@ -218,17 +218,159 @@ def extract_runtime_snapshot(payload: Dict[str, Any]) -> Dict[str, Any]:
     return snapshot
 
 
+def _skip_relaxed_ws(text: str, index: int) -> int:
+    while index < len(text) and text[index].isspace():
+        index += 1
+    return index
+
+
+def _parse_relaxed_string(text: str, index: int) -> tuple[str, int]:
+    quote = text[index]
+    index += 1
+    chars: list[str] = []
+    while index < len(text):
+        char = text[index]
+        if char == '\\' and index + 1 < len(text):
+            chars.append(text[index + 1])
+            index += 2
+            continue
+        if char == quote:
+            return ''.join(chars), index + 1
+        chars.append(char)
+        index += 1
+    raise ValueError('unterminated string literal')
+
+
+def _parse_relaxed_key(text: str, index: int) -> tuple[str, int]:
+    index = _skip_relaxed_ws(text, index)
+    if index >= len(text):
+        raise ValueError('unexpected end of input while parsing object key')
+    if text[index] in {'\"', "'"}:
+        return _parse_relaxed_string(text, index)
+    start = index
+    while index < len(text) and text[index] not in {':', ' ', '\t', '\r', '\n'}:
+        index += 1
+    token = text[start:index].strip()
+    if not token:
+        raise ValueError('object key must not be empty')
+    return token, index
+
+
+def _coerce_relaxed_token(token: str) -> Any:
+    normalized = token.strip()
+    if not normalized:
+        return ''
+    lowered = normalized.lower()
+    if lowered == 'true':
+        return True
+    if lowered == 'false':
+        return False
+    if lowered == 'null':
+        return None
+    if lowered in {'nan', '+nan', '-nan', 'inf', '+inf', '-inf'}:
+        return normalized
+    try:
+        if any(marker in normalized for marker in ('.', 'e', 'E')):
+            return float(normalized)
+        return int(normalized)
+    except ValueError:
+        return normalized
+
+
+def _parse_relaxed_bare_token(text: str, index: int) -> tuple[Any, int]:
+    start = index
+    while index < len(text) and text[index] not in {',', '}', ']'}:
+        index += 1
+    token = text[start:index].strip()
+    if not token:
+        raise ValueError('value token must not be empty')
+    return _coerce_relaxed_token(token), index
+
+
+def _parse_relaxed_value(text: str, index: int) -> tuple[Any, int]:
+    index = _skip_relaxed_ws(text, index)
+    if index >= len(text):
+        raise ValueError('unexpected end of input while parsing value')
+    marker = text[index]
+    if marker == '{':
+        return _parse_relaxed_object(text, index)
+    if marker == '[':
+        return _parse_relaxed_array(text, index)
+    if marker in {'\"', "'"}:
+        return _parse_relaxed_string(text, index)
+    return _parse_relaxed_bare_token(text, index)
+
+
+def _parse_relaxed_array(text: str, index: int) -> tuple[list[Any], int]:
+    items: list[Any] = []
+    index += 1
+    while True:
+        index = _skip_relaxed_ws(text, index)
+        if index >= len(text):
+            raise ValueError('unexpected end of input while parsing array')
+        if text[index] == ']':
+            return items, index + 1
+        item, index = _parse_relaxed_value(text, index)
+        items.append(item)
+        index = _skip_relaxed_ws(text, index)
+        if index < len(text) and text[index] == ',':
+            index += 1
+            continue
+        if index < len(text) and text[index] == ']':
+            return items, index + 1
+        raise ValueError('expected array separator')
+
+
+def _parse_relaxed_object(text: str, index: int) -> tuple[Dict[str, Any], int]:
+    payload: Dict[str, Any] = {}
+    index += 1
+    while True:
+        index = _skip_relaxed_ws(text, index)
+        if index >= len(text):
+            raise ValueError('unexpected end of input while parsing object')
+        if text[index] == '}':
+            return payload, index + 1
+        key, index = _parse_relaxed_key(text, index)
+        index = _skip_relaxed_ws(text, index)
+        if index >= len(text) or text[index] != ':':
+            raise ValueError('expected key/value separator')
+        value, index = _parse_relaxed_value(text, index + 1)
+        payload[str(key)] = value
+        index = _skip_relaxed_ws(text, index)
+        if index < len(text) and text[index] == ',':
+            index += 1
+            continue
+        if index < len(text) and text[index] == '}':
+            return payload, index + 1
+        raise ValueError('expected object separator')
+
+
+def parse_relaxed_snapshot_seed(raw_text: str) -> Optional[Dict[str, Any]]:
+    text = str(raw_text or '').strip()
+    if not text:
+        return None
+    try:
+        value, index = _parse_relaxed_value(text, 0)
+        index = _skip_relaxed_ws(text, index)
+        if index != len(text) or not isinstance(value, dict):
+            return None
+        return value
+    except ValueError:
+        return None
+
+
 def read_snapshot_seed(snapshot_path: Path) -> Optional[Dict[str, Any]]:
     try:
-        payload = json.loads(Path(snapshot_path).read_text(encoding='utf-8'))
+        raw_text = Path(snapshot_path).read_text(encoding='utf-8')
     except FileNotFoundError:
         return None
+    try:
+        payload = json.loads(raw_text)
     except json.JSONDecodeError:
-        return None
+        payload = parse_relaxed_snapshot_seed(raw_text)
     if not isinstance(payload, dict):
         return None
     return extract_runtime_snapshot(payload)
-
 
 def fetch_bridge_snapshot(
     bridge_health_url: str,
@@ -368,3 +510,4 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == '__main__':
     raise SystemExit(main())
+
