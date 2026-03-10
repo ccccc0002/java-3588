@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from http.cookiejar import CookieJar
 from typing import Any, Dict, List, Optional, Tuple
 from urllib import error, parse, request
+from urllib.parse import urlparse
 
 
 @dataclass(frozen=True)
@@ -109,7 +110,7 @@ def collect_camera_context(session: HttpSession) -> Dict[str, Any]:
     }
 
 
-def run_target(session: HttpSession, target: SmokeTarget) -> Dict[str, Any]:
+def run_target(session: HttpSession, target: SmokeTarget, base_url: str = '') -> Dict[str, Any]:
     status, body, headers = session.open(target.method, target.path, target.data, timeout_sec=target.timeout_sec)
     result: Dict[str, Any] = {
         'name': target.name or target.path,
@@ -141,12 +142,41 @@ def run_target(session: HttpSession, target: SmokeTarget) -> Dict[str, Any]:
         result['ok'] = status == 200
         if not result['ok']:
             result['error'] = 'Unexpected non-object JSON payload'
-        return result
+        return validate_stream_urls(base_url, result)
 
     result['snippet'] = text[:240]
     result['ok'] = status == 200 and '<html' in text.lower()
     if not result['ok']:
         result['error'] = f'Expected html page, got status={status}'
+    return result
+
+
+def is_loopback_host(value: str) -> bool:
+    host = str(value or '').strip().lower()
+    return host in {'127.0.0.1', 'localhost', '0.0.0.0', '::1', '[::1]'}
+
+
+def validate_stream_urls(base_url: str, result: Dict[str, Any]) -> Dict[str, Any]:
+    payload = result.get('payload')
+    if not isinstance(payload, dict):
+        return result
+    rows = payload.get('data') if isinstance(payload.get('data'), list) else []
+    if not rows:
+        return result
+    base_host = urlparse(base_url).hostname or ''
+    if is_loopback_host(base_host):
+        return result
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        play_url = str(row.get('playUrl') or row.get('play_url') or '').strip()
+        if not play_url:
+            continue
+        play_host = urlparse(play_url).hostname or ''
+        if is_loopback_host(play_host):
+            result['ok'] = False
+            result['error'] = f'playUrl points to loopback host: {play_url}'
+            return result
     return result
 
 
@@ -207,7 +237,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     session = HttpSession(args.base_url, timeout_sec=max(1.0, float(args.timeout_sec)))
     smoke_login(session, args.username, args.password)
     camera_context = collect_camera_context(session)
-    results = [run_target(session, target) for target in build_targets(camera_context)]
+    results = [run_target(session, target, args.base_url) for target in build_targets(camera_context)]
 
     failed = [item for item in results if not item.get('ok')]
     summary = {

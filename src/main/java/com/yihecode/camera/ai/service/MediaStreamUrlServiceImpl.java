@@ -4,9 +4,15 @@ import cn.hutool.core.util.StrUtil;
 import com.yihecode.camera.ai.entity.Camera;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.util.Locale;
 
 /**
- * 濯掍綋娴佸湴鍧€鏋勫缓瀹炵幇
+ * Stream play/push URL resolver for legacy and ZLMediaKit modes.
  */
 @Service
 public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
@@ -20,7 +26,6 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         if ("zlm".equalsIgnoreCase(StrUtil.trim(mediaServerType))) {
             return true;
         }
-        // 鍏煎鑰侀厤缃細浠呴厤缃?zlm_enable=1 鏃朵篃鍚敤 zlm 妯″紡
         return "1".equals(StrUtil.trim(configService.getByValTag("zlm_enable")));
     }
 
@@ -52,6 +57,7 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         if (StrUtil.isBlank(host)) {
             host = configService.getByValTag("streamUrl");
         }
+        host = resolveBrowserFacingHost(host);
         String httpPort = configService.getByValTag("zlm_http_port");
         String app = configService.getByValTag("zlm_app");
         if (StrUtil.isBlank(app)) {
@@ -82,7 +88,7 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
     }
 
     private String buildLegacyPlayUrl(Integer videoPort) {
-        String streamUrl = configService.getByValTag("streamUrl");
+        String streamUrl = resolveBrowserFacingHost(configService.getByValTag("streamUrl"));
         if (StrUtil.isBlank(streamUrl) || videoPort == null || videoPort <= 0) {
             return "";
         }
@@ -132,13 +138,80 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         return "rtmp://" + videoInnerIp + ":" + videoPushPort + "/live/" + cameraId;
     }
 
+    private String resolveBrowserFacingHost(String configuredHost) {
+        String trimmed = StrUtil.trim(configuredHost);
+        if (StrUtil.isBlank(trimmed) || !isLoopbackOrWildcardHost(trimmed)) {
+            return trimmed;
+        }
+        String requestHost = resolveCurrentRequestHost();
+        if (StrUtil.isBlank(requestHost) || isLoopbackOrWildcardHost(requestHost)) {
+            return trimmed;
+        }
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            try {
+                URI uri = URI.create(trimmed);
+                URI updated = new URI(uri.getScheme(), uri.getUserInfo(), requestHost, uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
+                return updated.toString();
+            } catch (Exception ignored) {
+                return trimmed;
+            }
+        }
+        return requestHost;
+    }
+
+    private boolean isLoopbackOrWildcardHost(String value) {
+        String candidate = StrUtil.trim(value);
+        if (StrUtil.isBlank(candidate)) {
+            return false;
+        }
+        if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+            try {
+                URI uri = URI.create(candidate);
+                candidate = uri.getHost();
+            } catch (Exception ignored) {
+                return false;
+            }
+        } else {
+            int slash = candidate.indexOf('/');
+            if (slash >= 0) {
+                candidate = candidate.substring(0, slash);
+            }
+            if (candidate.startsWith("[") && candidate.contains("]")) {
+                candidate = candidate.substring(1, candidate.indexOf(']'));
+            } else {
+                int colon = candidate.indexOf(':');
+                if (colon >= 0) {
+                    candidate = candidate.substring(0, colon);
+                }
+            }
+        }
+        String normalized = StrUtil.trim(candidate).toLowerCase(Locale.ROOT);
+        return "127.0.0.1".equals(normalized)
+                || "localhost".equals(normalized)
+                || "0.0.0.0".equals(normalized)
+                || "::1".equals(normalized)
+                || "[::1]".equals(normalized);
+    }
+
+    private String resolveCurrentRequestHost() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return "";
+            }
+            HttpServletRequest request = attributes.getRequest();
+            return request == null ? "" : StrUtil.trim(request.getServerName());
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
     private String joinBase(String schema, String host, String port) {
         if (StrUtil.isBlank(host)) {
             return "";
         }
         String h = StrUtil.trim(host);
         if (h.startsWith("http://") || h.startsWith("https://")) {
-            // 鍏煎鍘嗗彶 streamUrl 宸茬粡甯﹀崗璁殑鍦烘櫙
             if (StrUtil.isBlank(port) || h.contains(":" + port)) {
                 return h;
             }
