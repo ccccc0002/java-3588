@@ -49,6 +49,57 @@ class RuntimeBridgeControllerTests(unittest.TestCase):
             self.assertTrue(popen_kwargs['start_new_session'])
             self.assertEqual('demo', popen_kwargs['env']['RUNTIME_BOOTSTRAP_TOKEN'])
 
+    def test_start_persists_extra_env_for_future_restarts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            runtime_dir = repo_root / 'runtime'
+            config = runtime_bridge_ctl.ControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=runtime_dir,
+                pid_path=runtime_dir / 'runtime-bridge.pid',
+                log_path=runtime_dir / 'runtime-bridge.log',
+                health_url='http://127.0.0.1:19080/health',
+                wait_seconds=1.0,
+                poll_interval=0.01,
+            )
+            process = mock.Mock(pid=4321)
+
+            with mock.patch.object(runtime_bridge_ctl, 'read_pid', return_value=None), \
+                 mock.patch.object(runtime_bridge_ctl, 'is_process_running', return_value=False), \
+                 mock.patch.object(runtime_bridge_ctl, 'wait_for_health', return_value={'http_status': 200, 'payload': {'status': 'ok'}}), \
+                 mock.patch.object(runtime_bridge_ctl.subprocess, 'Popen', return_value=process):
+                runtime_bridge_ctl.start_bridge(config, extra_env={'RUNTIME_BOOTSTRAP_TOKEN': 'demo', 'DEFAULT_PLUGIN_ID': 'yolov8n'})
+
+            persisted = (runtime_dir / 'runtime-bridge.env').read_text(encoding='utf-8')
+            self.assertIn('RUNTIME_BOOTSTRAP_TOKEN=demo', persisted)
+            self.assertIn('DEFAULT_PLUGIN_ID=yolov8n', persisted)
+
+    def test_start_uses_persisted_env_when_extra_env_missing(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            runtime_dir = repo_root / 'runtime'
+            runtime_dir.mkdir(parents=True, exist_ok=True)
+            (runtime_dir / 'runtime-bridge.env').write_text('RUNTIME_BOOTSTRAP_TOKEN=demo\nDEFAULT_PLUGIN_ID=yolov8n\n', encoding='utf-8')
+            config = runtime_bridge_ctl.ControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=runtime_dir,
+                pid_path=runtime_dir / 'runtime-bridge.pid',
+                log_path=runtime_dir / 'runtime-bridge.log',
+                health_url='http://127.0.0.1:19080/health',
+                wait_seconds=1.0,
+                poll_interval=0.01,
+            )
+            process = mock.Mock(pid=4321)
+
+            with mock.patch.object(runtime_bridge_ctl, 'read_pid', return_value=None), \
+                 mock.patch.object(runtime_bridge_ctl, 'is_process_running', return_value=False), \
+                 mock.patch.object(runtime_bridge_ctl, 'wait_for_health', return_value={'http_status': 200, 'payload': {'status': 'ok'}}), \
+                 mock.patch.object(runtime_bridge_ctl.subprocess, 'Popen', return_value=process) as popen_mock:
+                runtime_bridge_ctl.start_bridge(config)
+
+            self.assertEqual('demo', popen_mock.call_args.kwargs['env']['RUNTIME_BOOTSTRAP_TOKEN'])
+            self.assertEqual('yolov8n', popen_mock.call_args.kwargs['env']['DEFAULT_PLUGIN_ID'])
+
     def test_start_returns_already_running_when_pid_is_active(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = pathlib.Path(temp_dir)

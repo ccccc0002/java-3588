@@ -26,10 +26,13 @@ class ControllerConfig:
     poll_interval: float = 0.5
     stop_wait_seconds: float = 5.0
     run_script: Optional[Path] = None
+    env_path: Optional[Path] = None
 
     def __post_init__(self) -> None:
         if self.run_script is None:
             object.__setattr__(self, 'run_script', self.repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Bridge.sh')
+        if self.env_path is None:
+            object.__setattr__(self, 'env_path', self.runtime_dir / 'runtime-bridge.env')
 
 
 def default_config() -> ControllerConfig:
@@ -81,6 +84,29 @@ def terminate_process_group(pid: int, sig: int) -> None:
     os.kill(pid, sig)
 
 
+def load_persisted_env(env_path: Path) -> Dict[str, str]:
+    try:
+        lines = env_path.read_text(encoding='utf-8').splitlines()
+    except FileNotFoundError:
+        return {}
+    env = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        if key:
+            env[key] = value
+    return env
+
+
+def write_persisted_env(env_path: Path, env_values: Dict[str, str]) -> None:
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f'{key}={env_values[key]}' for key in sorted(env_values.keys()) if str(key).strip()]
+    env_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
+
+
 def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
     req = request.Request(health_url, headers={'Accept': 'application/json'}, method='GET')
     try:
@@ -122,9 +148,13 @@ def start_bridge(config: ControllerConfig, extra_env: Optional[Dict[str, str]] =
     if existing_pid and not is_process_running(existing_pid):
         config.pid_path.unlink(missing_ok=True)
 
-    env = os.environ.copy()
+    persisted_env = load_persisted_env(config.env_path) if config.env_path is not None else {}
     if extra_env:
-        env.update({k: str(v) for k, v in extra_env.items() if v is not None})
+        persisted_env.update({k: str(v) for k, v in extra_env.items() if v is not None})
+        if config.env_path is not None:
+            write_persisted_env(config.env_path, persisted_env)
+    env = os.environ.copy()
+    env.update(persisted_env)
 
     with config.log_path.open('ab') as log_file:
         process = subprocess.Popen(
