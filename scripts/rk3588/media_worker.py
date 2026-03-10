@@ -356,6 +356,17 @@ class RuntimeSnapshotFetcher:
         return self.client.get_runtime_snapshot()
 
 
+def default_state_path() -> Path:
+    return SCRIPT_DIR.parent.parent / 'runtime' / 'media-worker.state.json'
+
+
+def write_state_payload(state_path: Path, payload: Dict[str, Any]) -> None:
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = state_path.with_suffix(state_path.suffix + '.tmp')
+    tmp_path.write_text(json.dumps(payload, ensure_ascii=True), encoding='utf-8')
+    tmp_path.replace(state_path)
+
+
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Run RK3588 media worker against runtime snapshot stream targets')
     parser.add_argument('--runtime-url', default='http://127.0.0.1:18081')
@@ -363,11 +374,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument('--runtime-token', default='')
     parser.add_argument('--timeout-sec', type=float, default=5.0)
     parser.add_argument('--interval-sec', type=float, default=2.0)
+    parser.add_argument('--state-path', default='')
     parser.add_argument('--once', action='store_true')
     return parser.parse_args(argv)
 
 
-def run_worker_loop(fetcher, worker, interval_sec: float, once: bool = False, sleep_fn=None, emit_fn=None, stop_flag=None, iteration_limit: Optional[int] = None) -> Dict[str, Any]:
+def run_worker_loop(fetcher, worker, interval_sec: float, once: bool = False, sleep_fn=None, emit_fn=None, stop_flag=None, iteration_limit: Optional[int] = None, state_path: Optional[Path] = None) -> Dict[str, Any]:
     sleep = sleep_fn or time.sleep
     emit = emit_fn or (lambda payload: print(json.dumps(payload, ensure_ascii=True)))
     stop = stop_flag or {'value': False}
@@ -378,12 +390,18 @@ def run_worker_loop(fetcher, worker, interval_sec: float, once: bool = False, sl
             try:
                 snapshot = fetcher.fetch()
                 result = worker.sync(snapshot)
-                emit({'status': 'running', 'sync': result})
+                payload = {'status': 'running', 'sync': result}
+                emit(payload)
+                if state_path is not None:
+                    write_state_payload(state_path, payload)
                 if once:
                     break
             except Exception as exc:
                 error_count += 1
-                emit({'status': 'error', 'message': str(exc), 'error_count': error_count})
+                payload = {'status': 'error', 'message': str(exc), 'error_count': error_count}
+                emit(payload)
+                if state_path is not None:
+                    write_state_payload(state_path, payload)
             iterations += 1
             if iteration_limit is not None and iterations >= max(1, int(iteration_limit)):
                 break
@@ -417,6 +435,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         interval_sec=max(0.2, float(args.interval_sec)),
         once=args.once,
         stop_flag=stop_flag,
+        state_path=Path(args.state_path).resolve() if str(args.state_path).strip() else default_state_path(),
     )
     return 0
 

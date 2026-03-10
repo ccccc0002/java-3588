@@ -1,6 +1,8 @@
 import importlib.util
+import json
 import pathlib
 import sys
+import tempfile
 import unittest
 
 
@@ -273,6 +275,40 @@ class MediaWorkerTests(unittest.TestCase):
             worker.sync(snapshot)
 
         self.assertIn('MPP+RGA', str(ctx.exception))
+
+    def test_run_worker_loop_writes_latest_state_file(self):
+        events = []
+
+        class FakeFetcher:
+            def fetch(self):
+                return {'media': {}, 'streams': []}
+
+        class FakeWorker:
+            def sync(self, snapshot):
+                return {'desired_count': len(snapshot.get('streams', [])), 'running_count': 0, 'started_camera_ids': [], 'stopped_camera_ids': [], 'sessions': []}
+
+            def close(self):
+                return None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = pathlib.Path(temp_dir) / 'media-worker.state.json'
+            result = media_worker.run_worker_loop(
+                fetcher=FakeFetcher(),
+                worker=FakeWorker(),
+                interval_sec=0.01,
+                once=True,
+                sleep_fn=lambda _seconds: None,
+                emit_fn=events.append,
+                stop_flag={'value': False},
+                state_path=state_path,
+            )
+
+            payload = json.loads(state_path.read_text(encoding='utf-8'))
+
+        self.assertEqual(0, result['error_count'])
+        self.assertEqual('running', payload['status'])
+        self.assertEqual(0, payload['sync']['running_count'])
+        self.assertEqual('running', events[0]['status'])
 
     def test_run_worker_loop_continues_after_fetch_timeout(self):
         events = []
