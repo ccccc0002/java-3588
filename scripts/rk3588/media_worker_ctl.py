@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Manage the RK3588 media worker as a detached background process."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import signal
+import subprocess
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+
+@dataclass(frozen=True)
+class ControllerConfig:
+    repo_root: Path
+    runtime_dir: Path
+    pid_path: Path
+    log_path: Path
+    wait_seconds: float = 2.0
+    poll_interval: float = 0.2
+    stop_wait_seconds: float = 5.0
+    run_script: Optional[Path] = None
+    env_path: Optional[Path] = None
+
+    def __post_init__(self) -> None:
+        if self.run_script is None:
+            object.__setattr__(self, 'run_script', self.repo_root / 'scripts' / 'rk3588' / 'Run-Media-Worker.sh')
+        if self.env_path is None:
+            object.__setattr__(self, 'env_path', self.runtime_dir / 'media-worker.env')
+
+
+def default_config() -> ControllerConfig:
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent.parent
+    runtime_dir = repo_root / 'runtime'
+    return ControllerConfig(
+        repo_root=repo_root,
+        runtime_dir=runtime_dir,
+        pid_path=runtime_dir / 'media-worker.pid',
+        log_path=runtime_dir / 'media-worker.log',
+    )
+
+
+def read_pid(pid_path: Path) -> Optional[int]:
+    try:
+        raw = pid_path.read_text(encoding='utf-8').strip()
+    except FileNotFoundError:
+        return None
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        pid_path.unlink(missing_ok=True)
+        return None
+
+
+def write_pid(pid_path: Path, pid: int) -> None:
+    pid_path.parent.mkdir(parents=True, exist_ok=True)
+    pid_path.write_text(f'{pid}\n', encoding='utf-8')
+
+
+def is_process_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def terminate_process_group(pid: int, sig: int) -> None:
+    if hasattr(os, 'killpg') and hasattr(os, 'getpgid'):
+        os.killpg(os.getpgid(pid), sig)
+        return
+    os.kill(pid, sig)
+
+
+def load_persisted_env(env_path: Path) -> Dict[str, str]:
+    try:
+        lines = env_path.read_text(encoding='utf-8').splitlines()
+    except FileNotFoundError:
+        return {}
+    env = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        if key:
+            env[key] = value
+    return env
+
+
+def write_persisted_env(env_path: Path, env_values: Dict[str, str]) -> None:
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f'{key}={env_values[key]}' for key in sorted(env_values.keys()) if str(key).strip()]
+    env_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
+
+
+def start_worker(config: ControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    existing_pid = read_pid(config.pid_path)
+    if existing_pid and is_process_running(existing_pid):
+        return {'status': 'already_running', 'pid': existing_pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+
+    config.runtime_dir.mkdir(parents=True, exist_ok=True)
+    persisted_env = load_persisted_env(config.env_path) if config.env_path is not None else {}
+    if extra_env:
+        persisted_env.update(extra_env)
+        if config.env_path is not None:
+            write_persisted_env(config.env_path, persisted_env)
+    env = os.environ.copy()
+    env.update(persisted_env)
+
+    with config.log_path.open('ab') as log_handle:
+        process = subprocess.Popen(
+            ['bash', str(config.run_script)],
+            cwd=str(config.repo_root),
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=log_handle,
+            start_new_session=True,
+        )
+    write_pid(config.pid_path, process.pid)
+    time.sleep(max(0.01, config.poll_interval))
+    if process.poll() is not None:
+        config.pid_path.unlink(missing_ok=True)
+        return {'status': 'exited_early', 'pid': process.pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+    return {'status': 'started', 'pid': process.pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+
+
+def stop_worker(config: ControllerConfig) -> Dict[str, Any]:
+    pid = read_pid(config.pid_path)
+    if not pid:
+        return {'status': 'not_running', 'pid': None, 'pid_path': str(config.pid_path)}
+    if not is_process_running(pid):
+        config.pid_path.unlink(missing_ok=True)
+        return {'status': 'not_running', 'pid': pid, 'pid_path': str(config.pid_path)}
+
+    terminate_process_group(pid, signal.SIGTERM)
+    deadline = time.time() + max(0.1, config.stop_wait_seconds)
+    while time.time() < deadline:
+        if not is_process_running(pid):
+            config.pid_path.unlink(missing_ok=True)
+            return {'status': 'stopped', 'pid': pid, 'pid_path': str(config.pid_path)}
+        time.sleep(0.05)
+
+    terminate_process_group(pid, signal.SIGKILL)
+    config.pid_path.unlink(missing_ok=True)
+    return {'status': 'killed', 'pid': pid, 'pid_path': str(config.pid_path)}
+
+
+def status_worker(config: ControllerConfig) -> Dict[str, Any]:
+    pid = read_pid(config.pid_path)
+    if not pid:
+        return {'status': 'not_running', 'pid': None, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+    if not is_process_running(pid):
+        config.pid_path.unlink(missing_ok=True)
+        return {'status': 'not_running', 'pid': pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+    return {'status': 'running', 'pid': pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+
+
+def restart_worker(config: ControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    stop_worker(config)
+    return start_worker(config, extra_env=extra_env)
+
+
+def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Control RK3588 media worker process')
+    parser.add_argument('command', choices=['start', 'stop', 'status', 'restart'])
+    parser.add_argument('--repo-root', default='')
+    parser.add_argument('--runtime-dir', default='')
+    parser.add_argument('--pid-path', default='')
+    parser.add_argument('--log-path', default='')
+    parser.add_argument('--wait-seconds', type=float, default=2.0)
+    parser.add_argument('--poll-interval', type=float, default=0.2)
+    parser.add_argument('--stop-wait-seconds', type=float, default=5.0)
+    parser.add_argument('--env', action='append', default=[], help='Extra environment variables in KEY=VALUE form')
+    return parser.parse_args(argv)
+
+
+def build_config(args: argparse.Namespace) -> ControllerConfig:
+    config = default_config()
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else config.repo_root
+    runtime_dir = Path(args.runtime_dir).resolve() if args.runtime_dir else config.runtime_dir
+    pid_path = Path(args.pid_path).resolve() if args.pid_path else runtime_dir / 'media-worker.pid'
+    log_path = Path(args.log_path).resolve() if args.log_path else runtime_dir / 'media-worker.log'
+    return ControllerConfig(
+        repo_root=repo_root,
+        runtime_dir=runtime_dir,
+        pid_path=pid_path,
+        log_path=log_path,
+        wait_seconds=args.wait_seconds,
+        poll_interval=args.poll_interval,
+        stop_wait_seconds=args.stop_wait_seconds,
+    )
+
+
+def parse_env_pairs(pairs: list[str]) -> Dict[str, str]:
+    env = {}
+    for pair in pairs:
+        if '=' not in pair:
+            raise ValueError(f'invalid --env value: {pair}')
+        key, value = pair.split('=', 1)
+        key = key.strip()
+        if not key:
+            raise ValueError(f'invalid --env key: {pair}')
+        env[key] = value
+    return env
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = parse_args(argv)
+    try:
+        config = build_config(args)
+        extra_env = parse_env_pairs(args.env)
+        if args.command == 'start':
+            result = start_worker(config, extra_env=extra_env)
+        elif args.command == 'stop':
+            result = stop_worker(config)
+        elif args.command == 'restart':
+            result = restart_worker(config, extra_env=extra_env)
+        else:
+            result = status_worker(config)
+        print(json.dumps(result, ensure_ascii=True))
+        return 0 if result['status'] in {'started', 'already_running', 'running', 'stopped', 'not_running', 'killed'} else 1
+    except Exception as exc:
+        print(json.dumps({'status': 'error', 'message': str(exc)}, ensure_ascii=True))
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
