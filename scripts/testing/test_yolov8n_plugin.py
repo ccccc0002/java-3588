@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import sys
 import tempfile
@@ -73,6 +74,17 @@ def write_png(path: pathlib.Path, width: int, height: int, rgb: Tuple[int, int, 
 
 
 class YoloV8nInferenceTests(unittest.TestCase):
+    def test_plugin_json_references_existing_default_assets(self):
+        payload = json.loads((ROOT / 'config' / 'plugin.json').read_text(encoding='utf-8-sig'))
+
+        self.assertEqual('mpp', payload['stream_decode_backend'])
+        self.assertEqual('rga', payload['stream_decode_hwaccel'])
+        self.assertTrue((ROOT / payload['default_test_image_path']).exists())
+        self.assertTrue((ROOT / payload['labels_path']).exists())
+        self.assertTrue((ROOT / payload['fallback_model_path']).exists())
+        self.assertIn('label_aliases_zh', payload)
+        self.assertIn('alert_labels', payload)
+
     def test_resolve_model_path_prefers_existing_override(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
@@ -374,6 +386,96 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertEqual(len(created), 1)
         self.assertEqual(created[0].release_count, 1)
         self.assertEqual(runtime_state['stream_manager'].session_count(), 0)
+
+    def test_full_pipeline_applies_runtime_config_to_alert_events(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            model_path = root / 'model' / 'demo.rknn'
+            model_path.parent.mkdir(parents=True, exist_ok=True)
+            model_path.write_bytes(b'model')
+            labels_path = root / 'config' / 'labels.txt'
+            labels_path.parent.mkdir(parents=True, exist_ok=True)
+            labels_path.write_text('person\nbus\n', encoding='utf-8')
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'rknn_model_path': str(model_path),
+                    'labels_path': 'config/labels.txt',
+                    'label_aliases_zh': {'person': '??', 'bus': '???'},
+                    'enabled_labels': ['??', '???'],
+                    'alert_labels': ['???'],
+                    'alert_event_type': 'vision.alert.custom',
+                    'input_size': [640, 640],
+                },
+                model_path=model_path,
+            )
+            context.plugin_id = 'yolov8n'
+            context.version = '1.0.0'
+
+            original_open = yolov8n_inference.RKNNLiteSession.open
+            original_create_stream_manager = yolov8n_inference.decode_impl.create_stream_manager
+            original_load_frame_bgr = yolov8n_inference.load_frame_bgr
+            original_prepare_image_input = yolov8n_inference.prepare_image_input
+            original_decode_outputs = yolov8n_postprocess.decode_outputs
+            original_restore_boxes = yolov8n_postprocess.restore_boxes
+            cleanup_flags = {'session': False, 'stream': False}
+            infer_inputs = {}
+            try:
+                class FakeSession:
+                    def infer(self, inputs):
+                        infer_inputs['shape'] = tuple(inputs[0].shape)
+                        return ['raw-output']
+
+                    def release(self):
+                        cleanup_flags['session'] = True
+
+                class FakeStreamManager:
+                    def session_count(self):
+                        return 1
+
+                    def close(self):
+                        cleanup_flags['stream'] = True
+
+                yolov8n_inference.RKNNLiteSession.open = staticmethod(lambda model_path, core_mask, target, device_id=None: FakeSession())
+                yolov8n_inference.decode_impl.create_stream_manager = lambda package_context: FakeStreamManager()
+                yolov8n_inference.load_frame_bgr = lambda request_payload, package_context, runtime_state=None: (
+                    yolov8n_inference.np.zeros((12, 20, 3), dtype=yolov8n_inference.np.uint8),
+                    {'source_kind': 'stream', 'resolved_source': 'rtsp://demo/stream'},
+                )
+                yolov8n_inference.prepare_image_input = lambda image_bgr, input_size: (
+                    yolov8n_inference.np.zeros((1, input_size[1], input_size[0], 3), dtype=yolov8n_inference.np.uint8),
+                    {'scale': 1.0, 'pad_left': 0, 'pad_top': 0, 'original_width': 20, 'original_height': 12},
+                )
+                yolov8n_postprocess.decode_outputs = lambda outputs, obj_threshold, nms_threshold, input_size: (
+                    yolov8n_postprocess.np.array([[0.0, 0.0, 10.0, 10.0], [10.0, 1.0, 20.0, 12.0]], dtype=yolov8n_postprocess.np.float32),
+                    yolov8n_postprocess.np.array([0, 1], dtype=yolov8n_postprocess.np.int32),
+                    yolov8n_postprocess.np.array([0.9, 0.8], dtype=yolov8n_postprocess.np.float32),
+                )
+                yolov8n_postprocess.restore_boxes = lambda boxes, prep_meta: boxes
+
+                runtime_state = yolov8n_inference.load(context)
+                request_payload = {'trace_id': 'trace-e2e', 'camera_id': 7, 'frame': {'source': 'rtsp://demo/stream', 'timestamp_ms': 1000}}
+                runtime_plan = {'ready_stream_count': 1}
+                raw_outputs = yolov8n_inference.infer(request_payload, runtime_plan, context, runtime_state)
+                result = yolov8n_postprocess.postprocess(raw_outputs, request_payload, runtime_plan, context, runtime_state)
+                yolov8n_inference.cleanup(runtime_state, context)
+            finally:
+                yolov8n_inference.RKNNLiteSession.open = original_open
+                yolov8n_inference.decode_impl.create_stream_manager = original_create_stream_manager
+                yolov8n_inference.load_frame_bgr = original_load_frame_bgr
+                yolov8n_inference.prepare_image_input = original_prepare_image_input
+                yolov8n_postprocess.decode_outputs = original_decode_outputs
+                yolov8n_postprocess.restore_boxes = original_restore_boxes
+
+            self.assertEqual((1, 640, 640, 3), infer_inputs['shape'])
+            self.assertEqual(['person', 'bus'], [item['label'] for item in result['detections']])
+            self.assertEqual(['??', '???'], [item['label_zh'] for item in result['detections']])
+            self.assertEqual([False, True], [item['alert'] for item in result['detections']])
+            self.assertEqual('vision.alert.custom', result['events'][0]['event_type'])
+            self.assertEqual('???', result['events'][0]['label_zh'])
+            self.assertEqual(1, result['plugin_meta']['active_stream_session_count'])
+            self.assertTrue(cleanup_flags['session'])
+            self.assertTrue(cleanup_flags['stream'])
 
     def test_postprocess_maps_zh_labels_filters_enabled_classes_and_alert_labels(self):
         original_decode_outputs = yolov8n_postprocess.decode_outputs
