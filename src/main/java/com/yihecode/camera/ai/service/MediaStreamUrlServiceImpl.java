@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * 媒体流地址构建实现
+ * 濯掍綋娴佸湴鍧€鏋勫缓瀹炵幇
  */
 @Service
 public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
@@ -20,7 +20,7 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         if ("zlm".equalsIgnoreCase(StrUtil.trim(mediaServerType))) {
             return true;
         }
-        // 兼容老配置：仅配置 zlm_enable=1 时也启用 zlm 模式
+        // 鍏煎鑰侀厤缃細浠呴厤缃?zlm_enable=1 鏃朵篃鍚敤 zlm 妯″紡
         return "1".equals(StrUtil.trim(configService.getByValTag("zlm_enable")));
     }
 
@@ -94,6 +94,9 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         if (StrUtil.isBlank(host)) {
             host = configService.getByValTag("video_inner_ip");
         }
+        if (StrUtil.isBlank(host)) {
+            host = configService.getByValTag("zlm_host_public");
+        }
         String rtmpPort = configService.getByValTag("zlm_rtmp_port");
         if (StrUtil.isBlank(rtmpPort)) {
             rtmpPort = "1935";
@@ -135,7 +138,7 @@ public class MediaStreamUrlServiceImpl implements MediaStreamUrlService {
         }
         String h = StrUtil.trim(host);
         if (h.startsWith("http://") || h.startsWith("https://")) {
-            // 兼容历史 streamUrl 已经带协议的场景
+            // 鍏煎鍘嗗彶 streamUrl 宸茬粡甯﹀崗璁殑鍦烘櫙
             if (StrUtil.isBlank(port) || h.contains(":" + port)) {
                 return h;
             }

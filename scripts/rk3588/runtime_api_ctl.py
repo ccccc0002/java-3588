@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""Control the Java runtime API process on port 18081."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
+from urllib import error, request
+
+
+@dataclass(frozen=True)
+class RuntimeApiControllerConfig:
+    repo_root: Path
+    runtime_dir: Path
+    start_script: Path
+    health_url: str
+    wait_seconds: float = 40.0
+    poll_interval: float = 1.0
+    stop_wait_seconds: float = 10.0
+    stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar'
+    env_path: Optional[Path] = None
+
+    def __post_init__(self) -> None:
+        if self.env_path is None:
+            object.__setattr__(self, 'env_path', self.runtime_dir / 'runtime-api.env')
+
+
+def default_config() -> RuntimeApiControllerConfig:
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent.parent
+    runtime_dir = repo_root / 'runtime'
+    return RuntimeApiControllerConfig(
+        repo_root=repo_root,
+        runtime_dir=runtime_dir,
+        start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh',
+        health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+    )
+
+
+def load_persisted_env(env_path: Path) -> Dict[str, str]:
+    try:
+        lines = env_path.read_text(encoding='utf-8').splitlines()
+    except FileNotFoundError:
+        return {}
+    env: Dict[str, str] = {}
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        if key:
+            env[key] = value
+    return env
+
+
+def write_persisted_env(env_path: Path, env_values: Dict[str, str]) -> None:
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f'{key}={env_values[key]}' for key in sorted(env_values.keys()) if str(key).strip()]
+    env_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
+
+
+def normalize_env_list(values: Optional[list[str]]) -> Dict[str, str]:
+    env: Dict[str, str] = {}
+    for raw in values or []:
+        item = str(raw or '').strip()
+        if not item or '=' not in item:
+            continue
+        key, value = item.split('=', 1)
+        key = key.strip()
+        if key:
+            env[key] = value
+    return env
+
+
+def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
+    req = request.Request(health_url, headers={'Accept': 'application/json'}, method='GET')
+    try:
+        with request.urlopen(req, timeout=timeout) as resp:
+            payload = json.loads(resp.read().decode('utf-8'))
+            return {'http_status': int(resp.status), 'payload': payload}
+    except error.HTTPError as exc:
+        try:
+            payload = json.loads(exc.read().decode('utf-8'))
+        except Exception:
+            payload = {'message': str(exc)}
+        return {'http_status': int(exc.code), 'payload': payload}
+    except Exception as exc:
+        return {'http_status': 0, 'payload': {'message': str(exc)}}
+
+
+def wait_for_health(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
+    deadline = time.time() + max(0.1, config.wait_seconds)
+    last = {'http_status': 0, 'payload': {'message': 'health check not started'}}
+    while time.time() < deadline:
+        last = fetch_health(config.health_url)
+        if int(last.get('http_status', 0)) == 200:
+            return last
+        time.sleep(max(0.01, config.poll_interval))
+    return last
+
+
+def wait_for_down(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
+    deadline = time.time() + max(0.1, config.stop_wait_seconds)
+    last = {'http_status': 200, 'payload': {'message': 'shutdown check not started'}}
+    while time.time() < deadline:
+        last = fetch_health(config.health_url)
+        if int(last.get('http_status', 0)) != 200:
+            return last
+        time.sleep(max(0.01, config.poll_interval))
+    return last
+
+
+def start_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    current = fetch_health(config.health_url)
+    if int(current.get('http_status', 0)) == 200:
+        return {'status': 'already_running', 'health': current, 'script': str(config.start_script)}
+    if not config.start_script.exists():
+        return {'status': 'missing_start_script', 'script': str(config.start_script)}
+    persisted_env = load_persisted_env(config.env_path)
+    if extra_env:
+        persisted_env.update({str(key): str(value) for key, value in extra_env.items() if str(key).strip()})
+        write_persisted_env(config.env_path, persisted_env)
+    child_env = os.environ.copy()
+    child_env.update(persisted_env)
+    process = subprocess.Popen(
+        ['bash', str(config.start_script)],
+        cwd=str(config.repo_root),
+        env=child_env,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    health = wait_for_health(config)
+    if int(health.get('http_status', 0)) == 200:
+        return {'status': 'started', 'pid': process.pid, 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+    return {'status': 'runtime_unhealthy', 'pid': process.pid, 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+
+
+def stop_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
+    completed = subprocess.run(['pkill', '-f', config.stop_pattern], capture_output=True, text=True)
+    if completed.returncode in (0, 1):
+        health = wait_for_down(config)
+        if int(health.get('http_status', 0)) != 200:
+            return {'status': 'stopped', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'health': health}
+        return {'status': 'stop_pending_exit', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'health': health}
+    return {'status': 'stop_failed', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr}
+
+
+def status_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
+    health = fetch_health(config.health_url)
+    if int(health.get('http_status', 0)) == 200:
+        return {'status': 'running', 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+    return {'status': 'down', 'health': health, 'script': str(config.start_script), 'env_path': str(config.env_path)}
+
+
+def restart_runtime_api(config: RuntimeApiControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    stopped = stop_runtime_api(config)
+    if stopped.get('status') != 'stopped':
+        return {'status': 'restart_blocked', 'stop': stopped}
+    started = start_runtime_api(config, extra_env=extra_env)
+    return {'status': started.get('status', 'unknown'), 'stop': stopped, 'start': started}
+
+
+def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Control Java runtime API application')
+    parser.add_argument('command', choices=['start', 'stop', 'status', 'restart'])
+    parser.add_argument('--repo-root', default='')
+    parser.add_argument('--runtime-dir', default='')
+    parser.add_argument('--start-script', default='')
+    parser.add_argument('--health-url', default='')
+    parser.add_argument('--wait-seconds', type=float, default=40.0)
+    parser.add_argument('--poll-interval', type=float, default=1.0)
+    parser.add_argument('--stop-wait-seconds', type=float, default=10.0)
+    parser.add_argument('--stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar')
+    parser.add_argument('--env', action='append', default=[])
+    return parser.parse_args(argv)
+
+
+def build_config(args: argparse.Namespace) -> Tuple[RuntimeApiControllerConfig, Dict[str, str]]:
+    config = default_config()
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else config.repo_root
+    runtime_dir = Path(args.runtime_dir).resolve() if args.runtime_dir else config.runtime_dir
+    start_script = Path(args.start_script).resolve() if args.start_script else config.start_script
+    health_url = args.health_url or config.health_url
+    controller_config = RuntimeApiControllerConfig(
+        repo_root=repo_root,
+        runtime_dir=runtime_dir,
+        start_script=start_script,
+        health_url=health_url,
+        wait_seconds=args.wait_seconds,
+        poll_interval=args.poll_interval,
+        stop_wait_seconds=args.stop_wait_seconds,
+        stop_pattern=args.stop_pattern,
+    )
+    return controller_config, normalize_env_list(args.env)
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = parse_args(argv)
+    config, extra_env = build_config(args)
+    if args.command == 'start':
+        result = start_runtime_api(config, extra_env=extra_env)
+    elif args.command == 'stop':
+        result = stop_runtime_api(config)
+    elif args.command == 'restart':
+        result = restart_runtime_api(config, extra_env=extra_env)
+    else:
+        result = status_runtime_api(config)
+    print(json.dumps(result, ensure_ascii=True))
+    return 0 if result.get('status') in {'started', 'already_running', 'running', 'stopped'} else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
