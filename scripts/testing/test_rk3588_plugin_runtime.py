@@ -84,6 +84,20 @@ def write_plugin(root: pathlib.Path, plugin_id: str = 'demo-plugin', include_mod
 
 
 class PluginRuntimeTests(unittest.TestCase):
+    def test_repo_plugin_inventory_includes_yolov8n_package(self):
+        root = pathlib.Path(__file__).resolve().parent.parent / 'rk3588' / 'plugins'
+        manager = rk3588_runtime_bridge.PluginPackageManager(root, default_plugin_id='yolov8n')
+
+        inventory = manager.inventory()
+        package = manager.resolve({})
+        plugin_ids = {item['plugin_id'] for item in inventory['plugins']}
+
+        self.assertIn('yolov8n', plugin_ids)
+        self.assertEqual('yolov8n', inventory['default_plugin_id'])
+        self.assertNotIn('yolov8n', inventory['errors'])
+        self.assertEqual('yolov8n', package.context.plugin_id)
+        self.assertEqual('config/plugin.json', package.context.manifest['assets']['config'])
+
     def test_plugin_manager_discovers_default_plugin_and_executes_once_loaded_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
