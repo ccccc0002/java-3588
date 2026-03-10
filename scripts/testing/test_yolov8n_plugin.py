@@ -1,4 +1,4 @@
-﻿import importlib.util
+import importlib.util
 import pathlib
 import sys
 import tempfile
@@ -111,6 +111,68 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
             self.assertEqual(labels, ['person', 'bus'])
 
+    def test_load_builds_runtime_state_from_detection_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            model_path = root / 'model' / 'demo.rknn'
+            model_path.parent.mkdir(parents=True, exist_ok=True)
+            model_path.write_bytes(b'model')
+            labels_path = root / 'config' / 'labels.txt'
+            labels_path.parent.mkdir(parents=True, exist_ok=True)
+            labels_path.write_text('person\nbus\n', encoding='utf-8')
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'rknn_model_path': str(model_path),
+                    'labels_path': 'config/labels.txt',
+                    'label_aliases_zh': {'person': '??', 'bus': '???'},
+                    'enabled_class_ids': ['0'],
+                    'enabled_labels': ['???'],
+                    'alert_labels': ['???'],
+                    'alert_event_type': 'vision.alert.custom',
+                    'input_size': [640, 640],
+                    'obj_threshold': 0.3,
+                    'nms_threshold': 0.5,
+                    'core_mask': 'auto',
+                    'target_platform': 'rk3588',
+                },
+                model_path=model_path,
+            )
+            original_open = yolov8n_inference.RKNNLiteSession.open
+            original_create_stream_manager = yolov8n_inference.decode_impl.create_stream_manager
+            released = {'value': False}
+            stream_closed = {'value': False}
+            try:
+                class FakeSession:
+                    def release(self):
+                        released['value'] = True
+
+                class FakeStreamManager:
+                    def close(self):
+                        stream_closed['value'] = True
+
+                yolov8n_inference.RKNNLiteSession.open = staticmethod(lambda model_path, core_mask, target, device_id=None: FakeSession())
+                yolov8n_inference.decode_impl.create_stream_manager = lambda package_context: FakeStreamManager()
+
+                runtime_state = yolov8n_inference.load(context)
+                yolov8n_inference.cleanup(runtime_state, context)
+            finally:
+                yolov8n_inference.RKNNLiteSession.open = original_open
+                yolov8n_inference.decode_impl.create_stream_manager = original_create_stream_manager
+
+            self.assertEqual(['person', 'bus'], runtime_state['labels'])
+            self.assertEqual({'person': '??', 'bus': '???'}, runtime_state['label_aliases_zh'])
+            self.assertEqual({0}, runtime_state['enabled_class_ids'])
+            self.assertEqual({'???'}, runtime_state['enabled_labels'])
+            self.assertEqual({'???'}, runtime_state['alert_labels'])
+            self.assertEqual('vision.alert.custom', runtime_state['event_type'])
+            self.assertEqual((640, 640), runtime_state['input_size'])
+            self.assertEqual(0.3, runtime_state['obj_threshold'])
+            self.assertEqual(0.5, runtime_state['nms_threshold'])
+            self.assertTrue(hasattr(runtime_state['stream_manager'], 'close'))
+            self.assertTrue(released['value'])
+            self.assertTrue(stream_closed['value'])
+
     def test_load_frame_bgr_uses_default_test_image_for_test_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
@@ -131,6 +193,43 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(meta['source_kind'], 'default_test_image')
             self.assertEqual(meta['resolved_source'], str(image_path.resolve()))
 
+
+    def test_load_frame_bgr_prefers_request_decode_hint_backend(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            context = FakeContext(
+                root_dir=root,
+                config={
+                    'stream_decode_backend': 'opencv',
+                },
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+            sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
+            original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
+            try:
+                captured = {}
+
+                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                    captured['preferred_backend'] = preferred_backend
+                    return sample, preferred_backend
+
+                yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
+                image_bgr, meta = yolov8n_inference.load_frame_bgr(
+                    {
+                        'frame': {'source': 'rtsp://demo/stream'},
+                        'decode_hints': {'backend': 'mpp', 'hwaccel': 'rga', 'codec': 'h265'},
+                    },
+                    context,
+                )
+            finally:
+                yolov8n_inference.decode_impl.read_stream_frame = original_read_stream_frame
+
+            self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
+            self.assertEqual('mpp', captured['preferred_backend'])
+            self.assertEqual('mpp', meta['decoder_backend'])
+            self.assertEqual('mpp', meta['decoder_backend_requested'])
+            self.assertEqual('rga', meta['decoder_hwaccel'])
+
     def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
@@ -143,24 +242,49 @@ class YoloV8nInferenceTests(unittest.TestCase):
             )
             sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
             original_read_stream_opencv = yolov8n_inference.decode_impl.read_stream_frame_opencv
+            original_read_stream_mpp = yolov8n_inference.decode_impl.read_stream_frame_mpp
+            original_read_stream_mpp = yolov8n_inference.decode_impl.read_stream_frame_mpp
             original_read_stream_ffmpeg = yolov8n_inference.decode_impl.read_stream_frame_ffmpeg
             try:
                 def fail_opencv(source, stream_manager=None):
                     raise RuntimeError('opencv stream open failed')
 
-                def ok_ffmpeg(source):
+                def ok_ffmpeg(source, ffmpeg_bin='ffmpeg'):
                     return sample
 
                 yolov8n_inference.decode_impl.read_stream_frame_opencv = fail_opencv
+                yolov8n_inference.decode_impl.read_stream_frame_mpp = lambda source, codec_hint='auto', ffmpeg_bin='ffmpeg': (_ for _ in ()).throw(RuntimeError('mpp failed'))
                 yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = ok_ffmpeg
                 image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': 'rtsp://demo/stream'}}, context)
             finally:
                 yolov8n_inference.decode_impl.read_stream_frame_opencv = original_read_stream_opencv
+                yolov8n_inference.decode_impl.read_stream_frame_mpp = original_read_stream_mpp
                 yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = original_read_stream_ffmpeg
 
             self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
             self.assertEqual(meta['source_kind'], 'stream')
             self.assertEqual(meta['decoder_backend'], 'ffmpeg')
+
+    def test_load_frame_bgr_fails_fast_when_explicit_mpp_backend_is_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            context = FakeContext(
+                root_dir=root,
+                config={'stream_decode_backend': 'mpp'},
+                model_path=root / 'model' / 'placeholder.rknn',
+            )
+            original_ensure = yolov8n_inference.decode_impl.ensure_mpp_decode_support
+            try:
+                yolov8n_inference.decode_impl.ensure_mpp_decode_support = lambda ffmpeg_bin='ffmpeg': (_ for _ in ()).throw(RuntimeError('MPP+RGA decode backend is unavailable'))
+                with self.assertRaises(RuntimeError) as ctx:
+                    yolov8n_inference.load_frame_bgr(
+                        {'frame': {'source': 'rtsp://demo/stream'}, 'decode_hints': {'backend': 'mpp', 'hwaccel': 'rga'}},
+                        context,
+                    )
+            finally:
+                yolov8n_inference.decode_impl.ensure_mpp_decode_support = original_ensure
+
+            self.assertIn('MPP+RGA', str(ctx.exception))
 
     def test_load_frame_bgr_uses_stream_decoder_for_local_video_file(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -176,7 +300,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
             sample = yolov8n_inference.np.zeros((4, 5, 3), dtype=yolov8n_inference.np.uint8)
             original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
             try:
-                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None):
+                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
                     return sample, 'opencv'
 
                 yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
@@ -269,12 +393,12 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 'input_size': (640, 640),
                 'labels': ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus'],
                 'label_aliases_zh': {
-                    'person': '人员',
-                    'bus': '公交车',
+                    'person': '\u4eba\u5458',
+                    'bus': '\u516c\u4ea4\u8f66',
                 },
                 'enabled_class_ids': set(),
-                'enabled_labels': {'person', '公交车'},
-                'alert_labels': {'公交车'},
+                'enabled_labels': {'person', '\u516c\u4ea4\u8f66'},
+                'alert_labels': {'\u516c\u4ea4\u8f66'},
             }
             raw_outputs = {
                 'outputs': [object(), object()],
@@ -292,7 +416,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
             yolov8n_postprocess.restore_boxes = original_restore_boxes
 
         self.assertEqual([item['label'] for item in result['detections']], ['person', 'bus'])
-        self.assertEqual([item['label_zh'] for item in result['detections']], ['人员', '公交车'])
+        self.assertEqual([item['label_zh'] for item in result['detections']], ['\u4eba\u5458', '\u516c\u4ea4\u8f66'])
         self.assertEqual([item['alert'] for item in result['detections']], [False, True])
         self.assertEqual([item['label'] for item in result['alerts']], ['bus'])
         self.assertEqual(result['attributes']['alert_detection_count'], 1)
@@ -311,7 +435,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
             runtime_state = {
                 'input_size': (640, 640),
                 'labels': ['person'],
-                'label_aliases_zh': {'person': '人员'},
+                'label_aliases_zh': {'person': '\u4eba\u5458'},
                 'enabled_class_ids': set(),
                 'enabled_labels': set(),
                 'alert_labels': set(),
@@ -331,7 +455,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
             yolov8n_postprocess.decode_outputs = original_decode_outputs
             yolov8n_postprocess.restore_boxes = original_restore_boxes
 
-        self.assertEqual(result['detections'][0]['label_zh'], '人员')
+        self.assertEqual(result['detections'][0]['label_zh'], '\u4eba\u5458')
         self.assertTrue(result['detections'][0]['alert'])
         self.assertEqual(len(result['alerts']), 1)
 
@@ -352,3 +476,4 @@ class YoloV8nInferenceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

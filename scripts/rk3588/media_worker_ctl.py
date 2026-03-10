@@ -25,12 +25,15 @@ class ControllerConfig:
     stop_wait_seconds: float = 5.0
     run_script: Optional[Path] = None
     env_path: Optional[Path] = None
+    state_path: Optional[Path] = None
 
     def __post_init__(self) -> None:
         if self.run_script is None:
             object.__setattr__(self, 'run_script', self.repo_root / 'scripts' / 'rk3588' / 'Run-Media-Worker.sh')
         if self.env_path is None:
             object.__setattr__(self, 'env_path', self.runtime_dir / 'media-worker.env')
+        if self.state_path is None:
+            object.__setattr__(self, 'state_path', self.runtime_dir / 'media-worker.state.json')
 
 
 def default_config() -> ControllerConfig:
@@ -104,6 +107,18 @@ def write_persisted_env(env_path: Path, env_values: Dict[str, str]) -> None:
     env_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
 
 
+def read_state_payload(state_path: Optional[Path]) -> Optional[Dict[str, Any]]:
+    if state_path is None:
+        return None
+    try:
+        payload = json.loads(state_path.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        return None
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
 def start_worker(config: ControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     existing_pid = read_pid(config.pid_path)
     if existing_pid and is_process_running(existing_pid):
@@ -164,7 +179,11 @@ def status_worker(config: ControllerConfig) -> Dict[str, Any]:
     if not is_process_running(pid):
         config.pid_path.unlink(missing_ok=True)
         return {'status': 'not_running', 'pid': pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
-    return {'status': 'running', 'pid': pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+    result = {'status': 'running', 'pid': pid, 'pid_path': str(config.pid_path), 'log_path': str(config.log_path)}
+    state_payload = read_state_payload(config.state_path)
+    if state_payload is not None:
+        result['state'] = state_payload
+    return result
 
 
 def restart_worker(config: ControllerConfig, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:

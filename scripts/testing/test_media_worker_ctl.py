@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import sys
 import tempfile
@@ -116,6 +117,28 @@ class MediaWorkerControllerTests(unittest.TestCase):
 
             self.assertEqual('running', result['status'])
             self.assertEqual(4567, result['pid'])
+
+    def test_status_worker_includes_latest_state_payload(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            runtime_dir = repo_root / 'runtime'
+            pid_path = runtime_dir / 'media-worker.pid'
+            state_path = runtime_dir / 'media-worker.state.json'
+            pid_path.parent.mkdir(parents=True, exist_ok=True)
+            pid_path.write_text('4567\n', encoding='utf-8')
+            state_path.write_text(json.dumps({'status': 'running', 'sync': {'running_count': 1, 'sessions': [{'camera_id': 1}]}}), encoding='utf-8')
+            config = media_worker_ctl.ControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=runtime_dir,
+                pid_path=pid_path,
+                log_path=runtime_dir / 'media-worker.log',
+            )
+            with mock.patch.object(media_worker_ctl, 'is_process_running', return_value=True):
+                result = media_worker_ctl.status_worker(config)
+
+            self.assertEqual('running', result['status'])
+            self.assertEqual(1, result['state']['sync']['running_count'])
+            self.assertEqual(1, result['state']['sync']['sessions'][0]['camera_id'])
 
     def test_stop_worker_terminates_process_group(self):
         with tempfile.TemporaryDirectory() as temp_dir:
