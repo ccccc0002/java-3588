@@ -636,6 +636,55 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertTrue(result['detections'][0]['alert'])
         self.assertEqual(len(result['alerts']), 1)
 
+    def test_decode_outputs_supports_rknn_branch_layout(self):
+        np = yolov8n_postprocess.np
+
+        def make_box_tensor(grid_h, grid_w, cell_y=None, cell_x=None, distances=(1, 1, 1, 1)):
+            tensor = np.full((1, 64, grid_h, grid_w), -12.0, dtype=np.float32)
+            if cell_y is None or cell_x is None:
+                return tensor
+            for coord_index, bin_index in enumerate(distances):
+                tensor[0, coord_index * 16 + int(bin_index), cell_y, cell_x] = 12.0
+            return tensor
+
+        def make_class_tensor(grid_h, grid_w, class_id=None, cell_y=None, cell_x=None, score=0.95):
+            tensor = np.zeros((1, 80, grid_h, grid_w), dtype=np.float32)
+            if class_id is not None and cell_y is not None and cell_x is not None:
+                tensor[0, int(class_id), cell_y, cell_x] = float(score)
+            return tensor
+
+        def make_score_tensor(grid_h, grid_w):
+            return np.zeros((1, 1, grid_h, grid_w), dtype=np.float32)
+
+        outputs = [
+            make_box_tensor(20, 20, 10, 10, distances=(1, 1, 1, 1)),
+            make_class_tensor(20, 20, 5, 10, 10, score=0.95),
+            make_score_tensor(20, 20),
+            make_box_tensor(10, 10),
+            make_class_tensor(10, 10),
+            make_score_tensor(10, 10),
+            make_box_tensor(5, 5),
+            make_class_tensor(5, 5),
+            make_score_tensor(5, 5),
+        ]
+
+        boxes, classes, scores = yolov8n_postprocess.decode_outputs(outputs, 0.25, 0.45, (640, 640))
+
+        self.assertEqual(1, len(boxes))
+        self.assertEqual(5, int(classes[0]))
+        self.assertAlmostEqual(0.95, float(scores[0]), places=6)
+        self.assertLess(float(boxes[0][0]), float(boxes[0][2]))
+        self.assertLess(float(boxes[0][1]), float(boxes[0][3]))
+
+    def test_build_label_text_prefers_ascii_label_for_opencv_overlay(self):
+        label = yolov8n_postprocess.build_label_text({
+            'label': 'person',
+            'label_zh': '人员',
+            'score': 0.875,
+        })
+
+        self.assertEqual('person 0.88', label)
+
     def test_prepare_image_input_letterboxes_to_640_square(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)

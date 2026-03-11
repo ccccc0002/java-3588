@@ -11,6 +11,7 @@ import com.yihecode.camera.ai.vo.ReportMessage;
 import com.yihecode.camera.ai.websocket.MessageWebsocket;
 import com.yihecode.camera.ai.websocket.ReportWebsocket;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -18,7 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +72,9 @@ class InferenceReportBridgeServiceTest {
     @InjectMocks
     private InferenceReportBridgeService inferenceReportBridgeService;
 
+    @TempDir
+    Path tempDir;
+
     @Test
     void persistAndBroadcast_shouldSkipWhenAlertsExplicitlyEmpty() {
         InferenceResult result = new InferenceResult();
@@ -78,6 +88,50 @@ class InferenceReportBridgeServiceTest {
         verify(reportService, never()).save(any());
         verify(reportWebsocket, never()).sendToAll(any());
         verify(messageWebsocket, never()).sendToAll(any());
+    }
+
+    @Test
+    void persistAndBroadcast_shouldPersistAnnotatedImageFromInferenceFrameWhenAvailable() throws Exception {
+        ReflectionTestUtils.setField(inferenceReportBridgeService, "uploadDir", tempDir.toFile().getAbsolutePath() + File.separator);
+
+        Camera camera = new Camera();
+        camera.setId(31L);
+        camera.setName("Camera-B");
+        camera.setRtspUrl("rtsp://demo/stream-b");
+        camera.setIntervalTime(0F);
+        camera.setWareHouseId(0L);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(41L);
+        algorithm.setName("YoloV8n");
+
+        when(cameraService.getById(31L)).thenReturn(camera);
+        when(algorithmService.getById(41L)).thenReturn(algorithm);
+        when(configService.getByValTag("webUrl")).thenReturn("http://demo-web");
+        doAnswer(invocation -> {
+            Report report = invocation.getArgument(0);
+            report.setId(2002L);
+            return true;
+        }).when(reportService).save(any(Report.class));
+
+        InferenceResult result = new InferenceResult();
+        result.setTraceId("trace-annotated-frame");
+        result.setCameraId(31L);
+        result.setAlerts(List.of(
+                mapOf("label", "person", "label_zh", "person-cn", "score", 0.88, "bbox", List.of(8, 12, 44, 52))
+        ));
+        result.setEvents(List.of(mapOf("event_type", "vision.alert", "label", "person")));
+        result.setFrame(Map.of("annotated_image_base64", createAnnotatedJpegBase64()));
+
+        Map<String, Object> response = inferenceReportBridgeService.persistAndBroadcast(31L, 41L, result, "trace-annotated-frame");
+
+        assertEquals("ok", response.get("status"));
+        ArgumentCaptor<Report> reportCaptor = ArgumentCaptor.forClass(Report.class);
+        verify(reportService).save(reportCaptor.capture());
+        Report persistedReport = reportCaptor.getValue();
+        assertTrue(persistedReport.getFileName().endsWith(".jpg"));
+        assertTrue(Files.exists(Path.of(persistedReport.getFileName())));
+        verify(takePhoto, never()).take(any(), any());
     }
 
     @Test
@@ -173,6 +227,13 @@ class InferenceReportBridgeServiceTest {
         Map<?, ?> data = JSON.parseObject(JSON.toJSONString(message.getData()), Map.class);
         assertEquals(1, ((Number) data.get("alertCount")).intValue());
         assertEquals("bus-cn", ((List<?>) data.get("alertLabelsZh")).get(0));
+    }
+
+    private String createAnnotatedJpegBase64() throws Exception {
+        BufferedImage image = new BufferedImage(64, 48, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", outputStream);
+        return Base64.getEncoder().encodeToString(outputStream.toByteArray());
     }
 
     private Map<String, Object> mapOf(Object... pairs) {

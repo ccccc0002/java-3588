@@ -1,6 +1,8 @@
 package com.yihecode.camera.ai.web.api;
 
 import cn.hutool.core.util.StrUtil;
+import com.yihecode.camera.ai.entity.Camera;
+import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.InferenceDeadLetterService;
 import com.yihecode.camera.ai.service.InferenceIdempotencyService;
@@ -71,6 +73,9 @@ public class InferenceApiController {
 
     @Autowired(required = false)
     private PluginInferenceDispatchService pluginInferenceDispatchService;
+
+    @Autowired(required = false)
+    private CameraService cameraService;
 
     @RequestMapping(value = {"/health"}, method = {RequestMethod.GET, RequestMethod.POST})
     @ResponseBody
@@ -1174,7 +1179,7 @@ public class InferenceApiController {
             frame.putAll((Map<? extends String, ?>) frameMetaObj);
         }
         if (!frame.containsKey("source")) {
-            frame.put("source", finalSource);
+            frame.put("source", resolveFrameSource(finalCameraId, finalSource));
         }
         if (!frame.containsKey("timestamp_ms")) {
             frame.put("timestamp_ms", System.currentTimeMillis());
@@ -1189,6 +1194,20 @@ public class InferenceApiController {
         return request;
     }
 
+
+    private String resolveFrameSource(Long cameraId, String fallbackSource) {
+        if (cameraService != null && cameraId != null) {
+            try {
+                Camera camera = cameraService.getById(cameraId);
+                if (camera != null && StrUtil.isNotBlank(camera.getRtspUrl())) {
+                    return camera.getRtspUrl().trim();
+                }
+            } catch (Exception ex) {
+                log.warn("resolve frame source failed, camera_id={}, ex={}", cameraId, ex.getMessage());
+            }
+        }
+        return fallbackSource;
+    }
 
     private Map<String, Object> resolvePluginRoute(Map<String, Object> payload) {
         if (pluginRouteResolverService == null || !pluginRouteResolverService.hasSelector(payload)) {

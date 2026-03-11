@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -71,6 +71,7 @@ def infer(request_payload, runtime_plan, package_context, runtime_state):
         'model_path': runtime_state['model_path'],
         'plan_ready_stream_count': runtime_plan.get('ready_stream_count', 0),
         'active_stream_session_count': stream_manager.session_count() if stream_manager is not None else 0,
+        'image_bgr': image_bgr,
     }
 
 

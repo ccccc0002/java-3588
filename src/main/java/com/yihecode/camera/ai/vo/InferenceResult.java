@@ -35,6 +35,12 @@ public class InferenceResult {
 
     private String rawBody;
 
+    private Map<String, Object> frame;
+
+    private Map<String, Object> pluginMeta;
+
+    private Map<String, Object> attributes;
+
     public Map<String, Object> toMap() {
         Map<String, Object> data = new HashMap<>();
         data.put("trace_id", traceId);
@@ -45,6 +51,9 @@ public class InferenceResult {
         data.put("events", events == null ? new ArrayList<>() : events);
         data.put("backend_type", backendType);
         data.put("attempt", attempt);
+        data.put("frame", frame == null ? new HashMap<>() : new HashMap<>(frame));
+        data.put("plugin", pluginMeta == null ? new HashMap<>() : new HashMap<>(pluginMeta));
+        data.put("attributes", attributes == null ? new HashMap<>() : new HashMap<>(attributes));
         return data;
     }
 

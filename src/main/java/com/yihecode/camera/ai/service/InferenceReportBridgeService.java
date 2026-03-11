@@ -23,14 +23,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -131,7 +141,7 @@ public class InferenceReportBridgeService {
         report.setCameraId(cameraId);
         report.setAlgorithmId(algorithmId);
         report.setType(ReportType.AI.getType());
-        report.setFileName(captureSnapshot(camera));
+        report.setFileName(resolveAlertImage(camera, inferenceResult, alarmPayload));
         report.setParams(params);
         report.setCreatedAt(new Date());
         report.setCreatedMills(System.currentTimeMillis());
@@ -200,6 +210,149 @@ public class InferenceReportBridgeService {
 
         ret.put("status", "ok");
         return ret;
+    }
+
+    private String resolveAlertImage(Camera camera, InferenceResult inferenceResult, List<Map<String, Object>> alarmPayload) {
+        String annotatedPath = saveAnnotatedImageFromInference(inferenceResult);
+        if (StrUtil.isNotBlank(annotatedPath)) {
+            return annotatedPath;
+        }
+        String snapshotPath = captureSnapshot(camera);
+        if (StrUtil.isBlank(snapshotPath)) {
+            return "";
+        }
+        return annotateSnapshot(snapshotPath, alarmPayload);
+    }
+
+    private String saveAnnotatedImageFromInference(InferenceResult inferenceResult) {
+        if (inferenceResult == null || inferenceResult.getFrame() == null || inferenceResult.getFrame().isEmpty()) {
+            return "";
+        }
+        String imageBase64 = firstNonBlank(
+                asString(inferenceResult.getFrame().get("annotated_image_base64")),
+                asString(inferenceResult.getFrame().get("alarm_image_base64")),
+                asString(inferenceResult.getFrame().get("image_base64"))
+        );
+        if (StrUtil.isBlank(imageBase64)) {
+            return "";
+        }
+        try {
+            byte[] payload = Base64.getDecoder().decode(imageBase64);
+            File outputDir = ensureUploadDirectory();
+            if (outputDir == null) {
+                return "";
+            }
+            File outputFile = new File(outputDir, UUID.randomUUID().toString().replace("-", "") + ".jpg");
+            try (FileOutputStream out = new FileOutputStream(outputFile)) {
+                out.write(payload);
+                out.flush();
+            }
+            return outputFile.getAbsolutePath();
+        } catch (Exception ex) {
+            log.warn("save annotated image from inference failed, trace_id={}, ex={}", inferenceResult.getTraceId(), ex.getMessage());
+            return "";
+        }
+    }
+
+    private File ensureUploadDirectory() {
+        if (StrUtil.isBlank(uploadDir)) {
+            return null;
+        }
+        File directory = new File(uploadDir);
+        if (directory.exists() || directory.mkdirs()) {
+            return directory;
+        }
+        log.warn("failed to create upload directory: {}", directory.getAbsolutePath());
+        return null;
+    }
+
+    private String annotateSnapshot(String snapshotPath, List<Map<String, Object>> alarmPayload) {
+        if (StrUtil.isBlank(snapshotPath)) {
+            return "";
+        }
+        File imageFile = new File(snapshotPath);
+        if (!imageFile.exists()) {
+            return imageFile.getAbsolutePath();
+        }
+        try {
+            BufferedImage image = ImageIO.read(imageFile);
+            if (image == null) {
+                return imageFile.getAbsolutePath();
+            }
+            Graphics2D graphics = image.createGraphics();
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            graphics.setColor(new Color(255, 59, 48));
+            graphics.setStroke(new BasicStroke(Math.max(2F, image.getWidth() / 480F)));
+            graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, Math.max(14, image.getWidth() / 64)));
+            for (Map<String, Object> item : alarmPayload) {
+                List<Integer> bbox = normalizeBbox(item == null ? null : item.get("bbox"));
+                if (bbox.size() != 4) {
+                    continue;
+                }
+                int x1 = clamp(bbox.get(0), 0, image.getWidth() - 1);
+                int y1 = clamp(bbox.get(1), 0, image.getHeight() - 1);
+                int x2 = clamp(bbox.get(2), 0, image.getWidth() - 1);
+                int y2 = clamp(bbox.get(3), 0, image.getHeight() - 1);
+                int width = Math.max(1, x2 - x1);
+                int height = Math.max(1, y2 - y1);
+                graphics.drawRect(x1, y1, width, height);
+                drawLabel(graphics, buildAlertLabelText(item), x1, y1, image.getWidth());
+            }
+            graphics.dispose();
+            ImageIO.write(image, "jpg", imageFile);
+        } catch (Exception ex) {
+            log.warn("annotate snapshot failed, path={}, ex={}", snapshotPath, ex.getMessage());
+        }
+        return imageFile.getAbsolutePath();
+    }
+
+    private void drawLabel(Graphics2D graphics, String text, int x, int y, int imageWidth) {
+        String labelText = StrUtil.blankToDefault(text, "alert");
+        int textWidth = graphics.getFontMetrics().stringWidth(labelText);
+        int textHeight = graphics.getFontMetrics().getHeight();
+        int boxX = clamp(x, 0, Math.max(0, imageWidth - textWidth - 12));
+        int boxY = Math.max(0, y - textHeight - 6);
+        graphics.setColor(new Color(255, 59, 48));
+        graphics.fillRect(boxX, boxY, textWidth + 10, textHeight + 4);
+        graphics.setColor(Color.WHITE);
+        graphics.drawString(labelText, boxX + 5, boxY + textHeight - 4);
+        graphics.setColor(new Color(255, 59, 48));
+    }
+
+    private String buildAlertLabelText(Map<String, Object> item) {
+        String label = resolveAlertLabel(item);
+        Double confidence = firstDouble(item == null ? null : item.get("score"), item == null ? null : item.get("confidence"));
+        if (confidence == null) {
+            return label;
+        }
+        return label + String.format(" %.2f", confidence);
+    }
+
+    private int clamp(int value, int min, int max) {
+        if (max < min) {
+            return min;
+        }
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private String asString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? null : text;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (StrUtil.isNotBlank(value)) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private void broadcastOverlay(Long cameraId, List<Map<String, Object>> alarmPayload, String traceId) {

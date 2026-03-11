@@ -1,7 +1,10 @@
 {
   "target_platform": "rk3588",
   "core_mask": "auto",
-  "input_size": [640, 640],
+  "input_size": [
+    640,
+    640
+  ],
   "obj_threshold": 0.25,
   "nms_threshold": 0.45,
   "rknn_model_path": "/home/zql/ks/java-rk3588/yolov8.rknn",
@@ -15,7 +18,12 @@
   },
   "enabled_class_ids": [],
   "enabled_labels": [],
-  "alert_labels": [],
+  "alert_labels": [
+    "person",
+    "bus",
+    "\u4eba\u5458",
+    "\u516c\u4ea4\u8f66"
+  ],
   "alert_event_type": "vision.alert",
   "stream_decode_backend": "mpp",
   "stream_decode_hwaccel": "rga",

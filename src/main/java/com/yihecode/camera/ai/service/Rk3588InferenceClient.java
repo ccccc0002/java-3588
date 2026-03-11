@@ -196,6 +196,9 @@ public class Rk3588InferenceClient implements InferenceClient {
         result.setDetections(toDetectionList(obj.get("detections")));
         result.setAlerts(obj.containsKey("alerts") ? toDetectionList(obj.get("alerts")) : null);
         result.setEvents(obj.containsKey("events") ? toDetectionList(obj.get("events")) : null);
+        result.setFrame(toObjectMap(obj.get("frame")));
+        result.setPluginMeta(toObjectMap(obj.get("plugin")));
+        result.setAttributes(toObjectMap(obj.get("attributes")));
         result.setBackendType(getBackendType());
         result.setAttempt(attempt);
         result.setRawBody(body);
@@ -239,6 +242,18 @@ public class Rk3588InferenceClient implements InferenceClient {
             list.add(new HashMap<>(single));
         }
         return list;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> toObjectMap(Object value) {
+        if (value instanceof Map) {
+            return new HashMap<>((Map<String, Object>) value);
+        }
+        JSONObject obj = toJsonObject(value);
+        if (obj != null) {
+            return new HashMap<>(obj);
+        }
+        return new HashMap<>();
     }
 
     private JSONObject toJsonObject(Object value) {
