@@ -12,6 +12,7 @@ import com.yihecode.camera.ai.entity.Report;
 import com.yihecode.camera.ai.entity.WareHouse;
 import com.yihecode.camera.ai.enums.MessageType;
 import com.yihecode.camera.ai.enums.ReportType;
+import com.yihecode.camera.ai.javacv.TakePhoto;
 import com.yihecode.camera.ai.vo.InferenceResult;
 import com.yihecode.camera.ai.vo.Message;
 import com.yihecode.camera.ai.vo.ReportMessage;
@@ -19,8 +20,10 @@ import com.yihecode.camera.ai.websocket.MessageWebsocket;
 import com.yihecode.camera.ai.websocket.ReportWebsocket;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,6 +56,12 @@ public class InferenceReportBridgeService {
 
     @Autowired
     private MessageWebsocket messageWebsocket;
+
+    @Autowired(required = false)
+    private TakePhoto takePhoto;
+
+    @Value("${uploadDir}")
+    private String uploadDir;
 
     public Map<String, Object> persistAndBroadcast(Long cameraId, Long algorithmId, InferenceResult inferenceResult, String traceId) {
         Map<String, Object> ret = new HashMap<>();
@@ -99,6 +108,7 @@ public class InferenceReportBridgeService {
         }
 
         String params = JSON.toJSONString(alarmPayload);
+        broadcastOverlay(cameraId, alarmPayload, traceId);
 
         int display = 0;
         Float intervalTime = camera.getIntervalTime();
@@ -113,6 +123,7 @@ public class InferenceReportBridgeService {
             ret.put("status", "suppressed");
             ret.put("reason", "camera interval suppression");
             ret.put("suppressed", true);
+            ret.put("broadcasted", true);
             return ret;
         }
 
@@ -120,7 +131,7 @@ public class InferenceReportBridgeService {
         report.setCameraId(cameraId);
         report.setAlgorithmId(algorithmId);
         report.setType(ReportType.AI.getType());
-        report.setFileName("");
+        report.setFileName(captureSnapshot(camera));
         report.setParams(params);
         report.setCreatedAt(new Date());
         report.setCreatedMills(System.currentTimeMillis());
@@ -189,6 +200,111 @@ public class InferenceReportBridgeService {
 
         ret.put("status", "ok");
         return ret;
+    }
+
+    private void broadcastOverlay(Long cameraId, List<Map<String, Object>> alarmPayload, String traceId) {
+        try {
+            ReportMessage overlayMessage = new ReportMessage();
+            overlayMessage.setType("REPORT");
+            overlayMessage.setCameraId(String.valueOf(cameraId));
+            overlayMessage.setParams(JSON.toJSONString(toOverlayItems(alarmPayload)));
+            overlayMessage.setTraceId(traceId);
+            reportWebsocket.sendToAll(JSON.toJSONString(overlayMessage));
+        } catch (Exception ex) {
+            log.warn("report overlay broadcast failed, trace_id={}, ex={}", traceId, ex.getMessage());
+        }
+    }
+
+    private List<Map<String, Object>> toOverlayItems(List<Map<String, Object>> alarmPayload) {
+        List<Map<String, Object>> overlayItems = new ArrayList<>();
+        if (alarmPayload == null) {
+            return overlayItems;
+        }
+        for (Map<String, Object> item : alarmPayload) {
+            List<Integer> bbox = normalizeBbox(item == null ? null : item.get("bbox"));
+            if (bbox.isEmpty()) {
+                continue;
+            }
+            Map<String, Object> overlayItem = new HashMap<>();
+            overlayItem.put("position", bbox);
+            overlayItem.put("type", resolveAlertLabel(item));
+            Double confidence = firstDouble(item == null ? null : item.get("score"), item == null ? null : item.get("confidence"));
+            if (confidence != null) {
+                overlayItem.put("confidence", confidence);
+            }
+            overlayItems.add(overlayItem);
+        }
+        return overlayItems;
+    }
+
+    private List<Integer> normalizeBbox(Object bboxObj) {
+        List<Integer> bbox = new ArrayList<>();
+        if (!(bboxObj instanceof List<?>)) {
+            return bbox;
+        }
+        List<?> list = (List<?>) bboxObj;
+        if (list.size() < 4) {
+            return bbox;
+        }
+        for (int i = 0; i < 4; i++) {
+            Object item = list.get(i);
+            if (!(item instanceof Number)) {
+                return new ArrayList<>();
+            }
+            bbox.add(((Number) item).intValue());
+        }
+        return bbox;
+    }
+
+    private Double firstDouble(Object... values) {
+        if (values == null) {
+            return null;
+        }
+        for (Object value : values) {
+            if (value instanceof Number) {
+                return ((Number) value).doubleValue();
+            }
+            if (value != null) {
+                try {
+                    return Double.parseDouble(String.valueOf(value));
+                } catch (Exception ignored) {
+                    // ignore invalid value and continue searching
+                }
+            }
+        }
+        return null;
+    }
+
+    private String resolveAlertLabel(Map<String, Object> item) {
+        if (item == null) {
+            return "";
+        }
+        String labelZh = String.valueOf(item.get("label_zh") == null ? "" : item.get("label_zh")).trim();
+        if (StrUtil.isNotBlank(labelZh)) {
+            return labelZh;
+        }
+        return String.valueOf(item.get("label") == null ? "" : item.get("label")).trim();
+    }
+
+    private String captureSnapshot(Camera camera) {
+        if (camera == null || StrUtil.isBlank(camera.getRtspUrl()) || takePhoto == null) {
+            return "";
+        }
+        try {
+            String ffmpegBin = configService.getByValTag("media_ffmpeg_bin");
+            String snapshotFileName = takePhoto.take(camera.getRtspUrl(), ffmpegBin);
+            if (StrUtil.isBlank(snapshotFileName)) {
+                return "";
+            }
+            File snapshotFile = new File(snapshotFileName);
+            if (snapshotFile.isAbsolute() || StrUtil.isBlank(uploadDir)) {
+                return snapshotFile.getAbsolutePath();
+            }
+            return new File(uploadDir, snapshotFileName).getAbsolutePath();
+        } catch (Exception ex) {
+            log.warn("capture snapshot failed for camera_id={}, ex={}", camera.getId(), ex.getMessage());
+            return "";
+        }
     }
 
     private String buildMessageContent(Camera camera, Algorithm algorithm, List<Map<String, Object>> alarmPayload) {

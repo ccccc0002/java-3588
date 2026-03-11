@@ -192,20 +192,9 @@ public class ReportController {
         modelMap.addAttribute("report", report);
 
         //
-        int width = 1;
-        int height = 1;
-        try {
-            File file = new File(report.getFileName());
-            if (file.exists()) {
-                BufferedImage bi = ImgUtil.read(file);
-                width = bi.getWidth();
-                height = bi.getHeight();
-            }
-        } catch (Exception e) {
-            //
-        }
-        modelMap.addAttribute("width", width <= 0 ? 1 : width);
-        modelMap.addAttribute("height", height <= 0 ? 1 : height);
+        int[] imageSize = resolveReportImageSize(report);
+        modelMap.addAttribute("width", imageSize[0]);
+        modelMap.addAttribute("height", imageSize[1]);
 
         //
         Camera camera = cameraService.getById(report == null ? 0L : report.getCameraId());
@@ -245,20 +234,9 @@ public class ReportController {
         retMap.put("report", report);
 
         //
-        int width = 1;
-        int height = 1;
-        try {
-            File file = new File(report.getFileName());
-            if (file.exists()) {
-                BufferedImage bi = ImgUtil.read(file);
-                width = bi.getWidth();
-                height = bi.getHeight();
-            }
-        } catch (Exception e) {
-            //
-        }
-        retMap.put("width", width <= 0 ? 1 : width);
-        retMap.put("height", height <= 0 ? 1 : height);
+        int[] imageSize = resolveReportImageSize(report);
+        retMap.put("width", imageSize[0]);
+        retMap.put("height", imageSize[1]);
 
         //
         Camera camera = cameraService.getById(report == null ? 0L : report.getCameraId());
@@ -287,14 +265,14 @@ public class ReportController {
     @GetMapping({"/stream"})
     public void getImageAsByteArray(@RequestParam(defaultValue = "0") Long id, HttpServletResponse response) {
         Report report = reportService.getById(id);
-        if(report != null && StrUtil.isNotBlank(report.getFileName())) {
-            try {
-                BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(report.getFileName())));
-                response.setContentType("image/jpeg");
+        File imageFile = resolveReportImageFile(report);
+        if(imageFile != null && imageFile.exists()) {
+            try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(imageFile))) {
+                String contentType = FileUtil.getMimeType(imageFile.getName());
+                response.setContentType(StrUtil.isBlank(contentType) ? "image/jpeg" : contentType);
                 IOUtils.copy(in, response.getOutputStream());
-                in.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.warn("read report image failed, id={}, path={}, ex={}", id, imageFile.getAbsolutePath(), e.getMessage());
             }
         }
     }
@@ -416,20 +394,9 @@ public class ReportController {
         modelMap.addAttribute("report", report);
 
         //
-        int width = 1;
-        int height = 1;
-        try {
-            File file = new File(report.getFileName());
-            if (file.exists()) {
-                BufferedImage bi = ImgUtil.read(file);
-                width = bi.getWidth();
-                height = bi.getHeight();
-            }
-        } catch (Exception e) {
-            //
-        }
-        modelMap.addAttribute("width", width <= 0 ? 1 : width);
-        modelMap.addAttribute("height", height <= 0 ? 1 : height);
+        int[] imageSize = resolveReportImageSize(report);
+        modelMap.addAttribute("width", imageSize[0]);
+        modelMap.addAttribute("height", imageSize[1]);
 
         //
         Camera camera = cameraService.getById(report == null ? 0L : report.getCameraId());
@@ -458,6 +425,38 @@ public class ReportController {
      * @param result
      * @return
      */
+    private int[] resolveReportImageSize(Report report) {
+        int width = 1;
+        int height = 1;
+        try {
+            File file = resolveReportImageFile(report);
+            if (file != null && file.exists()) {
+                BufferedImage bi = ImgUtil.read(file);
+                if (bi != null) {
+                    width = bi.getWidth();
+                    height = bi.getHeight();
+                }
+            }
+        } catch (Exception e) {
+            log.debug("resolve report image size failed, reportId={}", report == null ? null : report.getId(), e);
+        }
+        return new int[]{width <= 0 ? 1 : width, height <= 0 ? 1 : height};
+    }
+
+    private File resolveReportImageFile(Report report) {
+        if (report == null || StrUtil.isBlank(report.getFileName())) {
+            return null;
+        }
+        File candidate = new File(report.getFileName());
+        if (candidate.isAbsolute() || candidate.exists()) {
+            return candidate;
+        }
+        if (StrUtil.isBlank(uploadDir)) {
+            return candidate;
+        }
+        return new File(uploadDir, report.getFileName());
+    }
+
     @PostMapping("/audit")
     @ResponseBody
     public JsonResult doAudit(Long id, Integer result) {

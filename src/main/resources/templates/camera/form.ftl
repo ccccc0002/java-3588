@@ -17,16 +17,10 @@
         .safe-area-help { font-size: 14px; color: #999999; margin-right: 20px; }
         .dtree-select-show .layui-card-body { padding: 10px 5px; }
         #demoTree2 > li { padding-left: 5px; }
+        .algorithm-select-box { margin-bottom: 12px; }
+        .algorithm-select-tip { margin-top: 6px; }
     </style>
-    <script type="text/html" id="checkTpl">
-        {{# if(d.checked) { }}
-        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true" checked/>
-        {{# } else { }}
-        <input type="checkbox" value="{{ d.id }}" id="{{ d.id }}" name="algorithm" lay-ignore="true"/>
-        {{# } }}
-    </script>
-
-    <script type="text/html" id="confidenceTpl">
+        <script type="text/html" id="confidenceTpl">
         <input type="number" id="confidence_{{ d.id }}" value="{{ d.confidence }}" min="0.00" step="0.01" style="width: 60px; height: 30px; border: 1px solid #666666;" class="layui-input" />
     </script>
 
@@ -69,6 +63,10 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">算法关联</label>
                         <div class="layui-input-block">
+                            <div class="algorithm-select-box">
+                                <select id="algorithmSelect" xm-select="algorithmSelect" xm-select-search xm-select-skin="normal"></select>
+                                <div class="tip-info algorithm-select-tip">????????????????????????????</div>
+                            </div>
                             <table id="table" lay-filter="table"></table>
                         </div>
                     </div>
@@ -134,13 +132,14 @@
 <#--<script src="/static/js/jquery.3.6.1.min.js"></script>-->
 <#--<script src="/static/js/webuploader/webuploader.min.js"></script>-->
 <script>
-    layui.use(['form', 'jquery', 'popup', 'table', 'loading', 'dtree'], function() {
+    layui.use(['form', 'jquery', 'popup', 'table', 'loading', 'dtree', 'select'], function() {
         let form = layui.form;
         let $ = layui.jquery;
         let popup = layui.popup;
         let table = layui.table;
         let loading = layui.loading;
         let dtree = layui.dtree;
+        let formSelect = layui.select;
 
         //
         var multiPoints = [];
@@ -175,41 +174,87 @@
 
         //
         let cols = [{
-            title: '算法名称',
+            title: '????',
             field: 'name'
         }, {
-            title: '置信度',
+            title: '???',
             field: 'confidence',
             templet: '#confidenceTpl'
-        }, {
-            title: '选择',
-            field: 'name',
-            templet: '#checkTpl',
-            width: 80,
-            align: 'center'
         }];
 
-        //
-        table.render({
-            elem: '#table',
-            url: '/camera/algorithm/listData?cameraId=${(camera.id)!''}',
-            method: 'post',
-            page: false,
-            cols: [cols],
-            skin: 'line',
-            toolbar: false,
-            defaultToolbar: []
-        });
+        var algorithmRows = [];
+        window.syncAlgorithmConfidenceCache = function() {
+            var rowLen = algorithmRows.length;
+            for(var i = 0; i < rowLen; i++) {
+                var input = $('#confidence_' + algorithmRows[i].id);
+                if(input.length > 0) {
+                    algorithmRows[i].confidence = input.val();
+                }
+            }
+        }
 
+        window.getSelectedAlgorithms = function() {
+            return formSelect.value('algorithmSelect', 'val') || [];
+        }
+
+        window.renderAlgorithmTable = function() {
+            window.syncAlgorithmConfidenceCache();
+            var selectedMap = new Map();
+            var selectedAlgorithms = window.getSelectedAlgorithms();
+            for(var i = 0; i < selectedAlgorithms.length; i++) {
+                selectedMap.set(String(selectedAlgorithms[i]), true);
+            }
+            var renderRows = [];
+            for(var j = 0; j < algorithmRows.length; j++) {
+                var row = algorithmRows[j];
+                if(selectedMap.has(String(row.id))) {
+                    renderRows.push(row);
+                }
+            }
+            table.render({
+                elem: '#table',
+                id: 'cameraAlgorithmTable',
+                data: renderRows,
+                page: false,
+                cols: [cols],
+                skin: 'line',
+                toolbar: false,
+                defaultToolbar: [],
+                text: {
+                    none: '???????????'
+                }
+            });
+        }
+
+        $.post('/camera/algorithm/listData?cameraId=${(camera.id)!''}', function(res) {
+            algorithmRows = (res && res.data) ? res.data : [];
+            var options = [];
+            var selectedIds = [];
+            for(var i = 0; i < algorithmRows.length; i++) {
+                var row = algorithmRows[i];
+                var selected = row.checked ? ' selected' : '';
+                if(row.checked) {
+                    selectedIds.push(String(row.id));
+                }
+                options.push('<option value="' + row.id + '"' + selected + '>' + row.name + '</option>');
+            }
+            $('#algorithmSelect').html(options.join(''));
+            formSelect.render('algorithmSelect', {
+                showCount: 3,
+                init: selectedIds
+            });
+            formSelect.on('algorithmSelect', function() {
+                window.renderAlgorithmTable();
+            });
+            window.renderAlgorithmTable();
+        });
         //
         form.on('submit(save)', function(data) {
-            var algorithms = [];
-            $('input[name="algorithm"]:checked').each(function() {
-                algorithms.push($(this).val());
-            });
+            window.syncAlgorithmConfidenceCache();
+            var algorithms = window.getSelectedAlgorithms();
 
             if(algorithms.length == 0) {
-                popup.failure("请至少选择一个算法");
+                popup.failure("?????????");
                 return false;
             }
 
@@ -224,18 +269,22 @@
             }
 
             // algorithms -> confidence
+            var confidenceMap = new Map();
+            for(var i = 0; i < algorithmRows.length; i++) {
+                confidenceMap.set(String(algorithmRows[i].id), algorithmRows[i].confidence);
+            }
             var confidences = [];
             var aLen = algorithms.length;
             for(var i = 0; i < aLen; i++) {
-                var algoId = algorithms[i];
-                var cv = $('#confidence_' + algoId).val();
+                var algoId = String(algorithms[i]);
+                var cv = confidenceMap.get(algoId);
                 if($.trim(cv) != '') {
-                    confidences.push(cv)
-                    ;               }
+                    confidences.push(cv);
+                }
             }
 
             if(confidences.length != algorithms.length) {
-                popup.failure("勾选的算法请输入置信度");
+                popup.failure("???????????");
                 return false;
             }
 
