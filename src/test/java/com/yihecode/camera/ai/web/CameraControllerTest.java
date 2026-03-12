@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -97,6 +98,7 @@ class CameraControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(cameraService, never()).saveCamera(any(), any(), any(), any(), any());
+        verify(operationLogService).record(eq("camera:save"), eq("cameraId=null"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -108,6 +110,42 @@ class CameraControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(cameraService, never()).updateRunning(any(), any());
+        verify(operationLogService).record(eq("camera:switch_running"), eq("cameraId=1"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void deleteShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = cameraController.delete(2L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(cameraService, never()).delete(any());
+        verify(operationLogService).record(eq("camera:delete"), eq("cameraId=2"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void switchRtspTypeShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = cameraController.switchRtspType(3L, 1);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(cameraService, never()).updateRtspType(any(), any());
+        verify(operationLogService).record(eq("camera:switch_rtsp_type"), eq("cameraId=3"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void updateRtspShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = cameraController.updateRtsp(4L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("camera:update_rtsp"), eq("cameraId=4"), eq(false), eq("permission denied"), eq(""));
     }
 
     private Camera createValidCamera() {

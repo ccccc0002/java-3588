@@ -279,6 +279,7 @@ public class CameraController {
     @ResponseBody
     public JsonResult save(Camera camera, String algorithmvos, String confidencevos, String markpointsvos, Integer updatePoint) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:save", "cameraId=" + (camera == null ? null : camera.getId()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (StrUtil.isBlank(camera.getName())) {
@@ -333,6 +334,7 @@ public class CameraController {
     @ResponseBody
     public JsonResult delete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:delete", "cameraId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         this.cameraService.delete(id);
@@ -399,6 +401,7 @@ public class CameraController {
     @ResponseBody
     public JsonResult switchRunning(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:switch_running", "cameraId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         Camera camera = cameraService.getById(id);
@@ -428,6 +431,7 @@ public class CameraController {
     @ResponseBody
     public JsonResult switchRtspType(Long id, Integer rtspType) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:switch_rtsp_type", "cameraId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if(id == null) {
@@ -461,6 +465,7 @@ public class CameraController {
     @ResponseBody
     public JsonResult updateRtsp(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:update_rtsp", "cameraId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         Camera camera = cameraService.getById(id);
