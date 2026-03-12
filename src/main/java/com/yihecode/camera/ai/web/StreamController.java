@@ -193,6 +193,7 @@ public class StreamController {
     @ResponseBody
     public JsonResult formConfig(String ids) {
         if (!roleAccessService.canManageStream(currentAccountId())) {
+            operationLogService.record("stream:form_config", "stream", false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         JSONArray array = JSON.parseArray(ids);
@@ -401,6 +402,7 @@ public class StreamController {
     @ResponseBody
     public JsonResult stopStream(Long cameraId) {
         if (!roleAccessService.canManageStream(currentAccountId())) {
+            operationLogService.record("stream:stop", "cameraId=" + cameraId, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (cameraId == null) {
@@ -425,6 +427,7 @@ public class StreamController {
     @ResponseBody
     public JsonResult startStream(Long cameraId, Integer videoPort) {
         if (!roleAccessService.canManageStream(currentAccountId())) {
+            operationLogService.record("stream:start", "cameraId=" + cameraId, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (cameraId == null) {

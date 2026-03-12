@@ -5,9 +5,12 @@ import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.MediaStreamUrlService;
 import com.yihecode.camera.ai.service.ModelService;
+import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.entity.Model;
+import org.junit.jupiter.api.BeforeEach;
 import com.yihecode.camera.ai.utils.JsonResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,9 +43,16 @@ class StreamControllerTest {
     @Mock private VideoPlayService videoPlayService;
     @Mock private MediaStreamUrlService mediaStreamUrlService;
     @Mock private ModelService modelService;
+    @Mock private RoleAccessService roleAccessService;
+    @Mock private OperationLogService operationLogService;
 
     @InjectMocks
     private StreamController streamController;
+
+    @BeforeEach
+    void setupPermissionDefaults() {
+        lenient().when(roleAccessService.canManageStream(any())).thenReturn(true);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
@@ -119,5 +132,38 @@ class StreamControllerTest {
         List<Object> rankingValues = (List<Object>) ranking.get("values");
         assertTrue(rankingLabels.contains("cam-a"));
         assertTrue(rankingValues.contains(6));
+    }
+
+    @Test
+    void formConfigShouldDenyWhenNoManagePermission() {
+        when(roleAccessService.canManageStream(any())).thenReturn(false);
+
+        JsonResult result = streamController.formConfig("[]");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("stream:form_config"), eq("stream"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void stopStreamShouldDenyWhenNoManagePermission() {
+        when(roleAccessService.canManageStream(any())).thenReturn(false);
+
+        JsonResult result = streamController.stopStream(1L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("stream:stop"), eq("cameraId=1"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void startStreamShouldDenyWhenNoManagePermission() {
+        when(roleAccessService.canManageStream(any())).thenReturn(false);
+
+        JsonResult result = streamController.startStream(2L, 8080);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("stream:start"), eq("cameraId=2"), eq(false), eq("permission denied"), eq(""));
     }
 }
