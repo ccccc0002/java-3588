@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T17:48:25+08:00",
-                                  "summary":  "Phase8 parallel hardening: report-period/smsphone write APIs now RBAC+operation-log protected; execution constraints persisted (edge-test required + milestone github sync); local+edge targeted tests passed and milestone synced to GitHub.",
+                                  "updated_at":  "2026-03-12T18:08:00+08:00",
+                                  "summary":  "Phase8 parallel hardening continued: ReportController write APIs /report/batchRemove and /report/audit now enforce RBAC with operation logs; deny-path tests added; local+RK3588 targeted regression green; synced to GitHub.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest,ReportControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "ed29524",
-                                                       "updated_at":  "2026-03-12T17:48:25+08:00"
+                                                       "github_sync_ref":  "7d068cf",
+                                                       "updated_at":  "2026-03-12T18:08:00+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -281,6 +281,16 @@
                         "edge_test_command":  "mvn -Dtest=ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest,ReportControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "ed29524"
+                    },
+                    {
+                        "timestamp":  "2026-03-12T18:08:00+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 parallel hardening continued: ReportController write APIs /report/batchRemove and /report/audit now enforce RBAC with operation logs; deny-path tests added; local+RK3588 targeted regression green; synced to GitHub.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "7d068cf"
                     }
                 ]
 }

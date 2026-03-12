@@ -544,3 +544,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 17:48:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-174838-PHASE2-EXEC.json |
 | 2026-03-12 17:48:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 17:48:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: RBAC closure expanded to report-period/smsphone + constraints persisted; RK3588 edge tests green; pushed commit ed29524. |
+| 2026-03-12 18:08:00 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-180800-PHASE2-EXEC.json |
+| 2026-03-12 18:08:00 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening continued: ReportController write APIs /report/batchRemove and /report/audit now enforce RBAC with operation logs; deny-path tests added; local+RK3588 targeted regression green; synced to GitHub. |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-180816-PHASE2-EXEC.json |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Report batchRemove/audit RBAC closure done with deny-path tests; RK3588 verification passed; pushed commit 7d068cf. |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-180817-PHASE2-EXEC.json |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Report batchRemove/audit RBAC closure done with deny-path tests; RK3588 verification passed; pushed commit 7d068cf. |
