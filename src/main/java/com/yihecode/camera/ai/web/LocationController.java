@@ -97,6 +97,7 @@ public class LocationController {
     @ResponseBody
     public JsonResult save(Location location) throws Exception {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("location:save", "locationId=" + (location == null ? null : location.getId()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         locationService.saveNode(location);
@@ -113,6 +114,7 @@ public class LocationController {
     @ResponseBody
     public JsonResult delete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("location:delete", "locationId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         this.locationService.deleteNodes(id);

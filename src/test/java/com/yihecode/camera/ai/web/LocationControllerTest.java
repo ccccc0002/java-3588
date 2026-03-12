@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -50,6 +51,7 @@ class LocationControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(locationService, never()).saveNode(any());
+        verify(operationLogService).record(eq("location:save"), eq("locationId=null"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -61,6 +63,6 @@ class LocationControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(locationService, never()).deleteNodes(any());
+        verify(operationLogService).record(eq("location:delete"), eq("locationId=1"), eq(false), eq("permission denied"), eq(""));
     }
 }
-
