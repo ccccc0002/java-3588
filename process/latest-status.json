@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-12 19:05:20",
+    "time":  "2026-03-12 19:43:08",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase8",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: warehouse sync deny branches now audited; edge regression 33/33 passed; synced commit 0fc2e97"
+    "summary":  "compact after checkpoint: stream controller deny audit landed; edge regression 38/38 passed; synced commit 398f38d"
 }
