@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-12 18:33:05
+- generated_at: 2026-03-12 18:51:57
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-12T18:51:57+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
+- 2026-03-12T18:51:56+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
+- 2026-03-12T18:51:44+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:33:05+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T18:33:04+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T18:32:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
-- 2026-03-12T18:08:00+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-12T17:48:39+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-12T17:48:26+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Algorithm+Model RBAC closure complete (backend+frontend+tests). |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening expanded: algorithm/model write APIs and algorithm package lifecycle now RBAC-guarded with operation logs; algorithm/model pages now use /account/permissions for button-level write gating; new permission-deny unit tests added and targeted regressions green. |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Algorithm+Model RBAC closure complete (backend+frontend+tests). |
 | 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
 | 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
 | 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green. |
@@ -61,3 +54,10 @@
 | 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-183304-PHASE2-EXEC.json |
 | 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb. |
 | 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-183305-PHASE2-EXEC.json |
+| 2026-03-12 18:33:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb. |
+| 2026-03-12 18:51:44 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-185144-PHASE2-EXEC.json |
+| 2026-03-12 18:51:44 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 UI permission closure: smsphone/period pages now enforce can_write_system with button-level disable and write-action guards; edge targeted regression passed; milestone synced. |
+| 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-185156-PHASE2-EXEC.json |
+| 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-185157-PHASE2-EXEC.json |

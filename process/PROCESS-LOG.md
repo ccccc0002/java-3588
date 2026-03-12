@@ -558,3 +558,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-183305-PHASE2-EXEC.json |
 | 2026-03-12 18:33:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb. |
+| 2026-03-12 18:51:44 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-185144-PHASE2-EXEC.json |
+| 2026-03-12 18:51:44 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 UI permission closure: smsphone/period pages now enforce can_write_system with button-level disable and write-action guards; edge targeted regression passed; milestone synced. |
+| 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-185156-PHASE2-EXEC.json |
+| 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-185157-PHASE2-EXEC.json |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |

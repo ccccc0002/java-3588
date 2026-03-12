@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-12 18:33:05",
+    "time":  "2026-03-12 18:51:57",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase8",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb."
+    "summary":  "compact after checkpoint: UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green"
 }
