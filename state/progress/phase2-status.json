@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T19:42:56+08:00",
-                                  "summary":  "Phase8 stream audit hardening: stream formConfig/start/stop permission-denied branches now write operation logs; StreamController deny-path tests added; RK3588 targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-12T20:04:26+08:00",
+                                  "summary":  "Phase8 config audit hardening: config/license/network permission-denied branches now log operation events; ConfigController deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=StreamControllerTest,WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "398f38d",
-                                                       "updated_at":  "2026-03-12T19:42:56+08:00"
+                                                       "github_sync_ref":  "badf429",
+                                                       "updated_at":  "2026-03-12T20:04:26+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -331,6 +331,16 @@
                         "edge_test_command":  "mvn -Dtest=StreamControllerTest,WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "398f38d"
+                    },
+                    {
+                        "timestamp":  "2026-03-12T20:04:26+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 config audit hardening: config/license/network permission-denied branches now log operation events; ConfigController deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "badf429"
                     }
                 ]
 }

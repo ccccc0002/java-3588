@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-12 19:43:07
+- generated_at: 2026-03-12 20:04:37
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-12T20:04:37+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
+- 2026-03-12T20:04:27+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T19:43:07+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T19:42:57+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T19:05:20+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T19:05:20+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T19:05:09+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:51:57+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-12T18:51:56+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
-- 2026-03-12T18:51:44+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-12 17:48:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-174825-PHASE2-EXEC.json |
-| 2026-03-12 17:48:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening: report-period/smsphone write APIs now RBAC+operation-log protected; execution constraints persisted (edge-test required + milestone github sync); local+edge targeted tests passed and milestone synced to GitHub. |
-| 2026-03-12 17:48:38 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-174838-PHASE2-EXEC.json |
-| 2026-03-12 17:48:38 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | RBAC closure expanded to report-period/smsphone + constraints persisted; RK3588 edge tests green; pushed commit ed29524. |
-| 2026-03-12 17:48:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-174838-PHASE2-EXEC.json |
-| 2026-03-12 17:48:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 17:48:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: RBAC closure expanded to report-period/smsphone + constraints persisted; RK3588 edge tests green; pushed commit ed29524. |
 | 2026-03-12 18:08:00 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-180800-PHASE2-EXEC.json |
 | 2026-03-12 18:08:00 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening continued: ReportController write APIs /report/batchRemove and /report/audit now enforce RBAC with operation logs; deny-path tests added; local+RK3588 targeted regression green; synced to GitHub. |
 | 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-180816-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-12 19:43:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-194307-PHASE2-EXEC.json |
 | 2026-03-12 19:43:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | stream controller deny audit landed; edge regression 38/38 passed; synced commit 398f38d |
 | 2026-03-12 19:43:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-194307-PHASE2-EXEC.json |
+| 2026-03-12 19:43:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 19:43:08 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: stream controller deny audit landed; edge regression 38/38 passed; synced commit 398f38d |
+| 2026-03-12 20:04:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-200426-PHASE2-EXEC.json |
+| 2026-03-12 20:04:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 config audit hardening: config/license/network permission-denied branches now log operation events; ConfigController deny-path tests expanded; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-200437-PHASE2-EXEC.json |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | config controller deny audit completed; edge regression 50/50 passed; synced commit badf429 |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200437-PHASE2-EXEC.json |

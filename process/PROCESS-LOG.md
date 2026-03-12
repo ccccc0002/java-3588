@@ -579,3 +579,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 19:43:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-194307-PHASE2-EXEC.json |
 | 2026-03-12 19:43:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 19:43:08 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: stream controller deny audit landed; edge regression 38/38 passed; synced commit 398f38d |
+| 2026-03-12 20:04:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-200426-PHASE2-EXEC.json |
+| 2026-03-12 20:04:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 config audit hardening: config/license/network permission-denied branches now log operation events; ConfigController deny-path tests expanded; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-200437-PHASE2-EXEC.json |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | config controller deny audit completed; edge regression 50/50 passed; synced commit badf429 |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200437-PHASE2-EXEC.json |
+| 2026-03-12 20:04:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 20:04:38 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: config controller deny audit completed; edge regression 50/50 passed; synced commit badf429 |
