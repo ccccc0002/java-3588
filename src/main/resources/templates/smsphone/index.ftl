@@ -34,6 +34,7 @@
         let table = layui.table;
         let $ = layui.jquery;
         let popup = layui.popup;
+        let permissions = {can_write_system: false};
 
         //
         let cols = [{
@@ -67,6 +68,9 @@
         //
         table.on('tool(table)', function(obj) {
             if(obj.event == 'remove') {
+                if(!guardWriteAction()) {
+                    return;
+                }
                 window.removeData(obj);
             } else if(obj.event == 'edit') {
                 //window.editForm(obj);
@@ -76,6 +80,9 @@
         //
         table.on('toolbar(table)', function(obj) {
             if(obj.event == 'add') {
+                if(!guardWriteAction()) {
+                    return;
+                }
                 window.addForm();
             } else if(obj.event == 'refresh') {
                 window.refreshTable();
@@ -100,6 +107,9 @@
 
         //
         window.removeData = function (obj) {
+            if(!guardWriteAction()) {
+                return;
+            }
             layer.confirm('确定删除该手机号码吗?', {
                 icon: 3,
                 title: '提示'
@@ -118,6 +128,28 @@
                 });
             });
         }
+
+        function guardWriteAction() {
+            if(permissions.can_write_system) {
+                return true;
+            }
+            popup.failure('permission denied');
+            return false;
+        }
+
+        function applyPermissionUi() {
+            if(permissions.can_write_system) {
+                return;
+            }
+            $('button[lay-event=add]').prop('disabled', true).addClass('layui-btn-disabled');
+        }
+
+        $.post('/account/permissions', {}, function(res) {
+            if(res && res.code == 0 && res.data) {
+                permissions = res.data;
+            }
+            applyPermissionUi();
+        });
     })
 </script>
 </html>

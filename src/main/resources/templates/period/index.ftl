@@ -47,6 +47,7 @@
         let table = layui.table;
         let $ = layui.jquery;
         let popup = layui.popup;
+        let permissions = {can_write_system: false};
 
         //
         let cols = [{
@@ -89,8 +90,14 @@
         //
         table.on('tool(table)', function(obj) {
             if(obj.event == 'remove') {
+                if(!guardWriteAction()) {
+                    return;
+                }
                 window.removeData(obj);
             } else if(obj.event == 'edit') {
+                if(!guardWriteAction()) {
+                    return;
+                }
                 window.editForm(obj);
             }
         });
@@ -98,6 +105,9 @@
         //
         table.on('toolbar(table)', function(obj) {
             if(obj.event == 'add') {
+                if(!guardWriteAction()) {
+                    return;
+                }
                 window.addForm();
             } else if(obj.event == 'refresh') {
                 window.refreshTable();
@@ -133,6 +143,9 @@
 
         //
         window.removeData = function (obj) {
+            if(!guardWriteAction()) {
+                return;
+            }
             layer.confirm('确定删除该数据吗?', {
                 icon: 3,
                 title: '警告'
@@ -151,6 +164,29 @@
                 });
             });
         }
+
+        function guardWriteAction() {
+            if(permissions.can_write_system) {
+                return true;
+            }
+            popup.failure('permission denied');
+            return false;
+        }
+
+        function applyPermissionUi() {
+            if(permissions.can_write_system) {
+                return;
+            }
+            $('button[lay-event=add]').prop('disabled', true).addClass('layui-btn-disabled');
+            $('a[lay-event=edit],a[lay-event=remove]').addClass('layui-disabled').css('pointer-events', 'none');
+        }
+
+        $.post('/account/permissions', {}, function(res) {
+            if(res && res.code == 0 && res.data) {
+                permissions = res.data;
+            }
+            applyPermissionUi();
+        });
 
         $('#close-layer').click(function() {
             parent.layui.table.reload('table');
