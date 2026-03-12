@@ -45,8 +45,17 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T17:16:51+08:00",
-                                  "summary":  "Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green."
+                                  "updated_at":  "2026-03-12T17:48:25+08:00",
+                                  "summary":  "Phase8 parallel hardening: report-period/smsphone write APIs now RBAC+operation-log protected; execution constraints persisted (edge-test required + milestone github sync); local+edge targeted tests passed and milestone synced to GitHub.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest,ReportControllerTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "ed29524",
+                                                       "updated_at":  "2026-03-12T17:48:25+08:00"
+                                                   }
                               },
                    "Phase9":  {
                                   "status":  "pending",
@@ -262,6 +271,16 @@
                         "phase_id":  "Phase8",
                         "status":  "in_progress",
                         "summary":  "Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green."
+                    },
+                    {
+                        "timestamp":  "2026-03-12T17:48:25+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 parallel hardening: report-period/smsphone write APIs now RBAC+operation-log protected; execution constraints persisted (edge-test required + milestone github sync); local+edge targeted tests passed and milestone synced to GitHub.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest,ReportControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "ed29524"
                     }
                 ]
 }
