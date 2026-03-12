@@ -32,6 +32,7 @@ public class AlgorithmPackageLifecycleController {
     @ResponseBody
     public JsonResult importPackage(MultipartFile file) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("algorithm:package_import", "algorithm", false, "permission denied", file == null ? "" : file.getOriginalFilename());
             return JsonResultUtils.fail("permission denied");
         }
         try {
@@ -48,6 +49,7 @@ public class AlgorithmPackageLifecycleController {
     @ResponseBody
     public JsonResult forceDelete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("algorithm:force_delete", "algorithmId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         try {
@@ -64,6 +66,7 @@ public class AlgorithmPackageLifecycleController {
     @ResponseBody
     public JsonResult updateMetadata(Long id, String name, String description, String labelAliasesZh) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("algorithm:metadata_update", "algorithmId=" + id, false, "permission denied", name);
             return JsonResultUtils.fail("permission denied");
         }
         try {

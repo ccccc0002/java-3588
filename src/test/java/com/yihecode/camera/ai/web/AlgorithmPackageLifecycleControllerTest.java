@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -132,5 +133,28 @@ class AlgorithmPackageLifecycleControllerTest {
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("algorithm:package_import"), eq("algorithm"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void forceDelete_shouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = algorithmPackageLifecycleController.forceDelete(12L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("algorithm:force_delete"), eq("algorithmId=12"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void updateMetadata_shouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = algorithmPackageLifecycleController.updateMetadata(13L, "n", "d", "{}");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("algorithm:metadata_update"), eq("algorithmId=13"), eq(false), eq("permission denied"), eq("n"));
     }
 }
