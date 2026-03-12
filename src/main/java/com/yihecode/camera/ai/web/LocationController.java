@@ -1,8 +1,11 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import com.yihecode.camera.ai.entity.Location;
 import com.yihecode.camera.ai.service.LocationService;
+import com.yihecode.camera.ai.service.OperationLogService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.utils.TreeResult;
@@ -30,6 +33,12 @@ public class LocationController {
 
     @Autowired
     private LocationService locationService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     /**
      * 新增节点
@@ -87,7 +96,11 @@ public class LocationController {
     @PostMapping({"/save"})
     @ResponseBody
     public JsonResult save(Location location) throws Exception {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         locationService.saveNode(location);
+        operationLogService.record("location:save", "locationId=" + location.getId(), true, "location saved", location.getName());
         return JsonResultUtils.success();
     }
 
@@ -99,7 +112,11 @@ public class LocationController {
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         this.locationService.deleteNodes(id);
+        operationLogService.record("location:delete", "locationId=" + id, true, "location deleted", "");
         return JsonResultUtils.success();
     }
 
@@ -149,5 +166,13 @@ public class LocationController {
             }
         }
         return tree;
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

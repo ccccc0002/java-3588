@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-12 17:01:55
+- generated_at: 2026-03-12 17:16:52
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-12T17:16:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
+- 2026-03-12T17:16:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T17:01:55+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T16:15:07+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T15:34:32+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T15:34:32+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T15:26:36+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T15:26:35+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-12T15:23:55+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-12T15:23:29+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-12 13:47:14 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-134713-PHASE2-EXEC.json |
-| 2026-03-12 13:47:14 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 bootstrap delivered: RBAC role service (super_admin/ops/read_only), action-level backend guards for account/config/warehouse write paths, operation log service+list page, account role assignment UI, and front-end button-level permission gating. |
-| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-134728-PHASE2-EXEC.json |
-| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | rbac+operationlog first usable version online; regression tests green |
-| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-134728-PHASE2-EXEC.json |
-| 2026-03-12 13:47:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 13:47:29 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: rbac+operationlog first usable version online; regression tests green |
 | 2026-03-12 15:23:29 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-152328-PHASE2-EXEC.json |
 | 2026-03-12 15:23:29 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 hardening: ReportController push/target write APIs now RBAC-guarded with operation logs; ReportControllerTest added permission-deny cases; targeted regression suites all green. |
 | 2026-03-12 15:23:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-152354-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green. |
 | 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Camera module RBAC closure done with test verification. |
 | 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
+| 2026-03-12 17:01:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera module RBAC closure done with test verification. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Location management RBAC closure completed with tests. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-171652-PHASE2-EXEC.json |

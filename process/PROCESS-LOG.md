@@ -530,3 +530,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
 | 2026-03-12 17:01:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera module RBAC closure done with test verification. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Location management RBAC closure completed with tests. |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-171652-PHASE2-EXEC.json |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Location management RBAC closure completed with tests. |

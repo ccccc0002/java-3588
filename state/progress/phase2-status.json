@@ -45,8 +45,8 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T17:01:54+08:00",
-                                  "summary":  "Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green."
+                                  "updated_at":  "2026-03-12T17:16:51+08:00",
+                                  "summary":  "Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green."
                               },
                    "Phase9":  {
                                   "status":  "pending",
@@ -256,6 +256,12 @@
                         "phase_id":  "Phase8",
                         "status":  "in_progress",
                         "summary":  "Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green."
+                    },
+                    {
+                        "timestamp":  "2026-03-12T17:16:51+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green."
                     }
                 ]
 }
