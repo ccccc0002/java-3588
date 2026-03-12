@@ -586,3 +586,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 20:04:37 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200437-PHASE2-EXEC.json |
 | 2026-03-12 20:04:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 20:04:38 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: config controller deny audit completed; edge regression 50/50 passed; synced commit badf429 |
+| 2026-03-12 20:07:41 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-200740-PHASE2-EXEC.json |
+| 2026-03-12 20:07:41 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 camera audit hardening: save/delete/switchRunning/switchRtspType/updateRtsp permission-denied branches now emit operation logs; CameraController deny-path tests expanded; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 20:08:04 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-200804-PHASE2-EXEC.json |
+| 2026-03-12 20:08:04 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | camera controller deny audit completed; edge regression 53/53 passed; synced commit 33a7d69 |
+| 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200804-PHASE2-EXEC.json |
+| 2026-03-12 20:08:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: camera controller deny audit completed; edge regression 53/53 passed; synced commit 33a7d69 |
