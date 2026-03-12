@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>系统配置</title>
+    <title>System Config</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
 </head>
 <body class="pear-container">
@@ -16,70 +16,47 @@
         </div>
     </div>
 </div>
-</body>
+
 <script type="text/html" id="table-toolbar">
     <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add">
         <i class="layui-icon layui-icon-add-1"></i>
-        新增配置
+        Add Config
+    </button>
+    <button class="pear-btn pear-btn-warming pear-btn-md" lay-event="license" style="margin-left: 8px;">
+        License
+    </button>
+    <button class="pear-btn pear-btn-normal pear-btn-md" lay-event="network" style="margin-left: 8px;">
+        Network
     </button>
 </script>
+
 <script type="text/html" id="table-actions">
-    <a href="#" style="color: #409EFF;" lay-event="edit">编辑</a>
-    <a href="#" style="color: #DD4A68; margin-left: 15px;" lay-event="remove">删除</a>
-</script>
-<script type="text/html" id="stateTpl">
-    {{#  if(d.state=='0'){ }}
-    정상
-    {{#  } else { }}
-    비활성화
-    {{# } }}
+    <a href="#" style="color: #409EFF;" lay-event="edit">Edit</a>
+    <a href="#" style="color: #DD4A68; margin-left: 15px;" lay-event="remove">Delete</a>
 </script>
 
 <script src="/static/component/layui/layui.js"></script>
 <script src="/static/component/pear/pear.js"></script>
 <script>
-    layui.use(['table', 'form', 'jquery', 'util', 'popup'], function() {
+    layui.use(['table', 'jquery', 'popup'], function() {
         let table = layui.table;
         let $ = layui.jquery;
         let popup = layui.popup;
-        let form = layui.form;
+        let permissions = {can_write_system: false};
 
-        //
-        form.render('select');
+        let cols = [[
+            { title: 'Name', field: 'name' },
+            { title: 'Tag', field: 'tag' },
+            { title: 'Value', field: 'val' },
+            { title: 'Actions', toolbar: '#table-actions', align: 'left', width: 130, fixed: 'right' }
+        ]];
 
-        //
-        form.on('submit(query)', function (data) {
-            table.reload('table', {
-                where: data.field
-            })
-            return false;
-        });
-
-        //
-        let cols = [{
-            title: '配置名次',
-            field: 'name'
-        }, {
-            title: '配置标识',
-            field: 'tag'
-        }, {
-            title: '配置值',
-            field: 'val'
-        }, {
-            title: '操作',
-            toolbar: '#table-actions',
-            align: 'left',
-            width: 120,
-            fixed: 'right'
-        }];
-
-        //
         table.render({
             elem: '#table',
             url: '/config/listData',
             method: 'post',
             page: false,
-            cols: [cols],
+            cols: cols,
             skin: 'line',
             height: 'full-148',
             toolbar: '#table-toolbar',
@@ -90,63 +67,94 @@
             }]
         });
 
-        //
         table.on('tool(table)', function(obj) {
-            if(obj.event == 'remove') {
+            if (!permissions.can_write_system) {
+                popup.failure('permission denied');
+                return;
+            }
+            if (obj.event === 'remove') {
                 window.removeData(obj);
-            } else if(obj.event == 'edit') {
+            } else if (obj.event === 'edit') {
                 window.editForm(obj);
             }
         });
 
-        //
         table.on('toolbar(table)', function(obj) {
-            if(obj.event == 'add') {
+            if (obj.event === 'add') {
+                if (!permissions.can_write_system) {
+                    popup.failure('permission denied');
+                    return;
+                }
                 window.addForm();
-            } else if(obj.event == 'refresh') {
+            } else if (obj.event === 'license') {
+                if (!permissions.can_write_system) {
+                    popup.failure('permission denied');
+                    return;
+                }
+                window.openLicense();
+            } else if (obj.event === 'network') {
+                if (!permissions.can_write_system) {
+                    popup.failure('permission denied');
+                    return;
+                }
+                window.openNetwork();
+            } else if (obj.event === 'refresh') {
                 window.refreshTable();
             }
         });
 
-        //
         window.addForm = function() {
             layer.open({
                 type: 2,
-                title: '新增配置',
+                title: 'Add Config',
                 shade: 0.1,
                 area: ['60%', '80%'],
                 content: '/config/form'
             });
-        }
+        };
 
-        //
         window.editForm = function(obj) {
             layer.open({
                 type: 2,
-                title: '修改配置',
+                title: 'Edit Config',
                 shade: 0.1,
                 area: ['60%', '80%'],
                 content: '/config/form?id=' + obj.data.id
             });
-        }
+        };
 
-        //
+        window.openLicense = function() {
+            layer.open({
+                type: 2,
+                title: 'License',
+                shade: 0.1,
+                area: ['70%', '70%'],
+                content: '/config/license'
+            });
+        };
+
+        window.openNetwork = function() {
+            layer.open({
+                type: 2,
+                title: 'Network',
+                shade: 0.1,
+                area: ['80%', '80%'],
+                content: '/config/network'
+            });
+        };
+
         window.refreshTable = function() {
             table.reload('table');
-        }
+        };
 
-        //
-        window.removeData = function (obj) {
-            layer.confirm('确定删除该配置吗?', {
-                icon: 3,
-                title: '警告'
-            }, function (index) {
+        window.removeData = function(obj) {
+            layer.confirm('Delete selected config?', {icon: 3, title: 'Warning'}, function(index) {
                 layer.close(index);
-                var loading = layer.load(2);
-                $.post('/config/delete', {'id': obj.data['id']}, function(res) {
+                let loading = layer.load(2);
+                $.post('/config/delete', {'id': obj.data.id}, function(res) {
                     layer.close(loading);
-                    if(res.code == 0) {
-                        layer.msg('提示', {icon:1, time:1000}, function() {
+                    if (res.code === 0) {
+                        layer.msg('Success', {icon: 1, time: 900}, function() {
                             window.refreshTable();
                         });
                     } else {
@@ -154,7 +162,24 @@
                     }
                 });
             });
+        };
+
+        function applyPermissionUi() {
+            if (permissions.can_write_system) {
+                return;
+            }
+            $('button[lay-event=add],button[lay-event=license],button[lay-event=network]')
+                .prop('disabled', true)
+                .addClass('layui-btn-disabled');
         }
-    })
+
+        $.post('/account/permissions', {}, function(res) {
+            if (res && res.code === 0 && res.data) {
+                permissions = res.data;
+            }
+            applyPermissionUi();
+        });
+    });
 </script>
+</body>
 </html>

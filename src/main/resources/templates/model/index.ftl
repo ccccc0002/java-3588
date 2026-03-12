@@ -39,6 +39,29 @@
         let table = layui.table;
         let $ = layui.jquery;
         let popup = layui.popup;
+        let canWriteSystem = false;
+
+        function loadPermissionMatrix(done) {
+            $.post('/account/permissions', {}, function(res) {
+                if (res && res.code === 0 && res.data) {
+                    canWriteSystem = !!res.data.can_write_system;
+                } else {
+                    canWriteSystem = false;
+                }
+            }).always(function() {
+                if (typeof done === 'function') {
+                    done();
+                }
+            });
+        }
+
+        function guardWriteAction() {
+            if (!canWriteSystem) {
+                popup.failure('无权限操作');
+                return false;
+            }
+            return true;
+        }
 
         //
         let cols = [{
@@ -112,6 +135,9 @@
 
         //
         window.addForm = function() {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '新增模型',
@@ -123,6 +149,9 @@
 
         //
         window.editForm = function(obj) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '编辑模型',
@@ -150,6 +179,9 @@
 
         //
         window.removeData = function (obj) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.confirm('确定删除该算法吗?', {
                 icon: 3,
                 title: '提示'
@@ -179,6 +211,7 @@
                 content: '/model/version?modelId=' + modelId
             });
         }
+        loadPermissionMatrix();
     })
 </script>
 </html>

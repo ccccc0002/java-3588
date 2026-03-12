@@ -116,6 +116,7 @@
         let $ = layui.jquery;
         let popup = layui.popup;
         let form = layui.form;
+        let permissions = {can_sync_warehouse: false};
 
         //
         var currentIndexCode = '-1';
@@ -189,14 +190,30 @@
         //
         table.on('toolbar(organization-table)', function(obj) {
             if (obj.event === 'sync2node') {
+                if(!permissions.can_sync_warehouse) {
+                    popup.failure('permission denied');
+                    return;
+                }
                 window.sync2node(obj);
             } else if (obj.event === 'refresh') {
                 window.refresh();
             } else if (obj.event === 'sync2all') {
+                if(!permissions.can_sync_warehouse) {
+                    popup.failure('permission denied');
+                    return;
+                }
                 window.sync2all(obj);
             } else if (obj.event === 'pull') {
+                if(!permissions.can_sync_warehouse) {
+                    popup.failure('permission denied');
+                    return;
+                }
                 window.pullRtsp(obj);
             } else if (obj.event == 'select2export') {
+                if(!permissions.can_sync_warehouse) {
+                    popup.failure('permission denied');
+                    return;
+                }
                 window.select2export(obj);
             }
         });
@@ -212,7 +229,7 @@
                 $.post('/warehouse/sync2all', {}, function(res) {
                     layer.close(loading);
                     if(res.code == 0) {
-                        popup.success('数据正在处理');
+                        showSyncSummary(res, 'All nodes sync finished');
                     } else {
                         popup.failure(res.msg);
                     }
@@ -231,7 +248,7 @@
                 $.post('/warehouse/sync2node', {'indexCode': currentIndexCode}, function(res) {
                     layer.close(loading);
                     if(res.code == 0) {
-                        popup.success('数据正在处理');
+                        showSyncSummary(res, 'Current node sync finished');
                     } else {
                         popup.failure(res.msg);
                     }
@@ -281,12 +298,28 @@
                 $.post('/warehouse/select2export', {'ids': ids}, function(res) {
                     layer.close(loading);
                     if(res.code == 0) {
-                        popup.success('导入完成');
+                        showSyncSummary(res, 'Import finished');
                     } else {
                         popup.failure(res.msg);
                     }
                 });
             });
+        }
+
+        function showSyncSummary(res, prefix) {
+            let data = (res && res.data) ? res.data : {};
+            let synced = Number(data.synced || 0);
+            let skipped = Number(data.skipped_by_license || 0);
+            popup.success(prefix + ': synced=' + synced + ', skipped_by_license=' + skipped);
+        }
+
+        function applyPermissionUi() {
+            if (permissions.can_sync_warehouse) {
+                return;
+            }
+            $('button[lay-event=sync2node],button[lay-event=sync2all],button[lay-event=pull],button[lay-event=select2export]')
+                .prop('disabled', true)
+                .addClass('layui-btn-disabled');
         }
 
         //
@@ -306,6 +339,13 @@
 
         //
         $(document).ready(function() {
+            $.post('/account/permissions', {}, function(res) {
+                if(res && res.code == 0 && res.data) {
+                    permissions = res.data;
+                }
+                applyPermissionUi();
+            });
+
             $('#treeData').on("changed.jstree", function (e, data) {
                     if(data.selected.length) {
                         var jsonData = data.instance.get_node(data.selected[0]).original;

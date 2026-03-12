@@ -34,8 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 告警推送数据，对接算法推送告警数据
- *
+ * 闂傚倸鍊搁崐鎼佸磹妞嬪海鐭嗗〒姘ｅ亾妤犵偛顦甸弫宥夊礋椤撶姷鍘梻浣侯攰閹活亪姊介崟顖氱柧婵犻潧顑嗛悡蹇撯攽閻愰潧浜炬繛鍛崌閺屸剝鎷呴崨濠庢＆闂佸搫鐭夌紞浣割嚕椤曗偓瀹曟帒顫濋璺ㄥ笡缂傚倸鍊烽懗鑸垫叏閸偆绠惧┑鐘叉搐閽冪喖鏌￠崶鈺佹灁缂佺娀绠栭弻锝夊箛闂堟稑顫┑鐘灪鐢€愁潖閾忓湱鐭欐繛鍡樺劤閸撻亶姊洪崷顓х劸妞ゎ厾鍏橀悰顔跨疀濞戞ê绐涘銈嗙墬缁嬫垿寮搁崒鐐粹拺闁告稑锕ユ径鍕煕閹垮嫮鐣电€规洦鍨堕崺鈧い鎺戝閳锋帡鏌涚仦鍓ф噯闁稿繐鏈妵鍕閻欏懓鍚銈冨灪瀹€绋款嚕娴犲鏁囬柣鎰劋閿涙淇婇悙顏勨偓鏍偋濡ゅ啫鍨濈€广儱顧€缂嶆牠鏌￠崶鈺佹灁缂佲檧鍋撻梻鍌氬€搁悧濠勭矙閹惧瓨娅犻柟鎵閻撴洟鎮楅敐搴′簼閻忓繋鍗抽弻鐔风暋閻楀牆娈楅悗瑙勬礃閿曘垽骞冨▎鎿冩晢闁稿本绨介妷鈺傗拻濞达絽婀卞﹢浠嬫煕閳轰礁顏€规洝顫夌€靛ジ骞栭鐔告珨婵＄偑鍊栭幐鐐叏閹绢喖鍨傛繝闈涱儐閸嬶綁鏌涢妷鎴濆暞椤ユ繈姊洪崫鍕殜闁稿鎹囬弻鐔风暋閻楀牆娈楀Δ鐘靛仒缁舵岸鐛幒妤€骞㈡俊鐐村劤椤ユ艾鈹戦悩鍨毄濠殿喗娼欑叅闁挎洖鍊归崑鍌涚箾閸℃ɑ灏伴柣鎾寸懄閵囧嫰骞樼捄鐑樼€荤紓浣诡殕鐢帡鍩為幋锔绘晩闁绘挸绨堕崑鎾诲锤濡も偓閽冪喓鈧箍鍎遍悧婊冾瀶閵娾晜鈷戠紒瀣硶缁犺尙绱掔€ｎ偅灏甸柛鎺撳浮瀹曞ジ鎮㈤搹瑙勫殞闂備線鈧偛鑻晶鎾煟濞戝崬鏋熺€垫澘瀚伴獮鍥敇閻斿摜褰ㄩ梻鍌欑閹测€趁洪敃鍌氱婵炲棙鎼╅弫渚€鐓崶銊р姇闁抽攱鍨块弻鐔虹矙閸噮鍔夊銈冨劚濡鍩為幋锔绘晩闁告繂瀚ч崑鎾诲即閵忕姷鍘洪梺瑙勫礃椤曆囨煁閸ヮ剚鐓涢柛銉㈡櫅閺嬫棃�? *
  * @author zhoumingxing
  * @mail 465769438@qq.com
  */
@@ -63,6 +62,9 @@ public class ReportApiController {
     //
     @Autowired
     private ReportPushService reportPushService;
+
+    @Autowired
+    private ReportPushTargetService reportPushTargetService;
 
     //
     @Autowired
@@ -112,7 +114,7 @@ public class ReportApiController {
                 return JsonResultUtils.fail("the algorithm is not found.");
             }
 
-            // 把消息推送出去
+            // best-effort websocket broadcast
             try {
                 ReportMessage reportMessage = new ReportMessage();
                 reportMessage.setType("REPORT");
@@ -120,10 +122,9 @@ public class ReportApiController {
                 reportMessage.setParams(params);
                 reportWebsocket.sendToAll(JSON.toJSONString(reportMessage));
             } catch (Exception e) {
-                //
+                // ignore websocket send failure
             }
-
-            // 告警时间段判断
+            // report period check
             boolean inPeriod = false;
             Integer period = Integer.valueOf(DateUtil.format(new Date(), "HHmm"));
             List<ReportPeriod> reportPeriodList = reportPeriodService.listData(cameraId, algorithmId);
@@ -137,11 +138,10 @@ public class ReportApiController {
                     }
                 }
             }
-
-            // 不在告警时段
+            // skip when out of period
             if(!inPeriod) {
-                log.info("不在告警时段 {}, {}, {}, {}", camera.getName(), algorithm.getName(), fileName, params);
-                return JsonResultUtils.success("不在报警时间段内");
+                log.info("report push skipped {}, {}, {}, {}", camera.getName(), algorithm.getName(), fileName, params);
+                return JsonResultUtils.success("out of alarm period");
             }
 
             //
@@ -156,8 +156,7 @@ public class ReportApiController {
             report.setAuditResult(0);
             report.setAuditState(0);
             int display = 0;
-
-            // 根据摄像头的告警间隔处理
+            // camera interval throttle
             Float intervalTime = camera.getIntervalTime();
             if(intervalTime != null && intervalTime > 0) {
                 Report last = this.reportService.findLast(cameraId, algorithmId);
@@ -170,11 +169,10 @@ public class ReportApiController {
 
             //
             if(display == 0) {
-                // display = 1 的数据都丢弃掉
+                // save visible report
                 report.setDisplay(display);
                 this.reportService.save(report);
-
-                // 推送数据到前端显示
+                // resolve warehouse name
                 String wareHouseName = "-";
                 Long wareHouseId = camera.getWareHouseId();
                 if(wareHouseId != null && wareHouseId != 0) {
@@ -198,8 +196,7 @@ public class ReportApiController {
                 //
                 Message messageVo = new Message();
                 messageVo.setType(MessageType.REPORT.getType());
-                messageVo.setContent(camera.getName() + " 出现 " + algorithm.getName() + " 告警");
-
+                messageVo.setContent(camera.getName() + " alarm: " + algorithm.getName());
                 Map<String, Object> dataMap = new HashMap<>();
                 dataMap.put("reportId", report.getId());
                 dataMap.put("cameraName", camera.getName());
@@ -213,10 +210,9 @@ public class ReportApiController {
                 String voJson = objectMapper.writeValueAsString(messageVo);
                 websocket.sendToAll(voJson);
 
-                // 推送第三方
-                String reportPushUrl = configService.getByValTag("reportPushUrl");
-                String reportPushImage = configService.getByValTag("reportPushImage");
-                if(StrUtil.isNotBlank(reportPushUrl)) {
+                // 闂傚倸鍊搁崐鎼佸磹瀹勬噴褰掑炊椤掑﹦绋忔繝銏ｆ硾椤戝洭銆呴幓鎹楀綊鎮╁顔煎壈缂備讲鍋撳鑸靛姈閻撴瑩寮堕崼婵嗏挃闁伙綁浜堕弻锝夊箳閹寸姳绮甸梺闈涙搐鐎氫即鐛€ｎ喗鏅查柛娑卞幖鍟搁梻鍌欒兌椤牏鎹㈤幇鏉垮珘妞ゆ帒瀚闂佸憡娲﹂崹鎵不閿濆棛绡€闂傚牊绋掗幖鎰亜閿旇娅囩紒杈ㄦ尰閹峰懘宕滈幓鎺戝婵＄偑鍊ч梽鍕熆濮椻偓椤㈡岸濡烽埡浣侯槹濡炪倖鎸荤粙鎴炵妤ｅ啯鐓ユ繝闈涙椤庢霉濠婂懎浠遍柡?
+                List<Map<String, Object>> pushTargets = reportPushTargetService.listEnabledTargets();
+                if(pushTargets != null && !pushTargets.isEmpty()) {
                     try {
                         JSONObject reportMap = new JSONObject();
                         reportMap.put("cmpn_cd", "TLB");
@@ -233,21 +229,22 @@ public class ReportApiController {
                         reportMap.put("params", params);
                         reportMap.put("webUrl", configService.getByValTag("webUrl"));
 
-                        // imageBase64 这个数据做成配置式，因为需要消耗时间
-                        boolean toBase64 = false;
-                        if(reportPushImage != null && "true".equals(reportPushImage)) {
-                            toBase64 = true;
+                        for (Map<String, Object> target : pushTargets) {
+                            String targetUrl = trimText(target.get("url"));
+                            if (StrUtil.isBlank(targetUrl)) {
+                                continue;
+                            }
+                            boolean includeImage = toBool(target.get("include_image"), false);
+                            String bearerToken = trimText(target.get("bearer_token"));
+                            reportPushService.request(targetUrl, reportMap, includeImage, fileName, bearerToken);
                         }
-
-                        reportPushService.request(reportPushUrl, reportMap, toBase64, fileName);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.warn("push report to http targets failed, reportId={}, ex={}", report.getId(), e.getMessage());
                     }
                 } else {
-                    log.info("不推送告警，没有配置推送地址 {}, {}, {}, {}", camera.getName(), algorithm.getName(), fileName, params);
+                    log.info("report push skipped {}, {}, {}, {}", camera.getName(), algorithm.getName(), fileName, params);
                 }
 
-                // 推送短信
                 String smsEnable = configService.getByValTag("smsEnable");
                 if(StrUtil.isNotBlank(smsEnable) && "true".equals(smsEnable)) {
                     String mobiles = smsPhoneService.listPhoneStr("test");
@@ -255,8 +252,7 @@ public class ReportApiController {
                         SendSmsUtil.send(mobiles, camera.getName(), algorithm.getName());
                     }
                 }
-
-                // 推送到企业微信群机器人
+                // push to wework robot
                 String weworkEnable = configService.getByValTag("weworkEnable");
                 if(StrUtil.isNotBlank(weworkEnable) && "true".equals(weworkEnable)) {
                     String weworkUrl = configService.getByValTag("weworkUrl");
@@ -264,15 +260,39 @@ public class ReportApiController {
                     if(StrUtil.isNotBlank(weworkUrl) && StrUtil.isNotBlank(webUrl)) {
                         String clickUrl = webUrl + "/report/detail?id=" + report.getId();
                         String picUrl = webUrl + "/report/stream?id=" + report.getId();
-                        WeWorkRobotSendUtils.sendTextAndImage(weworkUrl, camera.getName() + "#" + algorithm.getName() + "#告警, " + DateUtil.format(new Date(), "MM/dd HH:mm"), clickUrl, picUrl);
+                        WeWorkRobotSendUtils.sendTextAndImage(weworkUrl, camera.getName() + "#" + algorithm.getName() + "#ALERT, " + DateUtil.format(new Date(), "MM/dd HH:mm"), clickUrl, picUrl);
                     }
                 }
             }
-
             return JsonResultUtils.success();
         } catch (Exception e) {
-            log.error("调用告警上报接口异常 {}", e.getMessage());
+            log.error("report api failed: {}", e.getMessage());
             return JsonResultUtils.fail(e.getMessage());
         }
     }
+
+    private String trimText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? null : text;
+    }
+
+    private boolean toBool(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            return defaultValue;
+        }
+        return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
 }
+
+
+

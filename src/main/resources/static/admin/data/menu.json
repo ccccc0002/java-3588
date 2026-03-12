@@ -1,14 +1,14 @@
 [
   {
     "id": 1,
-    "title": "应用监控",
+    "title": "Application",
     "icon": "layui-icon layui-icon-console",
     "type": 0,
     "href": "",
     "children": [
       {
         "id": 10,
-        "title": "算法管理",
+        "title": "Algorithm",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -16,7 +16,7 @@
       },
       {
         "id": 1011,
-        "title": "模型测试",
+        "title": "Model Test",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -24,7 +24,7 @@
       },
       {
         "id": 11,
-        "title": "摄像头管理",
+        "title": "Camera",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -32,7 +32,7 @@
       },
       {
         "id": 14,
-        "title": "视频流管理",
+        "title": "Stream",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -40,7 +40,7 @@
       },
       {
         "id": 12,
-        "title": "告警管理",
+        "title": "Alert",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -48,7 +48,7 @@
       },
       {
         "id": 15,
-        "title": "增量训练",
+        "title": "Training",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -56,7 +56,7 @@
       },
       {
         "id": 13,
-        "title": "统计管理",
+        "title": "Statistic",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -64,7 +64,7 @@
       },
       {
         "id": 118,
-        "title": "短信管理",
+        "title": "Push Channel",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -72,7 +72,7 @@
       },
       {
         "id": 18,
-        "title": "系统管理",
+        "title": "System Config",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -80,12 +80,21 @@
       },
       {
         "id": 22,
-        "title": "账号管理",
+        "title": "Account",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
         "href": "/account"
+      },
+      {
+        "id": 23,
+        "title": "Operation Log",
+        "icon": "layui-icon layui-icon-console",
+        "type": 1,
+        "openType": "_iframe",
+        "href": "/operationlog"
       }
     ]
   }
 ]
+

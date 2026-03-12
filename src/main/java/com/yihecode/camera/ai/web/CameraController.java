@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -70,6 +71,12 @@ public class CameraController {
 
     @Autowired
     private MediaStreamUrlService mediaStreamUrlService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     /**
      * 打开摄像头管理页面
@@ -271,6 +278,9 @@ public class CameraController {
     @PostMapping({"/save"})
     @ResponseBody
     public JsonResult save(Camera camera, String algorithmvos, String confidencevos, String markpointsvos, Integer updatePoint) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if (StrUtil.isBlank(camera.getName())) {
             return JsonResultUtils.fail("请输入摄像头名称");
         }
@@ -291,6 +301,10 @@ public class CameraController {
         }
          */
         if (camera.getId() == null) {
+            if (isChannelLimitExceeded()) {
+                return JsonResultUtils.fail("Camera channel limit exceeded by license");
+            }
+
             camera.setState(CommState.NORMAL.getType());
             camera.setRunning(CameraRunningState.CLOSED.getType());
             camera.setAction(CameraAction.ACTION_UPD.getType());
@@ -306,6 +320,7 @@ public class CameraController {
         }
         camera.setUpdatedAt(new Date());
         this.cameraService.saveCamera(camera, algorithmvos, confidencevos, markpointsvos, updatePoint);
+        operationLogService.record("camera:save", "cameraId=" + camera.getId(), true, "camera saved", camera.getName());
         return JsonResultUtils.success();
     }
 
@@ -317,7 +332,11 @@ public class CameraController {
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         this.cameraService.delete(id);
+        operationLogService.record("camera:delete", "cameraId=" + id, true, "camera deleted", "");
         return JsonResultUtils.success();
     }
 
@@ -690,6 +709,33 @@ public class CameraController {
         resMap.put("zlmMode", mediaStreamUrlService.isZlmMode() ? 1 : 0);
         return JsonResultUtils.success(resMap);
     }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean isChannelLimitExceeded() {
+        String maxChannelsRaw = configService.getByValTag("license_max_channels");
+        if (StrUtil.isBlank(maxChannelsRaw)) {
+            return false;
+        }
+        try {
+            int maxChannels = Integer.parseInt(maxChannelsRaw.trim());
+            if (maxChannels <= 0) {
+                return false;
+            }
+            List<Camera> activeCameras = cameraService.listData();
+            int currentCount = activeCameras == null ? 0 : activeCameras.size();
+            return currentCount >= maxChannels;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private String resolveFfmpegBin() {
         String ffmpegBin = configService.getByValTag("media_ffmpeg_bin");
         return StrUtil.isBlank(ffmpegBin) ? "ffmpeg" : ffmpegBin;

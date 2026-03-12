@@ -1,9 +1,12 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.yihecode.camera.ai.entity.Account;
 import com.yihecode.camera.ai.service.AccountService;
+import com.yihecode.camera.ai.service.OperationLogService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,66 +15,56 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-/**
- * 登录控制
- *
- * @author zhoumingxing
- * @mail 465769438@qq.com
- */
 @Controller
 public class LoginController {
 
     @Autowired
     private AccountService accountService;
 
-    /**
-     * 打开登录页面
-     * @return
-     */
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
+
     @GetMapping({"/login"})
     public String login() {
         return "login";
     }
 
-    /**
-     * 登录控制
-     * @return
-     */
     @PostMapping({"/login"})
     @ResponseBody
     public JsonResult doLogin(String account, String password) {
-        Account account1 = accountService.getByAccount(account);
-        if(account1 == null) {
-            return JsonResultUtils.fail("账号或密码错误");
+        if (StrUtil.isBlank(account) || StrUtil.isBlank(password)) {
+            return JsonResultUtils.fail("account and password are required");
         }
-        //
+        Account found = accountService.getByAccount(account);
+        if (found == null) {
+            return JsonResultUtils.fail("account or password invalid");
+        }
         String md5 = SecureUtil.md5(password);
-        if(!md5.equals(account1.getPassword())) {
-            return JsonResultUtils.fail("账号或密码错误");
+        if (!md5.equals(found.getPassword())) {
+            return JsonResultUtils.fail("account or password invalid");
         }
-        //
-        if(!(account1.getState() != null && account1.getState() == 0)) {
-            return JsonResultUtils.fail("账号已失效");
+        if (!(found.getState() != null && found.getState() == 0)) {
+            return JsonResultUtils.fail("account is disabled");
         }
-        //
-        StpUtil.login(account1.getId());
 
+        StpUtil.login(found.getId());
+        String role = roleAccessService.getRoleByAccountId(found.getId());
+        StpUtil.getSession().set("account_name", found.getName());
+        StpUtil.getSession().set("account", found.getAccount());
+        StpUtil.getSession().set("role", role);
+        operationLogService.record("login:success", "account:" + found.getAccount(), true, "login success", "");
         return JsonResultUtils.success();
     }
 
-    /**
-     * 登出控制
-     * @return
-     */
     @GetMapping(value = "/logout")
     public String logout() {
+        operationLogService.record("login:logout", "account", true, "logout", "");
         StpUtil.logout();
         StpUtil.getSession(true).logout();
         return "redirect:/login";
     }
-
-    public static void main(String[] args) {
-        String md5 = SecureUtil.md5("abc");
-        System.out.println(md5);
-    }
 }
+

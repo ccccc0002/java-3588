@@ -327,3 +327,199 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-05 17:19:17 | global | collab | timer_tick | codex-agent | periodic autosave tick #93 |
 | 2026-03-05 17:34:17 | global | collab | timer_tick | codex-agent | periodic autosave tick #94 |
 | 2026-03-05 17:49:17 | global | collab | timer_tick | codex-agent | periodic autosave tick #95 |
+| 2026-03-11 13:36:12 | PHASE2-EXEC | Phase0 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-133611-PHASE2-EXEC.json |
+| 2026-03-11 13:36:12 | PHASE2-EXEC | Phase0 | phase_checkpoint | codex-agent | checkpoint and protocol files saved |
+| 2026-03-11 13:36:12 | PHASE2-EXEC | Phase0 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-133612-PHASE2-EXEC.json |
+| 2026-03-11 13:36:13 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 13:36:13 | PHASE2-EXEC | Phase0 | session_compacted | codex-agent | compact after checkpoint: checkpoint and protocol files saved |
+| 2026-03-11 13:38:10 | PHASE2-EXEC | Phase0 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260311-133810-PHASE2-EXEC.json |
+| 2026-03-11 13:38:10 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 13:38:10 | PHASE2-EXEC | Phase0 | phase_completed | codex-agent | planning artifacts refreshed |
+| 2026-03-11 13:38:10 | PHASE2-EXEC | Phase0 | sync_done | codex-agent | event-driven sync completed |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-134129-PHASE2-EXEC.json |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | bootstrap session protocol |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-134129-PHASE2-EXEC.json |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | session ending: bootstrap session protocol |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-134129-PHASE2-EXEC.json |
+| 2026-03-11 13:41:29 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | session started: bootstrap session protocol |
+| 2026-03-11 13:41:30 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-134129-PHASE2-EXEC.json |
+| 2026-03-11 13:41:30 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 13:41:30 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | session end compact: bootstrap session protocol |
+| 2026-03-11 13:41:30 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-134130-PHASE2-EXEC.json |
+| 2026-03-11 13:41:30 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | bootstrap session protocol |
+| 2026-03-11 13:42:08 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-134208-PHASE2-EXEC.json |
+| 2026-03-11 13:42:08 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | manual test |
+| 2026-03-11 13:46:01 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-134600-PHASE2-EXEC.json |
+| 2026-03-11 13:46:01 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | tmux multi-agent bootstrap |
+| 2026-03-11 13:46:01 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-134601-PHASE2-EXEC.json |
+| 2026-03-11 13:46:01 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | session started: tmux multi-agent bootstrap |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-142153-PHASE2-EXEC.json |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-142154-PHASE2-EXEC.json |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | Phase1 cockpit implementation in progress: stream homepage + charts + summary API |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | dashboard cockpit layout + /stream/dashboard/summary API + manual stream select(1/4/9/16) |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-142154-PHASE2-EXEC.json |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 14:21:54 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | compact after cockpit milestone |
+| 2026-03-11 14:26:28 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-142627-PHASE2-EXEC.json |
+| 2026-03-11 14:26:28 | PHASE2-EXEC | Phase1 | phase_checkpoint | codex-agent | cockpit page refactor done; dashboard summary api done; StreamController/Template tests passed |
+| 2026-03-11 14:26:28 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-142627-PHASE2-EXEC.json |
+| 2026-03-11 14:26:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 14:26:28 | PHASE2-EXEC | Phase1 | session_compacted | codex-agent | compact after tests pass for cockpit milestone |
+| 2026-03-11 14:27:17 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-142717-PHASE2-EXEC.json |
+| 2026-03-11 14:27:17 | PHASE2-EXEC | Phase1 | phase_started | codex-agent | Phase1 milestone completed: cockpit layout + 1/4/9/16 + dashboard api + targeted tests pass |
+| 2026-03-11 15:00:41 | PHASE2-EXEC | Phase2 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-150041-PHASE2-EXEC.json |
+| 2026-03-11 15:00:41 | PHASE2-EXEC | Phase2 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-150041-PHASE2-EXEC.json |
+| 2026-03-11 15:00:41 | PHASE2-EXEC | Phase2 | phase_started | codex-agent | Phase2 in progress: latest alerts linkage + drawer preview implemented |
+| 2026-03-11 15:00:41 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 15:00:41 | PHASE2-EXEC | Phase2 | session_compacted | codex-agent | compact after alarm drawer milestone |
+| 2026-03-11 15:01:54 | PHASE2-EXEC | Phase2 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-150154-PHASE2-EXEC.json |
+| 2026-03-11 15:01:54 | PHASE2-EXEC | Phase2 | phase_checkpoint | codex-agent | latest alert list supports clickable drawer detail; realtime alert opens drawer; template regression tests passed |
+| 2026-03-11 15:05:39 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-150539-PHASE2-EXEC.json |
+| 2026-03-11 15:05:39 | PHASE2-EXEC | Phase2 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260311-150539-PHASE2-EXEC.json |
+| 2026-03-11 15:05:39 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 started: chart interaction/theme-language entry prep |
+| 2026-03-11 15:05:40 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-150540-PHASE2-EXEC.json |
+| 2026-03-11 15:05:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 15:05:40 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | phase2 completed and phase3 started |
+| 2026-03-11 15:08:53 | PHASE2-EXEC | Phase2 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260311-150853-PHASE2-EXEC.json |
+| 2026-03-11 15:08:53 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 15:08:53 | PHASE2-EXEC | Phase2 | phase_completed | codex-agent | Phase2 completed: homepage live stream + latest alert linkage + alarm detail drawer |
+| 2026-03-11 15:50:01 | PHASE2-EXEC | Phase3 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-155001-PHASE2-EXEC.json |
+| 2026-03-11 15:50:01 | PHASE2-EXEC | Phase3 | phase_checkpoint | codex-agent | Phase3 checkpoint: dashboard theme/lang global switch implemented with persistence; alarm drawer/chart text localization and tests passed |
+| 2026-03-11 15:50:42 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-155041-PHASE2-EXEC.json |
+| 2026-03-11 15:50:42 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 in progress: theme/lang global switch wired, localization pipeline online, target tests pass |
+| 2026-03-11 15:51:18 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-155118-PHASE2-EXEC.json |
+| 2026-03-11 15:51:18 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 15:51:18 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | manual compact after theme/lang checkpoint |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-155519-PHASE2-EXEC.json |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | phase_checkpoint | codex-agent | Phase3 checkpoint update: removed temporary i18n comment block, retained active theme/lang implementation, tests still passing |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-155519-PHASE2-EXEC.json |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-155519-PHASE2-EXEC.json |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 in progress: theme/lang switch stabilized after cleanup, target tests pass |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 15:55:19 | PHASE2-EXEC | Phase3 | session_compacted | codex-agent | compact after phase3 cleanup |
+| 2026-03-11 16:39:53 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-163952-PHASE2-EXEC.json |
+| 2026-03-11 16:39:53 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Algorithm package lifecycle endpoints wired: /algorithm/package/import + /algorithm/forceDelete; algorithm page import/delete fallback added; unit tests added (pending execution: local maven missing). |
+| 2026-03-11 16:40:09 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-164009-PHASE2-EXEC.json |
+| 2026-03-11 16:40:09 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | Implemented algorithm package import & force-delete backend/UI path and added dedicated tests. |
+| 2026-03-11 16:40:09 | PHASE2-EXEC | Phase4 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-164009-PHASE2-EXEC.json |
+| 2026-03-11 16:40:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 16:40:09 | PHASE2-EXEC | Phase4 | session_compacted | codex-agent | compact after checkpoint: Implemented algorithm package import & force-delete backend/UI path and added dedicated tests. |
+| 2026-03-11 17:03:56 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-170356-PHASE2-EXEC.json |
+| 2026-03-11 17:03:56 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5-M1/M2 advanced: algorithm package import, force delete with unbind, and metadata edit (name/description/label_aliases_zh) wired end-to-end with tests. |
+| 2026-03-11 17:04:08 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-170408-PHASE2-EXEC.json |
+| 2026-03-11 17:04:08 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | Algorithm package lifecycle + metadata edit completed with passing targeted tests. |
+| 2026-03-11 17:04:08 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-170408-PHASE2-EXEC.json |
+| 2026-03-11 17:04:08 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 17:04:08 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | compact after checkpoint: Algorithm package lifecycle + metadata edit completed with passing targeted tests. |
+| 2026-03-11 17:35:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-173500-PHASE2-EXEC.json |
+| 2026-03-11 17:35:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5-M3 progress: model test page rebuilt and predict API now returns normalized detections + annotated result image; upload->infer->render path is available with tests for detection flatten/annotation service. |
+| 2026-03-11 17:35:43 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-173543-PHASE2-EXEC.json |
+| 2026-03-11 17:35:43 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | Model testing workflow stabilized: frontend page rewritten, backend returns detections/resultFile, unit tests passing. |
+| 2026-03-11 17:35:44 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-173543-PHASE2-EXEC.json |
+| 2026-03-11 17:35:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 17:35:44 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | compact after checkpoint: Model testing workflow stabilized: frontend page rewritten, backend returns detections/resultFile, unit tests passing. |
+| 2026-03-11 17:41:48 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-174148-PHASE2-EXEC.json |
+| 2026-03-11 17:41:48 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5-M3 dual-path model testing enabled: image upload + RTSP one-frame capture feed into predict; backend now outputs detections and annotated image. |
+| 2026-03-11 17:42:50 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-174250-PHASE2-EXEC.json |
+| 2026-03-11 17:42:50 | PHASE2-EXEC | Phase5 | phase_checkpoint | codex-agent | Model testing dual-channel (upload/capture) delivered with detection table + annotated output and passing targeted tests. |
+| 2026-03-11 17:42:50 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-174250-PHASE2-EXEC.json |
+| 2026-03-11 17:42:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 17:42:51 | PHASE2-EXEC | Phase5 | session_compacted | codex-agent | compact after checkpoint: Model testing dual-channel (upload/capture) delivered with detection table + annotated output and passing targeted tests. |
+| 2026-03-11 18:02:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-180243-PHASE2-EXEC.json |
+| 2026-03-11 18:02:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 advanced: report list now supports camera/algorithm/type/time combo filters with quick ranges; statistic page/interfaces now accept camera/algorithm/type + date combined filtering. |
+| 2026-03-11 18:03:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-180335-PHASE2-EXEC.json |
+| 2026-03-11 18:03:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Alarm and statistics multi-condition filtering delivered with frontend wiring and passing tests. |
+| 2026-03-11 18:03:36 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-180335-PHASE2-EXEC.json |
+| 2026-03-11 18:03:36 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 18:03:36 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Alarm and statistics multi-condition filtering delivered with frontend wiring and passing tests. |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260311-185007-PHASE2-EXEC.json |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260311-185007-PHASE2-EXEC.json |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Phase7 checkpoint complete: ReportController and ReportApiController switched to ReportPushTargetService; ReportPushTargetServiceTest/ReportControllerTest/ReportApiControllerTest added; 31 targeted tests passed. |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 multi-target HTTP push delivered: manual push summary + target CRUD endpoints + auto-push multi-target with bearer/include_image; targeted tests passed. |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260311-185008-PHASE2-EXEC.json |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-11 18:50:08 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: Phase7 checkpoint complete: ReportController and ReportApiController switched to ReportPushTargetService; ReportPushTargetServiceTest/ReportControllerTest/ReportApiControllerTest added; 31 targeted tests passed. |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-124111-PHASE2-EXEC.json |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-124111-PHASE2-EXEC.json |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 frontend integration advanced: report page now supports HTTP push target management dialog (list/create/edit/delete) and push result summary rendering. |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Phase7 checkpoint: report/index.ftl rewritten and wired to /report/push/targets* endpoints; backend regression tests (14) passed. |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-124112-PHASE2-EXEC.json |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 12:41:12 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: Phase7 checkpoint: report/index.ftl rewritten and wired to /report/push/targets* endpoints; backend regression tests (14) passed. |
+| 2026-03-12 13:02:34 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-130234-PHASE2-EXEC.json |
+| 2026-03-12 13:02:34 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 M2 backend landed: license info/save APIs + network interfaces/saved/save APIs + camera create license channel limit; added ConfigControllerTest/CameraControllerTest and targeted regression tests passed. |
+| 2026-03-12 13:02:43 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-130243-PHASE2-EXEC.json |
+| 2026-03-12 13:02:43 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | license/network/channel-limit API + TDD tests green |
+| 2026-03-12 13:02:43 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-130243-PHASE2-EXEC.json |
+| 2026-03-12 13:02:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:02:43 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: license/network/channel-limit API + TDD tests green |
+| 2026-03-12 13:06:17 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-130617-PHASE2-EXEC.json |
+| 2026-03-12 13:06:17 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 M2/M3 advanced: license/network backend APIs completed, camera create enforces licensed channel limit, config module now has License/Network pages wired; regression tests passed. |
+| 2026-03-12 13:06:36 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-130636-PHASE2-EXEC.json |
+| 2026-03-12 13:06:36 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | license/network UI + backend wired, tests green |
+| 2026-03-12 13:06:37 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-130637-PHASE2-EXEC.json |
+| 2026-03-12 13:06:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:06:37 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: license/network UI + backend wired, tests green |
+| 2026-03-12 13:13:10 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-131310-PHASE2-EXEC.json |
+| 2026-03-12 13:13:10 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 hardening: warehouse->camera sync now enforces license channel cap (prevents bypass), network config supports IPv4 validation and delete API/UI; Config/Camera/WareHouse + regression tests passed. |
+| 2026-03-12 13:13:21 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-131320-PHASE2-EXEC.json |
+| 2026-03-12 13:13:21 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | license bypass in warehouse sync fixed; network validate/delete completed; tests green |
+| 2026-03-12 13:13:21 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-131321-PHASE2-EXEC.json |
+| 2026-03-12 13:13:21 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:13:21 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: license bypass in warehouse sync fixed; network validate/delete completed; tests green |
+| 2026-03-12 13:15:32 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-131531-PHASE2-EXEC.json |
+| 2026-03-12 13:15:32 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 tightened: warehouse sync now reports skipped_by_license and blocks over-limit auto camera creation; network config adds IPv4 validation + delete API/UI; targeted and regression tests all green. |
+| 2026-03-12 13:15:44 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-131544-PHASE2-EXEC.json |
+| 2026-03-12 13:15:44 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | warehouse sync license bypass closed + skipped_by_license telemetry; network validation/delete done; tests green |
+| 2026-03-12 13:15:44 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-131544-PHASE2-EXEC.json |
+| 2026-03-12 13:15:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:15:44 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: warehouse sync license bypass closed + skipped_by_license telemetry; network validation/delete done; tests green |
+| 2026-03-12 13:18:59 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-131858-PHASE2-EXEC.json |
+| 2026-03-12 13:18:59 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 UX hardening: warehouse sync/select import now returns synced + skipped_by_license and frontend displays summary; added sync2node/select2export license-limit tests; regression tests passed. |
+| 2026-03-12 13:19:10 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-131910-PHASE2-EXEC.json |
+| 2026-03-12 13:19:10 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | warehouse sync summary UI wired and license skip tested for sync2node/select2export |
+| 2026-03-12 13:19:10 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-131910-PHASE2-EXEC.json |
+| 2026-03-12 13:19:11 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:19:11 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: warehouse sync summary UI wired and license skip tested for sync2node/select2export |
+| 2026-03-12 13:21:11 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-132111-PHASE2-EXEC.json |
+| 2026-03-12 13:21:11 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 parallel pass: warehouse page now surfaces synced/skipped_by_license summary; added sync2node/select2export coverage; license save now validates expire_at (yyyy-MM-dd); full targeted regression green. |
+| 2026-03-12 13:21:23 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-132122-PHASE2-EXEC.json |
+| 2026-03-12 13:21:23 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | warehouse sync summary UX + license date validation + tests green |
+| 2026-03-12 13:21:23 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-132123-PHASE2-EXEC.json |
+| 2026-03-12 13:21:23 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:21:23 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: warehouse sync summary UX + license date validation + tests green |
+| 2026-03-12 13:47:14 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-134713-PHASE2-EXEC.json |
+| 2026-03-12 13:47:14 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 bootstrap delivered: RBAC role service (super_admin/ops/read_only), action-level backend guards for account/config/warehouse write paths, operation log service+list page, account role assignment UI, and front-end button-level permission gating. |
+| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-134728-PHASE2-EXEC.json |
+| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | rbac+operationlog first usable version online; regression tests green |
+| 2026-03-12 13:47:28 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-134728-PHASE2-EXEC.json |
+| 2026-03-12 13:47:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 13:47:29 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: rbac+operationlog first usable version online; regression tests green |
+| 2026-03-12 15:23:29 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-152328-PHASE2-EXEC.json |
+| 2026-03-12 15:23:29 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 hardening: ReportController push/target write APIs now RBAC-guarded with operation logs; ReportControllerTest added permission-deny cases; targeted regression suites all green. |
+| 2026-03-12 15:23:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-152354-PHASE2-EXEC.json |
+| 2026-03-12 15:23:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Report push target action-level RBAC+operation-log completed; controller/service/web tests passed. |
+| 2026-03-12 15:23:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-152354-PHASE2-EXEC.json |
+| 2026-03-12 15:23:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 15:23:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Report push target action-level RBAC+operation-log completed; controller/service/web tests passed. |
+| 2026-03-12 15:26:35 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-152635-PHASE2-EXEC.json |
+| 2026-03-12 15:26:35 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Report module RBAC closed-loop done (backend guard + frontend button gating + tests). |
+| 2026-03-12 15:26:35 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-152635-PHASE2-EXEC.json |
+| 2026-03-12 15:26:36 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening: Report push/push-target APIs + report page action buttons now enforce can_manage_push_targets; added deny-path tests; targeted regressions all green. |
+| 2026-03-12 15:26:36 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-152636-PHASE2-EXEC.json |
+| 2026-03-12 15:26:36 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 15:26:36 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Report module RBAC closed-loop done (backend guard + frontend button gating + tests). |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-153431-PHASE2-EXEC.json |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Camera + Report write-path RBAC hardening finished with tests. |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-153432-PHASE2-EXEC.json |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera save/delete now RBAC-protected with operation logs; report module frontend+backend push-target permission closure completed; targeted controller regressions all green. |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-153432-PHASE2-EXEC.json |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera + Report write-path RBAC hardening finished with tests. |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Algorithm+Model RBAC closure complete (backend+frontend+tests). |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening expanded: algorithm/model write APIs and algorithm package lifecycle now RBAC-guarded with operation logs; algorithm/model pages now use /account/permissions for button-level write gating; new permission-deny unit tests added and targeted regressions green. |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Algorithm+Model RBAC closure complete (backend+frontend+tests). |

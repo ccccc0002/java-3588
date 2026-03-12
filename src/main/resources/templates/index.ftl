@@ -30,7 +30,7 @@
 					<li class="layui-nav-item layui-hide-xs" style="display: none;"><a href="http://www.pearadmin.com" class="layui-icon layui-icon-website"></a></li>
 					<li class="layui-nav-item layui-hide-xs message" style="display: none;"></li>
 					<li class="layui-nav-item user">
-						<a class="layui-icon layui-icon-username" href="javascript:">${accountName!''}</a>
+						<a class="layui-icon layui-icon-username" href="javascript:">${accountName!''} [${accountRole!''}]</a>
 						<dl class="layui-nav-child">
 							<dd><a href="javascript:void(0);" user-menu-title="profile" onclick="showPass();">更新密码</a></dd>
 							<dd><a href="/logout" class="logout">退出系统</a></dd>

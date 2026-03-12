@@ -19,6 +19,33 @@ class StreamTemplateAlarmRenderingTest {
         assertTemplateSupportsAlertFields("templates/stream/index426.ftl");
     }
 
+    @Test
+    void streamIndexTj_shouldSupportAlarmDetailDrawerPreview() throws IOException {
+        String content;
+        try (InputStream inputStream = new ClassPathResource("templates/stream/index_tj.ftl").getInputStream()) {
+            content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        assertTrue(content.contains("openAlarmDetailById"), "index_tj should support alarm detail click handler");
+        assertTrue(content.contains("openAlarmDetailByData"), "index_tj should support drawer preview render");
+        assertTrue(content.contains("alarm-detail-drawer"), "index_tj should contain drawer detail style/container");
+    }
+
+    @Test
+    void streamIndexTj_shouldSupportThemeAndLanguageGlobalSwitch() throws IOException {
+        String content;
+        try (InputStream inputStream = new ClassPathResource("templates/stream/index_tj.ftl").getInputStream()) {
+            content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        assertTrue(content.contains("id=\"theme-switch\""), "index_tj should contain global theme switch");
+        assertTrue(content.contains("id=\"lang-switch\""), "index_tj should contain global language switch");
+        assertTrue(content.contains("window.applyTheme"), "index_tj should expose theme apply function");
+        assertTrue(content.contains("window.applyLanguage"), "index_tj should expose language apply function");
+        assertTrue(content.contains("stream.dashboard.theme"), "index_tj should persist selected theme");
+        assertTrue(content.contains("stream.dashboard.lang"), "index_tj should persist selected language");
+    }
+
     private void assertTemplateSupportsAlertFields(String path) throws IOException {
         String content;
         try (InputStream inputStream = new ClassPathResource(path).getInputStream()) {

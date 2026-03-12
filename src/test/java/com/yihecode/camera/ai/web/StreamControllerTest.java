@@ -4,8 +4,10 @@ import com.yihecode.camera.ai.service.AlgorithmService;
 import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.MediaStreamUrlService;
+import com.yihecode.camera.ai.service.ModelService;
 import com.yihecode.camera.ai.service.ReportService;
 import com.yihecode.camera.ai.service.VideoPlayService;
+import com.yihecode.camera.ai.entity.Model;
 import com.yihecode.camera.ai.utils.JsonResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,10 +15,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +36,7 @@ class StreamControllerTest {
     @Mock private ReportService reportService;
     @Mock private VideoPlayService videoPlayService;
     @Mock private MediaStreamUrlService mediaStreamUrlService;
+    @Mock private ModelService modelService;
 
     @InjectMocks
     private StreamController streamController;
@@ -44,5 +52,72 @@ class StreamControllerTest {
         Map<String, Object> data = (Map<String, Object>) result.getData();
         assertNotNull(data.get("today"));
         assertEquals(7, ((Number) data.get("counter")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dashboardSummaryShouldReturnOverviewAndChartPayload() {
+        when(cameraService.getCountByRunState(-1)).thenReturn(12);
+        when(cameraService.getCountByRunState(1)).thenReturn(9);
+
+        Map<Long, String> algorithmMap = new HashMap<>();
+        algorithmMap.put(1L, "person");
+        algorithmMap.put(2L, "helmet");
+        when(algorithmService.toMap()).thenReturn(algorithmMap);
+
+        List<Model> models = new ArrayList<>();
+        models.add(new Model());
+        models.add(new Model());
+        when(modelService.listData()).thenReturn(models);
+
+        when(reportService.getCounter(anyLong(), anyLong())).thenReturn(5);
+
+        List<Map<String, Object>> ratioRows = new ArrayList<>();
+        Map<String, Object> ratio = new HashMap<>();
+        ratio.put("algorithm_id", 1L);
+        ratio.put("cnt", 4);
+        ratioRows.add(ratio);
+        when(reportService.findAlgorithmRatio(any(), any())).thenReturn(ratioRows);
+
+        Map<Long, String> cameraMap = new HashMap<>();
+        cameraMap.put(10L, "cam-a");
+        when(cameraService.toMap()).thenReturn(cameraMap);
+
+        List<Map<String, Object>> cameraRows = new ArrayList<>();
+        Map<String, Object> camera = new HashMap<>();
+        camera.put("camera_id", 10L);
+        camera.put("cnt", 6);
+        cameraRows.add(camera);
+        when(reportService.findCamera(any(), any())).thenReturn(cameraRows);
+
+        JsonResult result = streamController.dashboardSummary();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertNotNull(data);
+
+        Map<String, Object> overview = (Map<String, Object>) data.get("overview");
+        assertEquals(5, ((Number) overview.get("todayAlerts")).intValue());
+        assertEquals(9, ((Number) overview.get("onlineCameras")).intValue());
+        assertEquals(12, ((Number) overview.get("totalCameras")).intValue());
+        assertEquals(2, ((Number) overview.get("algorithmCount")).intValue());
+        assertEquals(2, ((Number) overview.get("modelCount")).intValue());
+
+        Map<String, Object> trend = (Map<String, Object>) data.get("trend");
+        List<Object> trendLabels = (List<Object>) trend.get("labels");
+        List<Object> trendValues = (List<Object>) trend.get("values");
+        assertEquals(7, trendLabels.size());
+        assertEquals(7, trendValues.size());
+
+        List<Map<String, Object>> pie = (List<Map<String, Object>>) data.get("pie");
+        assertEquals(1, pie.size());
+        assertEquals("person", pie.get(0).get("name"));
+        assertEquals(4, ((Number) pie.get(0).get("value")).intValue());
+
+        Map<String, Object> ranking = (Map<String, Object>) data.get("ranking");
+        List<Object> rankingLabels = (List<Object>) ranking.get("labels");
+        List<Object> rankingValues = (List<Object>) ranking.get("values");
+        assertTrue(rankingLabels.contains("cam-a"));
+        assertTrue(rankingValues.contains(6));
     }
 }

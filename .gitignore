@@ -1,3 +1,10 @@
 ops/java-3588-recorder/
 target/
 .tools/
+state/local/*.local.json
+state/local/*.secret.json
+state/local/*.env
+state/local/*.txt
+state/local/README.md
+__pycache__/
+*.pyc

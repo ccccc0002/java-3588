@@ -3,6 +3,33 @@
     "log"
   ],
   "event_actions": {
+    "phase_started": [
+      "checkpoint",
+      "log"
+    ],
+    "phase_checkpoint": [
+      "checkpoint",
+      "log"
+    ],
+    "phase_completed": [
+      "checkpoint",
+      "compact",
+      "log"
+    ],
+    "blocker_opened": [
+      "checkpoint",
+      "compact",
+      "log"
+    ],
+    "blocker_cleared": [
+      "checkpoint",
+      "log"
+    ],
+    "session_compacted": [
+      "checkpoint",
+      "compact",
+      "log"
+    ],
     "task_started": [
       "checkpoint",
       "log",

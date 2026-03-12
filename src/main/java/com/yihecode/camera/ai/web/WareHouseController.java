@@ -7,6 +7,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yihecode.camera.ai.entity.Camera;
 import com.yihecode.camera.ai.entity.WareHouse;
 import com.yihecode.camera.ai.service.CameraService;
+import com.yihecode.camera.ai.service.ConfigService;
+import com.yihecode.camera.ai.service.OperationLogService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.service.WareHouseService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import cn.dev33.satoken.stp.StpUtil;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +49,15 @@ public class WareHouseController {
 
     @Autowired
     private CameraService cameraService;
+
+    @Autowired
+    private ConfigService configService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     @GetMapping({"", "/"})
     public String index(ModelMap modelMap) {
@@ -125,6 +138,9 @@ public class WareHouseController {
     @PostMapping({"/sync2all"})
     @ResponseBody
     public JsonResult sync2all() {
+        if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         List<WareHouse> wareHouses = wareHouseService.list();
         if(wareHouses == null || wareHouses.isEmpty()) {
             return JsonResultUtils.fail("No data to sync");
@@ -144,15 +160,20 @@ public class WareHouseController {
             return JsonResultUtils.fail("No camera nodes to sync");
         }
 
-        int synced = syncWarehousesToCameras(cameraNodes);
+        SyncResult syncResult = syncWarehousesToCameras(cameraNodes);
         Map<String, Object> dataMap = new HashMap<>();
-        dataMap.put("synced", synced);
+        dataMap.put("synced", syncResult.synced);
+        dataMap.put("skipped_by_license", syncResult.skippedByLicense);
+        operationLogService.record("warehouse:sync_all", "warehouse", true, "sync all finished", dataMap.toString());
         return JsonResultUtils.success(dataMap);
     }
 
     @PostMapping({"/sync2node"})
     @ResponseBody
     public JsonResult sync2node(String indexCode) {
+        if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if(StrUtil.isBlank(indexCode)) {
             return JsonResultUtils.fail("No node selected");
         }
@@ -175,15 +196,20 @@ public class WareHouseController {
             return JsonResultUtils.fail("No camera nodes under current node");
         }
 
-        int synced = syncWarehousesToCameras(cameraNodes);
+        SyncResult syncResult = syncWarehousesToCameras(cameraNodes);
         Map<String, Object> dataMap = new HashMap<>();
-        dataMap.put("synced", synced);
+        dataMap.put("synced", syncResult.synced);
+        dataMap.put("skipped_by_license", syncResult.skippedByLicense);
+        operationLogService.record("warehouse:sync_node", "indexCode=" + indexCode, true, "sync node finished", dataMap.toString());
         return JsonResultUtils.success(dataMap);
     }
 
     @PostMapping({"/pullRtsp"})
     @ResponseBody
     public JsonResult pullRtsp(String indexCode) {
+        if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if(StrUtil.isBlank(indexCode)) {
             return JsonResultUtils.fail("No node selected");
         }
@@ -225,12 +251,16 @@ public class WareHouseController {
         dataMap.put("total", cameraNodes.size());
         dataMap.put("ok", okCount);
         dataMap.put("fail", failCount);
+        operationLogService.record("warehouse:pull_rtsp", "indexCode=" + indexCode, true, "pull rtsp finished", dataMap.toString());
         return JsonResultUtils.success(dataMap);
     }
 
     @PostMapping({"/select2export"})
     @ResponseBody
     public JsonResult select2export(String ids) {
+        if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if(StrUtil.isBlank(ids)) {
             return JsonResultUtils.fail("Please select data first");
         }
@@ -256,9 +286,11 @@ public class WareHouseController {
             return JsonResultUtils.fail("No camera nodes to import");
         }
 
-        int synced = syncWarehousesToCameras(selectedNodes);
+        SyncResult syncResult = syncWarehousesToCameras(selectedNodes);
         Map<String, Object> dataMap = new HashMap<>();
-        dataMap.put("synced", synced);
+        dataMap.put("synced", syncResult.synced);
+        dataMap.put("skipped_by_license", syncResult.skippedByLicense);
+        operationLogService.record("warehouse:select_export", "ids=" + ids, true, "select export finished", dataMap.toString());
         return JsonResultUtils.success(dataMap);
     }
 
@@ -394,8 +426,10 @@ public class WareHouseController {
         }
     }
 
-    private int syncWarehousesToCameras(List<WareHouse> wareHouses) {
-        int synced = 0;
+    private SyncResult syncWarehousesToCameras(List<WareHouse> wareHouses) {
+        SyncResult result = new SyncResult();
+        int maxChannels = parseLicenseMaxChannels();
+        int currentCameraCount = getCurrentCameraCount();
         for(WareHouse wareHouse : wareHouses) {
             if(wareHouse == null
                     || wareHouse.getId() == null
@@ -407,8 +441,13 @@ public class WareHouseController {
 
             Camera camera = cameraService.getByWareHouseId(wareHouse.getId());
             if(camera == null) {
+                if(maxChannels > 0 && currentCameraCount >= maxChannels) {
+                    result.skippedByLicense++;
+                    continue;
+                }
                 cameraService.save(buildNewCamera(wareHouse));
-                synced++;
+                currentCameraCount++;
+                result.synced++;
                 continue;
             }
 
@@ -427,9 +466,40 @@ public class WareHouseController {
                 update.setUpdatedAt(new Date());
                 cameraService.updateById(update);
             }
-            synced++;
+            result.synced++;
         }
-        return synced;
+        return result;
+    }
+
+    private int parseLicenseMaxChannels() {
+        String raw = configService.getByValTag("license_max_channels");
+        if(StrUtil.isBlank(raw)) {
+            return 0;
+        }
+        try {
+            int val = Integer.parseInt(raw.trim());
+            return Math.max(val, 0);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private int getCurrentCameraCount() {
+        List<Camera> cameras = cameraService.listData();
+        return cameras == null ? 0 : cameras.size();
+    }
+
+    private static class SyncResult {
+        private int synced;
+        private int skippedByLicense;
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Camera buildNewCamera(WareHouse wareHouse) {

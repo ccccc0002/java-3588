@@ -12,18 +12,23 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yihecode.camera.ai.entity.Algorithm;
 import com.yihecode.camera.ai.entity.Camera;
+import com.yihecode.camera.ai.entity.Model;
 import com.yihecode.camera.ai.entity.Report;
 import com.yihecode.camera.ai.entity.VideoPlay;
 import com.yihecode.camera.ai.service.AlgorithmService;
 import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.MediaStreamUrlService;
+import com.yihecode.camera.ai.service.ModelService;
+import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.utils.PageResult;
 import com.yihecode.camera.ai.utils.PageResultUtils;
+import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -38,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 
 @SaCheckLogin
 @Controller
@@ -61,6 +67,15 @@ public class StreamController {
 
     @Autowired
     private MediaStreamUrlService mediaStreamUrlService;
+
+    @Autowired
+    private ModelService modelService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     @GetMapping({"", "/"})
     public String index(ModelMap modelMap) {
@@ -177,6 +192,9 @@ public class StreamController {
     @PostMapping({"/formConfig"})
     @ResponseBody
     public JsonResult formConfig(String ids) {
+        if (!roleAccessService.canManageStream(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         JSONArray array = JSON.parseArray(ids);
         int len = array.size();
         if (len > 8) {
@@ -188,6 +206,7 @@ public class StreamController {
             idList.add(array.getLongValue(i));
         }
         algorithmService.updateStaticsFlag(idList);
+        operationLogService.record("stream:form_config", "stream", true, "stream dashboard algorithm config updated", "count=" + idList.size());
         return JsonResultUtils.success();
     }
 
@@ -225,6 +244,85 @@ public class StreamController {
         data.put("endMills", endMills);
         data.put("today", DateUtil.today());
         return JsonResultUtils.success(data);
+    }
+
+    @PostMapping({"/dashboard/summary"})
+    @ResponseBody
+    public JsonResult dashboardSummary() {
+        Date now = new Date();
+        long todayStart = DateUtil.truncate(now, DateField.DAY_OF_MONTH).getTime();
+        long todayEnd = DateUtil.truncate(DateUtil.offsetDay(now, 1), DateField.DAY_OF_MONTH).getTime();
+
+        Map<String, Object> overview = new HashMap<>();
+        overview.put("todayAlerts", reportService.getCounter(todayStart, todayEnd));
+        overview.put("onlineCameras", cameraService.getCountByRunState(1));
+        overview.put("totalCameras", cameraService.getCountByRunState(-1));
+        overview.put("algorithmCount", algorithmService.toMap().size());
+        List<Model> models = modelService.listData();
+        overview.put("modelCount", models == null ? 0 : models.size());
+
+        List<String> trendLabels = new ArrayList<>();
+        List<Integer> trendValues = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            Date dayStartDate = DateUtil.truncate(DateUtil.offsetDay(now, -i), DateField.DAY_OF_MONTH);
+            Date dayEndDate = DateUtil.offsetDay(dayStartDate, 1);
+            long dayStart = dayStartDate.getTime();
+            long dayEnd = dayEndDate.getTime();
+            trendLabels.add(DateUtil.format(dayStartDate, "MM-dd"));
+            trendValues.add(reportService.getCounter(dayStart, dayEnd));
+        }
+        Map<String, Object> trend = new HashMap<>();
+        trend.put("labels", trendLabels);
+        trend.put("values", trendValues);
+
+        Map<Long, String> algorithmNames = algorithmService.toMap();
+        List<Map<String, Object>> ratioRows = reportService.findAlgorithmRatio(new Date(todayStart), new Date(todayEnd));
+        List<Map<String, Object>> pie = new ArrayList<>();
+        if (ratioRows != null) {
+            for (Map<String, Object> row : ratioRows) {
+                Long algorithmId = Convert.toLong(row.get("algorithm_id"), 0L);
+                Integer count = Convert.toInt(row.get("cnt"), 0);
+                Map<String, Object> pieItem = new HashMap<>();
+                pieItem.put("name", algorithmNames.getOrDefault(algorithmId, "Unknown"));
+                pieItem.put("value", count);
+                pie.add(pieItem);
+            }
+        }
+
+        Map<Long, String> cameraNames = cameraService.toMap();
+        List<Map<String, Object>> cameraRows = reportService.findCamera(new Date(todayStart), new Date(todayEnd));
+        List<Map<String, Object>> rankingRows = new ArrayList<>();
+        if (cameraRows != null) {
+            for (Map<String, Object> row : cameraRows) {
+                Long cameraId = Convert.toLong(row.get("camera_id"), 0L);
+                Integer count = Convert.toInt(row.get("cnt"), 0);
+                Map<String, Object> item = new HashMap<>();
+                item.put("cameraName", cameraNames.getOrDefault(cameraId, "Unknown"));
+                item.put("count", count);
+                rankingRows.add(item);
+            }
+        }
+        rankingRows.sort(Comparator.comparingInt(item -> -Convert.toInt(item.get("count"), 0)));
+
+        List<String> rankingLabels = new ArrayList<>();
+        List<Integer> rankingValues = new ArrayList<>();
+        int top = Math.min(6, rankingRows.size());
+        for (int i = 0; i < top; i++) {
+            Map<String, Object> row = rankingRows.get(i);
+            rankingLabels.add(Convert.toStr(row.get("cameraName"), "Unknown"));
+            rankingValues.add(Convert.toInt(row.get("count"), 0));
+        }
+        Map<String, Object> ranking = new HashMap<>();
+        ranking.put("labels", rankingLabels);
+        ranking.put("values", rankingValues);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("overview", overview);
+        payload.put("trend", trend);
+        payload.put("pie", pie);
+        payload.put("ranking", ranking);
+        payload.put("today", DateUtil.today());
+        return JsonResultUtils.success(payload);
     }
 
     @GetMapping("/select_play")
@@ -302,6 +400,9 @@ public class StreamController {
     @PostMapping("/stop")
     @ResponseBody
     public JsonResult stopStream(Long cameraId) {
+        if (!roleAccessService.canManageStream(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if (cameraId == null) {
             return JsonResultUtils.fail("cameraId is required");
         }
@@ -316,12 +417,16 @@ public class StreamController {
         resMap.put("trace_id", traceId);
         resMap.put("cameraId", cameraId);
         resMap.put("mode", zlmMode ? "zlm" : "legacy");
+        operationLogService.record("stream:stop", "cameraId=" + cameraId, true, "stop stream", "mode=" + (zlmMode ? "zlm" : "legacy"));
         return JsonResultUtils.success(resMap);
     }
 
     @PostMapping("/start")
     @ResponseBody
     public JsonResult startStream(Long cameraId, Integer videoPort) {
+        if (!roleAccessService.canManageStream(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if (cameraId == null) {
             return JsonResultUtils.fail("cameraId is required");
         }
@@ -353,6 +458,15 @@ public class StreamController {
         resMap.put("mode", zlmMode ? "zlm" : "legacy");
         resMap.put("videoPort", currentPort);
         resMap.put("playUrl", mediaStreamUrlService.buildPlayUrl(camera, currentPort));
+        operationLogService.record("stream:start", "cameraId=" + cameraId, true, "start stream", "mode=" + (zlmMode ? "zlm" : "legacy"));
         return JsonResultUtils.success(resMap);
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

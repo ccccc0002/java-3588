@@ -48,7 +48,9 @@ $checkpoint = [ordered]@{
 }
 
 $file = Join-Path $checkpointDir "checkpoint-$stamp-$TaskId.json"
-$checkpoint | ConvertTo-Json -Depth 8 | Set-Content -Path $file -Encoding UTF8
+$json = $checkpoint | ConvertTo-Json -Depth 8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($file, $json, $utf8NoBom)
 
 if (-not $NoProcessLog) {
     $logScript = Join-Path $PSScriptRoot "Append-ProcessLog.ps1"
@@ -56,4 +58,3 @@ if (-not $NoProcessLog) {
 }
 
 Write-Output "OK: checkpoint saved to $file"
-

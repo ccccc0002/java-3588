@@ -2,6 +2,8 @@ package com.yihecode.camera.ai.web.api;
 
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
@@ -17,88 +19,117 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * 告警第三方推送，将最新对告警同时推送到第三方平台
- *
- * @author zhoumingxing
- * @mail 465769438@qq.com
- */
 @Slf4j
 @Component
 @EnableAsync
 public class ReportPushService {
 
-    /**
-     * 调用接口
-     * @param url
-     * @param params
-     */
     @Async
     public void request(String url, JSONObject params, boolean toBase64, String fileName) {
+        request(url, params, toBase64, fileName, null);
+    }
+
+    @Async
+    public void request(String url, JSONObject params, boolean toBase64, String fileName, String bearerToken) {
+        requestSync(url, params, toBase64, fileName, bearerToken);
+    }
+
+    public Map<String, Object> requestSync(String url,
+                                           JSONObject params,
+                                           boolean toBase64,
+                                           String fileName,
+                                           String bearerToken) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("url", url);
+        result.put("success", false);
+        result.put("status", -1);
+        result.put("response", "");
+
+        if (StrUtil.isBlank(url)) {
+            result.put("error", "push url is blank");
+            return result;
+        }
+
         int statusCode = -1;
         HttpEntity httpEntity = null;
+        String responseText = "";
         try {
-            //
-            if(toBase64) {
-                // 文件还没写完，还不能读取？
+            JSONObject requestBody = params == null ? new JSONObject() : JSON.parseObject(params.toJSONString());
+            if (requestBody == null) {
+                requestBody = new JSONObject();
+            }
+
+            if (toBase64) {
                 int count = 0;
-                while(true) {
+                while (true) {
                     File file = new File(fileName);
-                    if(file.exists() && file.canRead()) {
+                    if (file.exists() && file.canRead()) {
                         break;
                     }
                     count++;
-
-                    if(count >= 10) {
+                    if (count >= 10) {
                         break;
                     }
-
                     Thread.sleep(20);
                 }
 
                 try {
                     File file = new File(fileName);
                     String imageBase64 = ImgUtil.toBase64(ImgUtil.read(file), FileUtil.extName(file));
-                    params.put("imageBase64", imageBase64);
+                    requestBody.put("imageBase64", imageBase64);
                 } catch (Exception e) {
-                    params.put("imageBase64", "");
+                    requestBody.put("imageBase64", "");
                 }
             } else {
-                params.put("imageBase64", "");
+                requestBody.put("imageBase64", "");
             }
 
-            CloseableHttpClient client = HttpClients.createDefault();
-            //
-            HttpPost httpPost = new HttpPost(url);
-            httpPost.addHeader("Accept-Encoding", "gzip, deflate, br");
-            httpPost.addHeader("Content-Type", "application/json");
-            httpPost.setEntity(new StringEntity(params.toString(),"UTF-8"));
+            try (CloseableHttpClient client = HttpClients.createDefault()) {
+                HttpPost httpPost = new HttpPost(url);
+                httpPost.addHeader("Accept-Encoding", "gzip, deflate, br");
+                httpPost.addHeader("Content-Type", "application/json");
+                if (StrUtil.isNotBlank(bearerToken)) {
+                    httpPost.addHeader("Authorization", "Bearer " + bearerToken.trim());
+                }
+                httpPost.setEntity(new StringEntity(requestBody.toString(), StandardCharsets.UTF_8));
 
-            //
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(10000).setConnectTimeout(10000).setConnectionRequestTimeout(500).build();
-            httpPost.setConfig(requestConfig);
+                RequestConfig requestConfig = RequestConfig.custom()
+                        .setSocketTimeout(10000)
+                        .setConnectTimeout(10000)
+                        .setConnectionRequestTimeout(500)
+                        .build();
+                httpPost.setConfig(requestConfig);
 
-            //
-            CloseableHttpResponse response = client.execute(httpPost);
-            statusCode = response.getStatusLine().getStatusCode();
-            httpEntity = response.getEntity();
+                try (CloseableHttpResponse response = client.execute(httpPost)) {
+                    statusCode = response.getStatusLine().getStatusCode();
+                    httpEntity = response.getEntity();
+                    responseText = httpEntity == null ? "" : EntityUtils.toString(httpEntity, StandardCharsets.UTF_8);
+                }
+            }
 
-            //
+            result.put("status", statusCode);
+            result.put("response", responseText);
+            result.put("success", statusCode == 200);
+
             if (statusCode != 200) {
-                log.error("调用第三方上报接口状态异常 status:{}, url:{}, camera:{}, algorithm:{}, response:{}", statusCode, url, params.getString("camera_name"), params.getString("algorithm_name"), EntityUtils.toString(httpEntity));
+                log.error("report push failed status={}, url={}, response={}", statusCode, url, responseText);
             } else {
-                log.info("调用第三方上报接口状态成功 status:{}, url:{}, camera:{}, algorithm:{}, response:{}", statusCode, url, params.getString("camera_name"), params.getString("algorithm_name"), EntityUtils.toString(httpEntity));
+                log.info("report push success status={}, url={}", statusCode, url);
             }
-
-            response.close();
-            client.close();
         } catch (Exception e) {
-            log.error("调用第三方上报接口异常 {}, ex:{}", url, e);
+            result.put("error", e.getMessage());
+            log.error("report push exception url={}, ex={}", url, e.getMessage());
         } finally {
             try {
                 EntityUtils.consume(httpEntity);
-            } catch (Exception e) {}
+            } catch (Exception ignore) {
+            }
         }
+
+        return result;
     }
 }

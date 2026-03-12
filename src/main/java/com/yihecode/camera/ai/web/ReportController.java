@@ -3,6 +3,7 @@ package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaIgnore;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileUtil;
@@ -42,7 +43,7 @@ import java.net.URLEncoder;
 import java.util.*;
 
 /**
- * 告警管理，查询/展示/审核等
+ * 鍛婅绠＄悊锛屾煡锟?灞曠ず/瀹℃牳锟?
  *
  * @author zhoumingxing
  * @mail 465769438@qq.com
@@ -73,12 +74,21 @@ public class ReportController {
     @Autowired
     private ReportPushService reportPushService;
 
+    @Autowired
+    private ReportPushTargetService reportPushTargetService;
+
     //
     @Autowired
     private WareHouseService wareHouseService;
 
     @Autowired
     private ReportWebsocket reportWebsocket;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     @Value("${uploadDir}")
     private String uploadDir;
@@ -135,12 +145,16 @@ public class ReportController {
      */
     @PostMapping({"/listPage"})
     @ResponseBody
-    public PageResult listPage(@RequestParam(defaultValue = "1") Integer page, @RequestParam(defaultValue = "10") Integer limit, Long cameraId, Long algorithmId, Integer type) {
-        Report reportQuery = new Report();
-        reportQuery.setCameraId(cameraId);
-        reportQuery.setAlgorithmId(algorithmId);
-        reportQuery.setType(type);
-        IPage<Report> pageResult = this.reportService.listPage(new Page<>(page, limit), reportQuery);
+    public PageResult listPage(@RequestParam(defaultValue = "1") Integer page,
+                               @RequestParam(defaultValue = "10") Integer limit,
+                               Long cameraId,
+                               Long algorithmId,
+                               Integer type,
+                               String startTime,
+                               String endTime) {
+        Long startMills = parseDateTimeText(startTime, false);
+        Long endMills = parseDateTimeText(endTime, true);
+        IPage<Report> pageResult = this.reportService.listByPage(new Page<>(page, limit), cameraId, algorithmId, type, startMills, endMills);
         List<Report> reportList = pageResult.getRecords();
         if (reportList == null) {
             reportList = new ArrayList<>();
@@ -174,6 +188,31 @@ public class ReportController {
             report.setTypeName(typeName);
         }
         return PageResultUtils.success(pageResult.getTotal(), reportList);
+    }
+
+    private Long parseDateTimeText(String text, boolean endExclusive) {
+        if (StrUtil.isBlank(text)) {
+            return null;
+        }
+        String normalized = text.trim().replace("T", " ");
+        Date date = null;
+        try {
+            if (normalized.length() == 10) {
+                date = DateUtil.parse(normalized, "yyyy-MM-dd");
+                if (endExclusive) {
+                    date = DateUtil.offsetDay(date, 1);
+                }
+            } else if (normalized.length() == 16) {
+                date = DateUtil.parse(normalized, "yyyy-MM-dd HH:mm");
+            } else if (normalized.length() == 19) {
+                date = DateUtil.parse(normalized, "yyyy-MM-dd HH:mm:ss");
+            } else {
+                date = DateUtil.parse(normalized);
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return date == null ? null : date.getTime();
     }
 
     /**
@@ -286,18 +325,18 @@ public class ReportController {
     @ResponseBody
     public JsonResult batchRemove(String ids) {
         if(StrUtil.isBlank(ids)) {
-            return JsonResultUtils.fail("没有选中数据");
+            return JsonResultUtils.fail("娌℃湁閫変腑鏁版嵁");
         }
 
         String[] idArr = ids.split(",");
         if(idArr == null || idArr.length == 0) {
-            return JsonResultUtils.fail("没有选中数据");
+            return JsonResultUtils.fail("娌℃湁閫変腑鏁版嵁");
         }
 
         for(String id : idArr) {
             try {
                 Long idLng = Long.parseLong(id);
-                reportService.updateDisplay(idLng, 1); // 不显示
+                reportService.updateDisplay(idLng, 1); // 涓嶆樉锟?
             } catch (Exception e) {
                 //
             }
@@ -309,7 +348,7 @@ public class ReportController {
 
 
     /**
-     * 增量训练
+     * 澧為噺璁粌
      * @param modelMap
      * @return
      */
@@ -367,7 +406,7 @@ public class ReportController {
             report.setCameraName(cameraName == null ? "" : cameraName);
             report.setAlgorithmName(algorithmName == null ? "" : algorithmName);
             report.setCreatedStr(report.getCreatedAt() != null ? DateUtil.format(report.getCreatedAt(), "yyyy-MM-dd HH:mm:ss") : "");
-            report.setTypeName("监控告警");
+            report.setTypeName("鐩戞帶鍛婅");
             try {
                 JSONArray root = JSON.parseArray(report.getParams());
                 JSONObject first = root.getJSONObject(0);
@@ -420,7 +459,7 @@ public class ReportController {
     }
 
     /**
-     * 审核
+     * 瀹℃牳
      * @param id
      * @param result
      * @return
@@ -465,7 +504,7 @@ public class ReportController {
     }
 
     /**
-     * 增量训练 - 导出
+     * 澧為噺璁粌 - 瀵煎嚭
      * @param modelMap
      * @return
      */
@@ -479,7 +518,7 @@ public class ReportController {
     }
 
     /**
-     * 增量训练 - 导出
+     * 澧為噺璁粌 - 瀵煎嚭
      * @param modelMap
      * @return
      */
@@ -502,7 +541,7 @@ public class ReportController {
         if(StrUtil.isNotBlank(endText)) {
             try {
                 endDate = DateUtil.parse(endText, "yyyy-MM-dd");
-                endDate = DateUtil.offsetDay(endDate, 1); // 向后移动一天
+                endDate = DateUtil.offsetDay(endDate, 1); // 鍚戝悗绉诲姩涓€锟?
             } catch (Exception e) {
                 //
             }
@@ -510,13 +549,13 @@ public class ReportController {
 
         String fileName = reportService.export(uploadDir, algorithmId, cameraId, startDate, endDate, auditState);
         if(fileName == null) {
-            return JsonResultUtils.fail("没有数据");
+            return JsonResultUtils.fail("娌℃湁鏁版嵁");
         }
         return JsonResultUtils.success(fileName);
     }
 
     /**
-     * 下载文件压缩包
+     * 涓嬭浇鏂囦欢鍘嬬缉锟?
      */
     @GetMapping("/audit/download")
     public void download(String fileName, HttpServletRequest request, HttpServletResponse response) {
@@ -524,7 +563,7 @@ public class ReportController {
         BufferedInputStream bis = null;
         BufferedOutputStream bos = null;
         try {
-            String chName = "增量训练_下载.zip";
+            String chName = "澧為噺璁粌_涓嬭浇.zip";
 
             //
             //File file = new File("/Users/zhoumingxing/Downloads/futuyuan/05.mp4");
@@ -574,39 +613,39 @@ public class ReportController {
     }
 
     /**
-     * 手动推送
+     * 鎵嬪姩鎺拷?
      * @param id
      * @return
      */
     @PostMapping("/pushData")
     @ResponseBody
     public JsonResult pushData(Long id) {
-        // 推送第三方
-        String reportPushUrl = configService.getByValTag("reportPushUrl");
-        String reportPushImage = configService.getByValTag("reportPushImage");
-        if(StrUtil.isBlank(reportPushUrl)) {
-            return JsonResultUtils.fail("推送地址未配置");
+        if (!roleAccessService.canManagePushTargets(currentAccountId())) {
+            operationLogService.record("report:push_data", "reportId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        List<Map<String, Object>> targets = reportPushTargetService.listEnabledTargets();
+        if(targets == null || targets.isEmpty()) {
+            operationLogService.record("report:push_data", "reportId=" + id, false, "no enabled push targets", "");
+            return JsonResultUtils.fail("锟斤拷锟酵碉拷址未锟斤拷锟矫ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷 HTTP 锟斤拷锟斤拷目锟斤拷");
         }
 
-        //
         Report report = reportService.getById(id);
         if(report == null) {
-            return JsonResultUtils.fail("告警数据不存在，或已删除");
+            operationLogService.record("report:push_data", "reportId=" + id, false, "report not found", "");
+            return JsonResultUtils.fail("锟芥警锟斤拷锟捷诧拷锟斤拷锟节ｏ拷锟斤拷锟斤拷删锟斤拷");
         }
 
-        //
         Camera camera = cameraService.getById(report.getCameraId());
         if(camera == null) {
-            return JsonResultUtils.fail("摄像头数据不存在，或已删除");
+            return JsonResultUtils.fail("锟斤拷锟斤拷头锟斤拷锟捷诧拷锟斤拷锟节ｏ拷锟斤拷锟斤拷删锟斤拷");
         }
 
-        //
         Algorithm algorithm = algorithmService.getById(report.getAlgorithmId());
         if(algorithm == null) {
-            return JsonResultUtils.fail("算法数据不存在，或已删除");
+            return JsonResultUtils.fail("锟姐法锟斤拷锟捷诧拷锟斤拷锟节ｏ拷锟斤拷锟斤拷删锟斤拷");
         }
 
-        //
         try {
             JSONObject reportMap = new JSONObject();
             reportMap.put("cmpn_cd", "TLB");
@@ -621,21 +660,135 @@ public class ReportController {
             reportMap.put("alarm_dt", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
             reportMap.put("report_id", String.valueOf(report.getId()));
             reportMap.put("params", report.getParams());
+            reportMap.put("webUrl", configService.getByValTag("webUrl"));
 
-            // imageBase64 这个数据做成配置式，因为需要消耗时间
-            boolean toBase64 = false;
-            if (reportPushImage != null && "true".equals(reportPushImage)) {
-                toBase64 = true;
+            List<Map<String, Object>> results = new ArrayList<>();
+            int successCount = 0;
+            int failedCount = 0;
+            for (Map<String, Object> target : targets) {
+                String targetUrl = trimText(target.get("url"));
+                if (StrUtil.isBlank(targetUrl)) {
+                    continue;
+                }
+                boolean includeImage = toBool(target.get("include_image"), false);
+                String bearerToken = trimText(target.get("bearer_token"));
+                Map<String, Object> pushResult = reportPushService.requestSync(
+                        targetUrl,
+                        reportMap,
+                        includeImage,
+                        report.getFileName(),
+                        bearerToken
+                );
+                pushResult.put("target_id", trimText(target.get("id")));
+                pushResult.put("target_name", trimText(target.get("name")));
+                results.add(pushResult);
+                if (toBool(pushResult.get("success"), false)) {
+                    successCount++;
+                } else {
+                    failedCount++;
+                }
             }
 
-            reportPushService.request(reportPushUrl, reportMap, toBase64, report.getFileName());
-            return JsonResultUtils.success();
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("target_count", targets.size());
+            summary.put("success_count", successCount);
+            summary.put("failed_count", failedCount);
+            summary.put("results", results);
+
+            if (failedCount > 0) {
+                operationLogService.record("report:push_data", "reportId=" + id, false, "push partially failed", JSON.toJSONString(summary));
+                return JsonResultUtils.fail("锟斤拷锟斤拷锟斤拷锟斤拷失锟斤拷", summary);
+            }
+            operationLogService.record("report:push_data", "reportId=" + id, true, "push success", JSON.toJSONString(summary));
+            return JsonResultUtils.success(summary);
         } catch (Exception e) {
-            return JsonResultUtils.fail("推送异常@" + e.getMessage());
+            operationLogService.record("report:push_data", "reportId=" + id, false, "push exception", e.getMessage());
+            return JsonResultUtils.fail("锟斤拷锟斤拷锟届常:" + e.getMessage());
         }
     }
 
+    @PostMapping("/push/targets")
+    @ResponseBody
+    public JsonResult listPushTargets() {
+        try {
+            return JsonResultUtils.success(reportPushTargetService.listAllTargets());
+        } catch (Exception e) {
+            return JsonResultUtils.fail("锟斤拷取锟斤拷锟斤拷目锟斤拷失锟斤拷: " + e.getMessage());
+        }
+    }
 
+    @PostMapping("/push/targets/save")
+    @ResponseBody
+    public JsonResult savePushTarget(String id,
+                                     String name,
+                                     String url,
+                                     @RequestParam(value = "bearerToken", required = false) String bearerToken,
+                                     @RequestParam(value = "bearer_token", required = false) String bearerTokenSnake,
+                                     Boolean enabled,
+                                     @RequestParam(value = "includeImage", required = false) Boolean includeImage,
+                                     @RequestParam(value = "include_image", required = false) Boolean includeImageSnake) {
+        if (!roleAccessService.canManagePushTargets(currentAccountId())) {
+            operationLogService.record("report:push_target_save", "targetId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        try {
+            String token = StrUtil.isNotBlank(bearerToken) ? bearerToken : bearerTokenSnake;
+            Boolean include = includeImage != null ? includeImage : includeImageSnake;
+            Object result = reportPushTargetService.saveTarget(id, name, url, token, enabled, include);
+            operationLogService.record("report:push_target_save", "targetId=" + id, true, "push target saved", "name=" + name);
+            return JsonResultUtils.success(result);
+        } catch (Exception e) {
+            operationLogService.record("report:push_target_save", "targetId=" + id, false, "push target save failed", e.getMessage());
+            return JsonResultUtils.fail("push target save failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/push/targets/delete")
+    @ResponseBody
+    public JsonResult deletePushTarget(String id) {
+        if (!roleAccessService.canManagePushTargets(currentAccountId())) {
+            operationLogService.record("report:push_target_delete", "targetId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        try {
+            Object result = reportPushTargetService.deleteTarget(id);
+            operationLogService.record("report:push_target_delete", "targetId=" + id, true, "push target deleted", "");
+            return JsonResultUtils.success(result);
+        } catch (Exception e) {
+            operationLogService.record("report:push_target_delete", "targetId=" + id, false, "push target delete failed", e.getMessage());
+            return JsonResultUtils.fail("push target delete failed: " + e.getMessage());
+        }
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String trimText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value).trim();
+        return text.isEmpty() ? null : text;
+    }
+
+    private boolean toBool(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            return defaultValue;
+        }
+        return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
     @GetMapping("/test")
     @ResponseBody
     public JsonResult test() {
@@ -656,7 +809,7 @@ public class ReportController {
     }
 
     /**
-     * 卡片列表
+     * 鍗＄墖鍒楄〃
      * @param modelMap
      * @return
      */
@@ -672,7 +825,7 @@ public class ReportController {
     }
 
     /**
-     * 卡片列表数据
+     * 鍗＄墖鍒楄〃鏁版嵁
      * @return
      */
     @GetMapping(value = "/list_card_data")
@@ -735,7 +888,7 @@ public class ReportController {
             String cameraName = cameraNames.get(report.getCameraId());
             String algorithmName = algorithmNames.get(report.getAlgorithmId());
 
-            // 区域位置名称
+            // 鍖哄煙浣嶇疆鍚嶇О
             String wareName = "-";
             Camera camera = cameraService.getById(report.getCameraId());
             if(camera != null) {
@@ -752,13 +905,16 @@ public class ReportController {
             Map<String, Object> dataMap = new HashMap<>();
             dataMap.put("id", report.getId());
             dataMap.put("params", report.getParams());
-            dataMap.put("cameraName", "所属摄像机：" + cameraName);
-            dataMap.put("algorithmName", "告警类型：" + algorithmName);
-            dataMap.put("wareName", "区域名称：" + wareName);
+            dataMap.put("cameraName", "Camera: " + cameraName);
+            dataMap.put("algorithmName", "Algorithm: " + algorithmName);
+            dataMap.put("wareName", "Area: " + wareName);
             dataMap.put("image", "/report/stream?id=" + report.getId());
-            dataMap.put("alarmTime", "告警时间：" + report.getCreatedAt() != null ? DateUtil.format(report.getCreatedAt(), "yyyy-MM-dd HH:mm:ss") : "");
+            dataMap.put("alarmTime", "Alarm Time: " + (report.getCreatedAt() != null ? DateUtil.format(report.getCreatedAt(), "yyyy-MM-dd HH:mm:ss") : ""));
             dataList.add(dataMap);
         }
         return PageResultUtils.success(pageResult.getTotal(), dataList);
     }
 }
+
+
+

@@ -20,34 +20,66 @@
                     <div class="layui-form-item layui-inline">
                         <label class="layui-form-label">开始时间</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="startDate" id="startDate" value="${startDate!''}" placeholder="" class="layui-input">
+                            <input type="text" name="startDate" id="startDate" value="${startDate!''}" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item layui-inline">
                         <label class="layui-form-label">结束时间</label>
                         <div class="layui-input-inline">
-                            <input type="text" name="endDate" id="endDate" value="${endDate!''}" placeholder="" class="layui-input">
+                            <input type="text" name="endDate" id="endDate" value="${endDate!''}" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-inline">
+                        <label class="layui-form-label">摄像头</label>
+                        <div class="layui-input-inline">
+                            <select name="cameraId">
+                                <option value="">全部</option>
+                                <#list cameraList as item>
+                                    <option value="${(item.id)!''}">${(item.name)!''}</option>
+                                </#list>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-inline">
+                        <label class="layui-form-label">算法</label>
+                        <div class="layui-input-inline">
+                            <select name="algorithmId">
+                                <option value="">全部</option>
+                                <#list algorithmList as item>
+                                    <option value="${(item.id)!''}">${(item.name)!''}</option>
+                                </#list>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-inline">
+                        <label class="layui-form-label">告警类型</label>
+                        <div class="layui-input-inline">
+                            <select name="type">
+                                <option value="">全部</option>
+                                <#list typeList as item>
+                                    <option value="${(item.id)!''}">${(item.name)!''}</option>
+                                </#list>
+                            </select>
                         </div>
                     </div>
                     <div class="layui-form-item layui-inline">
                         <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">
-                            <i class="layui-icon layui-icon-search"></i>
-                            查询
+                            <i class="layui-icon layui-icon-search"></i>查询
                         </button>
-                        <button type="reset" class="pear-btn pear-btn-md">
-                            <i class="layui-icon layui-icon-refresh"></i>
-                            重置
+                        <button type="reset" class="pear-btn pear-btn-md" id="resetBtn">
+                            <i class="layui-icon layui-icon-refresh"></i>重置
                         </button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
     <div class="layui-card">
         <div class="layui-row layui-col-space10" style="margin-top: 15px;" id="contentMain">
             <div class="layui-col-xs12 layui-col-sm12 layui-col-md6">
                 <div class="camera-counter">
-                    <h4>摄像头</h4>
+                    <h4>摄像头总数</h4>
                     <h1>${(cameraCount)!'0'} CHANNELS</h1>
                 </div>
             </div>
@@ -66,48 +98,29 @@
         </div>
     </div>
 </div>
-</body>
+
 <script src="/static/component/layui/layui.js"></script>
 <script src="/static/component/pear/pear.js"></script>
 <script>
-    layui.use(['laydate', 'form', 'jquery', 'util', 'popup', 'echarts'], function() {
+    layui.use(['laydate', 'form', 'jquery', 'echarts'], function() {
         let laydate = layui.laydate;
         let $ = layui.jquery;
         let form = layui.form;
         let echarts = layui.echarts;
 
-        laydate.render({
-            elem: '#startDate'
-        });
+        laydate.render({ elem: '#startDate' });
+        laydate.render({ elem: '#endDate' });
 
-        laydate.render({
-            elem: '#endDate'
-        });
+        let dW = 0;
+        let dH = 0;
+        let qH = 0;
+        let qW = 0;
+        let algorithmRatioChart = null;
+        let cameraColumnChart = null;
+        let cameraAlgorithmChart = null;
 
-        form.on('submit(query)', function(data) {
-            window.updateAlgorithmRatioChart(data.field);
-            window.updateCameraColumnChart(data.field);
-            window.updateCameraAlgorithmChart(data.field);
-            return false;
-        })
-
-        var dW = 0;
-        var dH = 0;
-        var qH = 0;
-        var qW = 0;
-        var algorithmRatioChart = null;
-        var cameraColumnChart = null;
-        var cameraAlgorithmChart = null;
-
-        $(window).on('resize', function() {
-            dW = $(document).width();
-            dH = $(document).height();
-            qH = $('#contentQuery').height();
-            window.setHeight();
-        });
-
-        window.setHeight = function() {
-            if(dW < 768) {
+        function setHeight() {
+            if (dW < 768) {
                 $('#contentMain > div').each(function() {
                     $(this).css('height', dW + 'px');
                 });
@@ -120,256 +133,142 @@
             }
         }
 
-        window.buildAlgorithmRatioChart = function() {
-            var option = {
-                title: {
-                    text: '算法告警占比',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'item'
-                },
-                legend: {
-                    orient: 'vertical',
-                    left: 'left'
-                },
-                series: [
-                    {
-                        name: '算法告警占比',
-                        type: 'pie',
-                        radius: '50%',
-                        data: [
-                            // { value: 1048, name: 'Search Engine' },
-                            // { value: 735, name: 'Direct' },
-                            // { value: 580, name: 'Email' },
-                            // { value: 484, name: 'Union Ads' },
-                            // { value: 300, name: 'Video Ads' }
-                        ],
-                        emphasis: {
-                            itemStyle: {
-                                shadowBlur: 10,
-                                shadowOffsetX: 0,
-                                shadowColor: 'rgba(0, 0, 0, 0.5)'
-                            }
+        function buildAlgorithmRatioChart() {
+            algorithmRatioChart = echarts.init(document.getElementById('algorithmRatio'), null, { width: qW, height: qH });
+            algorithmRatioChart.setOption({
+                title: { text: '算法告警占比', left: 'center' },
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    name: '算法告警占比',
+                    type: 'pie',
+                    radius: '50%',
+                    data: [],
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
                         }
                     }
-                ]
-            };
-
-            algorithmRatioChart = echarts.init(document.getElementById('algorithmRatio'), null, {
-                width: qW,
-                height: qH
+                }]
             });
-            algorithmRatioChart.setOption(option);
         }
 
-        window.updateAlgorithmRatioChart = function(data) {
+        function updateAlgorithmRatioChart(data) {
             $.post('/statistic/algorithm/ratio', data, function(res) {
                 algorithmRatioChart.setOption({
-                    series: [
-                        {
-                            data: res.data
-                        }
-                    ]
+                    series: [{ data: (res && res.data) ? res.data : [] }]
                 });
             });
         }
 
-        window.buildCameraColumnChart = function() {
-            var option = {
-                title: {
-                    text: '摄像头告警统计'
-                },
-                xAxis: {
-                    type: 'category',
-                    data: []
-                },
-                yAxis: {
-                    type: 'value'
-                },
-                series: [
-                    {
-                        data: [],
-                        type: 'bar',
-                        showBackground: true,
-                        backgroundStyle: {
-                            color: 'rgba(180, 180, 180, 0.2)'
-                        }
-                    }
-                ]
-            };
-            cameraColumnChart = echarts.init(document.getElementById('cameraColumnChart'), null, {
-                width: qW,
-                height: qH
-            });
-            cameraColumnChart.setOption(option);
-        }
-
-        window.updateCameraColumnChart = function(data) {
-            $.post('/statistic/camera', data, function(res) {
-                cameraColumnChart.setOption({
-                    xAxis: {
-                        data: res.data.xAxiss,
-                    },
-                    series: [
-                        {
-                            data: res.data.values
-                        }
-                    ]
-                });
-            });
-        }
-
-        window.buildCameraAlgorithmChart = function() {
-            var app = {};
-            var posList = [
-                'left',
-                'right',
-                'top',
-                'bottom',
-                'inside',
-                'insideTop',
-                'insideLeft',
-                'insideRight',
-                'insideBottom',
-                'insideTopLeft',
-                'insideTopRight',
-                'insideBottomLeft',
-                'insideBottomRight'
-            ];
-            app.configParameters = {
-                rotate: {
-                    min: -90,
-                    max: 90
-                },
-                align: {
-                    options: {
-                        left: 'left',
-                        center: 'center',
-                        right: 'right'
-                    }
-                },
-                verticalAlign: {
-                    options: {
-                        top: 'top',
-                        middle: 'middle',
-                        bottom: 'bottom'
-                    }
-                },
-                position: {
-                    options: posList.reduce(function (map, pos) {
-                        map[pos] = pos;
-                        return map;
-                    }, {})
-                },
-                distance: {
-                    min: 0,
-                    max: 100
-                }
-            };
-            app.config = {
-                rotate: 90,
-                align: 'left',
-                verticalAlign: 'middle',
-                position: 'insideBottom',
-                distance: 15
-            };
-            var labelOption = {
-                show: true,
-                position: app.config.position,
-                distance: app.config.distance,
-                align: app.config.align,
-                verticalAlign: app.config.verticalAlign,
-                rotate: app.config.rotate,
-                formatter: '{c}  {name|{a}}',
-                fontSize: 16,
-                rich: {
-                    // name: {}
-                }
-            };
-            var option = {
-                title: {
-                    text: '摄像头算法告警统计'
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        // type: 'shadow'
-                    }
-                },
-                legend: {
+        function buildCameraColumnChart() {
+            cameraColumnChart = echarts.init(document.getElementById('cameraColumnChart'), null, { width: qW, height: qH });
+            cameraColumnChart.setOption({
+                title: { text: '摄像头告警统计' },
+                xAxis: { type: 'category', data: [] },
+                yAxis: { type: 'value' },
+                series: [{
                     data: [],
-                    align: 'right',
-                    right: 20,
-                    left: 180
-                },
-                toolbox: {
-                    show: true,
-                    orient: 'vertical',
-                    left: 'right',
-                    top: 'center'
-                },
-                xAxis: [
-                    {
-                        type: 'category',
-                        axisTick: { show: false },
-                        data: []
-                    }
-                ],
-                yAxis: [
-                    {
-                        type: 'value'
-                    }
-                ],
-                series: []
-            };
-
-            cameraAlgorithmChart = echarts.init(document.getElementById('cameraAlgorithmChart'), null, {
-                width: qW,
-                height: qH
+                    type: 'bar',
+                    showBackground: true,
+                    backgroundStyle: { color: 'rgba(180, 180, 180, 0.2)' }
+                }]
             });
-            cameraAlgorithmChart.setOption(option);
         }
 
-        window.updateCameraAlgorithmChart = function(data) {
-            $.post('/statistic/camera2algorithm', data, function(res) {
-                cameraAlgorithmChart.setOption({
-                    legend: {
-                        data: res.data.algorithmNames
-                    },
-                    xAxis: [
-                        {
-                            data: res.data.cameraNames
-                        }
-                    ],
-                    series: res.data.datas
+        function updateCameraColumnChart(data) {
+            $.post('/statistic/camera', data, function(res) {
+                let payload = (res && res.data) ? res.data : { xAxiss: [], values: [] };
+                cameraColumnChart.setOption({
+                    xAxis: { data: payload.xAxiss || [] },
+                    series: [{ data: payload.values || [] }]
                 });
             });
         }
+
+        function buildCameraAlgorithmChart() {
+            cameraAlgorithmChart = echarts.init(document.getElementById('cameraAlgorithmChart'), null, { width: qW, height: qH });
+            cameraAlgorithmChart.setOption({
+                title: { text: '摄像头算法告警统计' },
+                tooltip: { trigger: 'axis' },
+                legend: { data: [], align: 'right', right: 20, left: 180 },
+                xAxis: [{ type: 'category', axisTick: { show: false }, data: [] }],
+                yAxis: [{ type: 'value' }],
+                series: []
+            });
+        }
+
+        function updateCameraAlgorithmChart(data) {
+            $.post('/statistic/camera2algorithm', data, function(res) {
+                let payload = (res && res.data) ? res.data : { algorithmNames: [], cameraNames: [], datas: [] };
+                cameraAlgorithmChart.setOption({
+                    legend: { data: payload.algorithmNames || [] },
+                    xAxis: [{ data: payload.cameraNames || [] }],
+                    series: payload.datas || []
+                });
+            });
+        }
+
+        function collectQueryData() {
+            return {
+                startDate: $('#startDate').val(),
+                endDate: $('#endDate').val(),
+                cameraId: $('select[name="cameraId"]').val(),
+                algorithmId: $('select[name="algorithmId"]').val(),
+                type: $('select[name="type"]').val()
+            };
+        }
+
+        function refreshCharts(data) {
+            updateAlgorithmRatioChart(data);
+            updateCameraColumnChart(data);
+            updateCameraAlgorithmChart(data);
+        }
+
+        form.on('submit(query)', function(data) {
+            refreshCharts(data.field);
+            return false;
+        });
+
+        $('#resetBtn').on('click', function() {
+            setTimeout(function() {
+                form.render('select');
+                refreshCharts(collectQueryData());
+            }, 0);
+        });
+
+        $(window).on('resize', function() {
+            dW = $(document).width();
+            dH = $(document).height();
+            qH = $('#contentQuery').height();
+            setHeight();
+            if (algorithmRatioChart) { algorithmRatioChart.resize(); }
+            if (cameraColumnChart) { cameraColumnChart.resize(); }
+            if (cameraAlgorithmChart) { cameraAlgorithmChart.resize(); }
+        });
 
         $(document).ready(function() {
             dW = $(document).width();
             dH = $(document).height();
             qH = $('#contentQuery').height();
             qW = dW;
+            setHeight();
 
-            window.setHeight();
-            window.buildAlgorithmRatioChart();
-            window.buildCameraColumnChart();
-            window.buildCameraAlgorithmChart();
+            buildAlgorithmRatioChart();
+            buildCameraColumnChart();
+            buildCameraAlgorithmChart();
 
-            setTimeout(function() {
-                window.updateAlgorithmRatioChart({'startDate': '${startDate!''}', 'endDate': '${endDate!''}'});
-            }, 300);
-
-            setTimeout(function() {
-                window.updateCameraColumnChart({'startDate': '${startDate!''}', 'endDate': '${endDate!''}'});
-            }, 500);
-
-            setTimeout(function() {
-                window.updateCameraAlgorithmChart({'startDate': '${startDate!''}', 'endDate': '${endDate!''}'});
-            }, 700);
+            refreshCharts({
+                startDate: '${startDate!''}',
+                endDate: '${endDate!''}',
+                cameraId: '',
+                algorithmId: '',
+                type: ''
+            });
         });
-    })
+    });
 </script>
+</body>
 </html>

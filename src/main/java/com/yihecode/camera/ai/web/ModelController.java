@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaIgnore;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileUtil;
@@ -70,6 +71,18 @@ public class ModelController {
     //
     @Autowired
     private ConfigService configService;
+
+    @Autowired
+    private ModelTestResultService modelTestResultService;
+
+    @Autowired
+    private ModelTestCaptureService modelTestCaptureService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     //
     @Value("${modelDir}")
@@ -152,6 +165,9 @@ public class ModelController {
     @PostMapping({"/save"})
     @ResponseBody
     public JsonResult save(Model model) throws Exception {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         //
         if(StrUtil.isBlank(model.getName())) {
             return JsonResultUtils.fail("请输入模型名称");
@@ -161,6 +177,7 @@ public class ModelController {
         }
         //
         Map<String, Object> retMap = modelService.saveModel(model);
+        operationLogService.record("model:save", "modelId=" + model.getId(), true, "model saved", model.getName());
         return JsonResultUtils.success(retMap);
     }
 
@@ -173,9 +190,21 @@ public class ModelController {
     @PostMapping({"/start"})
     @ResponseBody
     public JsonResult startModel(Long modelId) throws Exception {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         //
         modelService.updateModelEnable(modelId);
+        operationLogService.record("model:start", "modelId=" + modelId, true, "model enable toggled", "");
         return JsonResultUtils.success();
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -186,6 +215,9 @@ public class ModelController {
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         Model model = modelService.getById(id);
         if(model == null) {
             return JsonResultUtils.fail("模型不存在或已删除");
@@ -208,6 +240,7 @@ public class ModelController {
         int newVersionCount = modelService.getVersionCountByName(model.getName());
         modelService.updateVersionCount(model.getName(), newVersionCount);
         //
+        operationLogService.record("model:delete", "modelId=" + id, true, "model deleted", model.getName());
         return JsonResultUtils.success();
     }
 
@@ -366,36 +399,39 @@ public class ModelController {
             // [{"confidence":0.96,"position":[270,207,335,295],"type":"nohelmet"}, {"confidence":0.96,"position":[270,207,335,295],"type":"nohelmet"}]
             JSONArray predictArray = this.requestAlgorithm(algorithmUrl, params);
             if(predictArray == null || predictArray.isEmpty()) {
-                return JsonResultUtils.fail("算法调用异常");
+                return JsonResultUtils.fail("algorithm predict response is empty");
             }
 
-            // 调用告警接口
-            boolean isPredict = false;
-            int len = predictArray.size();
-            for(int i = 0; i < len; i++) {
-                JSONObject predictObj = predictArray.getJSONObject(i);
-                Long algorithmId = predictObj.getLong("algorithm_id");
-                JSONArray data = predictObj.getJSONArray("data");
-                if(data == null || data.isEmpty()) {
-                    continue;
-                }
+            List<Map<String, Object>> detections = modelTestResultService.flattenDetections(predictArray);
+            String json = JSON.toJSONString(detections, SerializerFeature.PrettyFormat,SerializerFeature.WriteMapNullValue,SerializerFeature.WriteDateUseDateFormat, SerializerFeature.WriteNullListAsEmpty);
+            String rawJson = JSON.toJSONString(predictArray, SerializerFeature.PrettyFormat,SerializerFeature.WriteMapNullValue,SerializerFeature.WriteDateUseDateFormat, SerializerFeature.WriteNullListAsEmpty);
+            String resultFile = modelTestResultService.saveAnnotatedImage(uploadDir, file, detections);
 
-                //
-                isPredict = true;
-            }
-
-            String json = JSON.toJSONString(predictArray, SerializerFeature.PrettyFormat,SerializerFeature.WriteMapNullValue,SerializerFeature.WriteDateUseDateFormat, SerializerFeature.WriteNullListAsEmpty);
-
-
-            //
             Map<String, Object> retMap = new HashMap<>();
-            //retMap.put("file", dateDir + saveName);
             retMap.put("json", json);
+            retMap.put("rawJson", rawJson);
+            retMap.put("detections", detections);
+            retMap.put("sourceFile", file);
+            retMap.put("resultFile", resultFile);
 
             return JsonResultUtils.success(retMap);
         } catch (Exception e) {
             return JsonResultUtils.fail("存储文件异常");
         }
+    }
+
+    @PostMapping("/test/capture")
+    @ResponseBody
+    public JsonResult testCapture(String rtspUrl) {
+        if (StrUtil.isBlank(rtspUrl)) {
+            return JsonResultUtils.fail("rtsp url is required");
+        }
+        String ffmpegBin = configService.getByValTag("media_ffmpeg_bin");
+        String file = modelTestCaptureService.capture(uploadDir, rtspUrl, ffmpegBin);
+        if (StrUtil.isBlank(file)) {
+            return JsonResultUtils.fail("capture failed");
+        }
+        return JsonResultUtils.success(file);
     }
 
     /**
@@ -617,6 +653,9 @@ public class ModelController {
     public JsonResult merge(@RequestParam(value = "chunks",required =false) Integer chunks,
                             @RequestParam(value = "md5File") String md5File,
                             @RequestParam(value = "name") String name) throws Exception {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         //
         String extName = FileUtil.extName(name);
 
@@ -652,8 +691,10 @@ public class ModelController {
             dataMap.put("onnxName", name);
             dataMap.put("onnxMd5", md5File);
             dataMap.put("onnxSize", new File(fileDir.getAbsolutePath() + "/" + name).length());
+            operationLogService.record("model:merge", "modelFile=" + name, true, "model chunks merged", "md5=" + md5File);
             return JsonResultUtils.success(dataMap);
         } catch (Exception e) {
+            operationLogService.record("model:merge", "modelFile=" + name, false, "model merge failed", e.getMessage());
             e.printStackTrace();
         } finally {
             fileOutputStream.close();
@@ -670,6 +711,9 @@ public class ModelController {
     @PostMapping("/rename")
     @ResponseBody
     public JsonResult fileRename(@RequestParam(value = "fileName") String fileName) throws Exception {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         //
         boolean exist = false;
         String newName = "";
@@ -698,6 +742,7 @@ public class ModelController {
         updateModel.setId(model.getId());
         updateModel.setOnnxName(newName);
         modelService.updateById(updateModel);
+        operationLogService.record("model:rename", "modelId=" + model.getId(), true, "model file renamed", fileName + "->" + newName);
         return JsonResultUtils.success();
     }
 

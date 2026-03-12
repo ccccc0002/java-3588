@@ -7,363 +7,433 @@
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
     <link href="/static/js/webuploader/webuploader.css?v=1.0" rel="stylesheet" />
     <style>
-        .xbox { position: absolute; border: 2px solid #f43838; background-color: rgba(255, 0, 0, .2); font-size: 12px; color: #1e9fff; }
-        .xcvs { position: absolute; top: 0; left: 0; }
-        .maskUpload{
+        .upload-zone {
             width: 100%;
-            min-height: 300px;
-            background-color: #f5f5f5;
+            min-height: 260px;
+            border: 1px dashed #dcdfe6;
+            border-radius: 8px;
+            background: #fafafa;
             display: flex;
-            flex-direction: row;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
-        .maskUpload .txt { font-size: 16px; font-weight: bold; color: #666; }
+        .upload-tip {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+        .preview-wrap {
+            width: 100%;
+            min-height: 240px;
+            border: 1px solid #ebeef5;
+            border-radius: 6px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-wrap img {
+            max-width: 100%;
+            max-height: 360px;
+            display: block;
+        }
+        .overlay-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        @media (min-width: 1200px) {
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .detection-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        .detection-table th,
+        .detection-table td {
+            border: 1px solid #ebeef5;
+            padding: 6px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin: 8px 0;
+        }
     </style>
 </head>
 <body class="pear-container">
 <div class="layui-row layui-col-space10">
-    <div class="layui-col-md6">
+    <div class="layui-col-md5">
         <div class="layui-card">
             <div class="layui-card-body">
-                <form class="layui-form" action="">
+                <form class="layui-form">
+                    <input type="hidden" id="fileName" />
+
                     <div class="layui-form-item">
-                        <div class="layui-form-item">
-                            <label class="layui-form-label">图片</label>
-                            <div class="layui-input-block">
-<#--                                <input type="file" id="file" class="layui-input" onchange="uploadFile();">-->
-                                <input type="hidden" id="fileName" />
-<#--                                <div style="margin-top: 10px; position: relative;" id="upload_picc"></div>-->
+                        <label class="layui-form-label">图片</label>
+                        <div class="layui-input-block">
+                            <div id="drop-zone" class="upload-zone">
+                                <div class="upload-tip" id="drop-tip">拖拽图片到这里或点击下方按钮选择</div>
+                                <div id="roi-image-container" style="width:100%;height:100%;position:relative;"></div>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <button type="button" id="picker" class="pear-btn pear-btn-primary pear-btn-sm">选择图片</button>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div id="uploader" class="wu-example file-box" style="width: auto;">
-
-                                    <div id="thelist" class="uploader-list flex-center"></div>
-                                    <div class="btns">
-<#--                                        <div id="picker">点击选择图片文件</div>-->
-                                        <div class="maskUpload">
-                                            <div class="txt" id="drag_txt">拖到文件到这里</div>
-                                            <div style="margin-top: 10px; position: relative;" id="upload_picc"></div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">算法</label>
+                        <div class="layui-input-block">
+                            <div class="layui-row layui-col-space5">
+                                <#if algorithmList??>
+                                    <#list algorithmList as item>
+                                        <div class="layui-col-xs6 layui-col-sm4 layui-col-md6 layui-col-lg4">
+                                            <input type="checkbox" name="algorithms" value="${(item.id)!''}" lay-skin="primary" title="${(item.name)!''}">
                                         </div>
-                                    </div>
-                                </div>
+                                    </#list>
+                                </#if>
                             </div>
                         </div>
-                        <div class="layui-form-item">
-                            <label class="layui-form-label">算法</label>
-                            <div class="layui-input-block">
-                                <div style="margin-top: 0;">
-                                    <#if algorithmList??>
-                                        <#list algorithmList as item>
-                                            <div class="layui-col-xs4">
-                                                <input type="checkbox" name="algorithms" value="${(item.id)!''}" lay-skin="primary" title="${(item.name)!''}" >
-                                            </div>
-                                        </#list>
-                                    </#if>
-                                </div>
-                            </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">ROI 点位</label>
+                        <div class="layui-input-block" style="display:flex;gap:8px;">
+                            <input type="text" id="marks" name="marks" class="layui-input" placeholder="点击图片生成多边形点位 JSON">
+                            <button type="button" class="pear-btn pear-btn-primary pear-btn-sm" id="reset-roi">重置</button>
                         </div>
-                        <div class="layui-form-item">
-                            <label class="layui-form-label">禁入区域</label>
-                            <div class="layui-input-block">
-                                <div style="display: flex; flex-direction: row;">
-                                    <input type="text" id="marks" name="marks" placeholder="" class="layui-input">
-                                    <button type="button" class="pear-btn pear-btn-md pear-btn-primary" style="margin-left: 10px;" onclick="removeMask();">重置</button>
-                                </div>
-                            </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">摄像头ID</label>
+                        <div class="layui-input-block">
+                            <input type="text" id="cameraId" name="cameraId" class="layui-input" placeholder="可选，不填则自动生成">
                         </div>
-                        <div class="layui-form-item">
-                            <label class="layui-form-label">摄像头</label>
-                            <div class="layui-input-block">
-                                <input type="text" id="cameraId" name="cameraId" placeholder="随便输入数字" class="layui-input">
-                            </div>
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">RTSP抓拍</label>
+                        <div class="layui-input-block" style="display:flex;gap:8px;">
+                            <input type="text" id="captureRtspUrl" class="layui-input" placeholder="rtsp://user:pass@ip:554/xxx">
+                            <button type="button" class="pear-btn pear-btn-primary pear-btn-sm" id="capture-frame-btn">抓拍一帧</button>
                         </div>
-                        <div class="layui-form-item layui-inline" style="text-align: center; display: flex; justify-content: center; margin-top: 50px;">
-                            <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query" style="margin: 0px 5px;">
-                                <i class="layui-icon layui-icon-search"></i>
-                                测试
-                            </button>
-                            <button type="reset" class="pear-btn pear-btn-md" style="margin: 0px 5px;">
-                                <i class="layui-icon layui-icon-refresh"></i>
-                                重置
-                            </button>
-                        </div>
+                    </div>
+
+                    <div class="layui-form-item" style="text-align:center;">
+                        <button class="pear-btn pear-btn-primary pear-btn-md" lay-submit lay-filter="predict-submit">
+                            <i class="layui-icon layui-icon-search"></i>测试
+                        </button>
+                        <button type="reset" class="pear-btn pear-btn-md" style="margin-left:8px;">重置</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="layui-col-md6">
+    <div class="layui-col-md7">
         <div class="layui-card">
             <div class="layui-card-body">
-                <div style="display: flex; flex-direction: row; justify-content: center; position: relative;" id="upload_pic">
+                <div class="result-grid">
+                    <div>
+                        <div class="section-title">原图</div>
+                        <div class="preview-wrap" id="origin-preview"></div>
+                    </div>
+                    <div>
+                        <div class="section-title">标注图</div>
+                        <div class="preview-wrap" id="annotated-preview"></div>
+                    </div>
+                </div>
 
-                </div>
-                <div style="margin-top: 10px;">
-                    <div style="font-size: 15px; font-weight: bold; color: #666666; margin-bottom: 10px;">测试结果:</div>
-                    <pre id="json_result" style="margin: 0; padding: 0;">
-                    </pre>
-                </div>
+                <div class="section-title" style="margin-top:12px;">检测结果列表</div>
+                <table class="detection-table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>类别</th>
+                        <th>置信度</th>
+                        <th>框坐标</th>
+                        <th>算法</th>
+                    </tr>
+                    </thead>
+                    <tbody id="detection-body">
+                    <tr><td colspan="5">暂无结果</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="section-title" style="margin-top:12px;">原始返回</div>
+                <pre id="json_result" style="white-space:pre-wrap;word-break:break-word;min-height:120px;"></pre>
             </div>
         </div>
     </div>
 </div>
-</body>
+
 <script src="/static/component/layui/layui.js"></script>
 <script src="/static/component/pear/pear.js"></script>
 <script src="/static/js/jquery.3.6.1.min.js"></script>
 <script src="/static/js/webuploader/md5.js"></script>
 <script src="/static/js/webuploader/webuploader.min.js"></script>
 <script>
-    layui.use(['table', 'form', 'jquery', 'util', 'popup'], function() {
+    layui.use(['form', 'jquery', 'popup'], function() {
+        let form = layui.form;
         let $ = layui.jquery;
         let popup = layui.popup;
-        let form = layui.form;
 
-        //
-        var json_result = '';
-        var ctx = null;
-        var marks = [];
+        let uploader = null;
+        let marks = [];
+        let ctx = null;
 
-        //
-        form.on('submit(query)', function(data) {
-            //
-            if($('#fileName').val() == '') {
-                popup.failure('请选择需要测试的图片');
-                return false;
-            }
-            //
-            var algorithms = [];
-            $('input[name="algorithms"]').each(function() {
-                if($(this).prop('checked')) {
-                    algorithms.push($(this).val());
-                }
-            });
-            //
-            if(algorithms.length == 0) {
-                popup.failure('请选择需要测试的算法');
-                return false;
-            }
-
-            //
-            var data = {
-                'file': $('#fileName').val(),
-                'algorithms': JSON.stringify(algorithms),
-                'marks': $('#marks').val(),
-                'cameraId': $('#cameraId').val(),
-                'imgHeight': $('#upload_picc').height()
-            };
-            $.post('/model/test/predict', data, function(res) {
-                if(res.code == 0) {
-                    $('#json_result').text(res.data.json);
-                    json_result = res.data.json;
-                    window.handleXbox(json_result);
-                } else {
-                    popup.failure(res.msg);
-                }
-            })
-            return false;
-        });
-
-        //
-        // window.uploadFile = function() {
-        //     marks = [];
-        //     $('#marks').val('');
-        //     //
-        //     if($('#file').length == 0 || $('#file')[0].files.length == 0) {
-        //         popup.failure('请选择需要测试的图片');
-        //         return false;
-        //     }
-        //     //
-        //     var formData = new FormData();
-        //     formData.append('file', $('#file')[0].files[0]);
-        //     //
-        //     $.ajax({
-        //         url: "/model/test/upload",
-        //         dataType: "json",
-        //         async: false,
-        //         processData: false,
-        //         contentType: false,
-        //         data: formData,
-        //         method: "POST",
-        //         success(res) {
-        //             if(res.code == 0) {
-        //                 $('#fileName').val(res.data);
-        //                 $('#upload_picc').html('');
-        //                 $('#upload_picc').append('<img src="/model/test/stream?file=' + res.data + '&_=' + (new Date()).getTime() + '" style="width: 100%; height: 100%;" onload="handleMask(this);" />');
-        //                 $('#upload_pic').html('');
-        //                 $('#upload_pic').append('<img id="upload_pic_el" src="/model/test/stream?file=' + res.data + '&_=' + (new Date()).getTime() + '" style="width: 100%; height: 100%;"/>');
-        //             } else {
-        //                 popup.failure(res.msg);
-        //             }
-        //         },
-        //         error(err) {
-        //             console.log(err)
-        //         }
-        //     });
-        //     return false;
-        // }
-
-        //
-        window.handleMask = function(obj) {
-            var that = $(obj);
-            var pW = that.width();
-            var pH = that.height();
-            $('#upload_picc_mask').remove();
-            $('#upload_picc').append('<canvas width="' + pW +'" height="' + pH + '" class="xcvs" id="upload_picc_mask"></canvas>');
-            //
-            ctx = document.getElementById('upload_picc_mask').getContext('2d');
-            //
-            $('#upload_picc_mask').on('mousedown', window.mouseDownListener);
+        function clearDetections() {
+            $('#detection-body').html('<tr><td colspan="5">暂无结果</td></tr>');
+            $('#json_result').text('');
+            $('#annotated-preview').html('');
         }
 
-        //
-        window.removeMask = function() {
-            marks = [];
-            $('#marks').val('');
-            window.clearCanvas();
-        }
-
-        //
-        window.clearCanvas = function() {
-            ctx.clearRect(0, 0, document.getElementById('upload_picc_mask').width, document.getElementById('upload_picc_mask').height);
-        }
-
-        //
-        window.handleXbox = function() {
-            //
-            var that = $('#upload_pic');
-            var nW = document.getElementById('upload_pic_el').naturalWidth;
-            var dW = that.width();
-            var ratio = (dW / nW).toFixed(2);
-
-            //
-            if(json_result == '') {
-                return false;
+        function safeParse(text, fallback) {
+            if (!text) {
+                return fallback;
             }
-            //
-            var json = JSON.parse(json_result);
-            var len = json.length;
-            for(var i = 0; i < len; i++) {
-                var it = json[i];
-                var type = it['type'];
-                var confs = it['confidence'];
-                var points = it['position'];
-                var sX = parseInt(points[0] * ratio);
-                var sY = parseInt(points[1] * ratio);
-                var sW = parseInt((points[2] - points[0]) * ratio);
-                var sH = parseInt((points[3] - points[1]) * ratio);
-                $('#upload_pic').append('<div class="xbox" style="width: ' + sW + 'px; height: ' + sH + 'px; top: ' + sX + 'px; left: ' + sY + 'px;">' + type + ' ' + confs + '</div>');
-            }
-
-        }
-
-        //
-        window.getClientOffset = function(event) {
-            var sLeft = $('#upload_picc').offset().left;
-            var sTop = $('#upload_picc').offset().top;
-            const { pageX, pageY } = event.touches ? event.touches[0] : event;
-            const x = pageX - sLeft;
-            const y = pageY - sTop;
-            return {
-                x,
-                y
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                return fallback;
             }
         }
 
-        //
-        window.drawCircle = function(x, y) {
+        function getClientOffset(event) {
+            let area = $('#roi-image-container');
+            let sLeft = area.offset().left;
+            let sTop = area.offset().top;
+            let pageX = event.pageX;
+            let pageY = event.pageY;
+            return { x: pageX - sLeft, y: pageY - sTop };
+        }
+
+        function drawPoint(x, y) {
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2*Math.PI);
-            ctx.strokeStyle = "#409EFF";
-            ctx.fillStyle = "#409EFF";
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#409EFF';
             ctx.fill();
             ctx.closePath();
-            ctx.stroke();
         }
 
-        //
-        window.mouseDownListener = function(event) {
-            //
-            window.clearCanvas();
-            //
-            var clickPoint = window.getClientOffset(event);
-            marks.push(clickPoint);
-            $('#marks').val(JSON.stringify(marks));
-            //
-            var len = marks.length;
-            for(var i = 0; i < len; i++) {
-                if(i == 0) {
-                    ctx.moveTo(marks[0].x, marks[0].y);
+        function redrawPolygon() {
+            if (!ctx) {
+                return;
+            }
+            let canvas = document.getElementById('roi-canvas');
+            if (!canvas) {
+                return;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (marks.length === 0) {
+                return;
+            }
+            ctx.beginPath();
+            for (let i = 0; i < marks.length; i++) {
+                let p = marks[i];
+                if (i === 0) {
+                    ctx.moveTo(p.x, p.y);
                 } else {
-                    ctx.lineTo(marks[i].x, marks[i].y);
+                    ctx.lineTo(p.x, p.y);
                 }
             }
-            //
-            ctx.fillStyle = "rgba(64, 158, 255, .4)";
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "#409EFF";
             ctx.closePath();
+            ctx.fillStyle = 'rgba(64, 158, 255, .25)';
+            ctx.strokeStyle = '#409EFF';
+            ctx.lineWidth = 2;
+            ctx.fill();
             ctx.stroke();
-            //
-            for(var i = 0; i < len; i++) {
-                window.drawCircle(marks[i].x, marks[i].y);
+            for (let i = 0; i < marks.length; i++) {
+                drawPoint(marks[i].x, marks[i].y);
             }
         }
 
-        //
-        var uploader = null;
-        window.createUploader = function() {
-            if(uploader != null) {
-                uploader.reset();
+        function bindCanvasEvents() {
+            $('#roi-canvas').off('mousedown').on('mousedown', function(event) {
+                let clickPoint = getClientOffset(event);
+                marks.push({ x: Math.round(clickPoint.x), y: Math.round(clickPoint.y) });
+                $('#marks').val(JSON.stringify(marks));
+                redrawPolygon();
+            });
+        }
+
+        function renderSourceImage(filePath) {
+            let src = '/model/test/stream?file=' + encodeURIComponent(filePath) + '&_=' + Date.now();
+            $('#drop-tip').hide();
+            $('#roi-image-container').html('<img id="roi-image" src="' + src + '" style="width:100%;display:block;" />');
+            $('#origin-preview').html('<img id="origin-image" src="' + src + '" />');
+            clearDetections();
+
+            $('#roi-image').on('load', function() {
+                let img = this;
+                let pW = $(img).width();
+                let pH = $(img).height();
+                $('#roi-image-container').append('<canvas id="roi-canvas" class="overlay-canvas" width="' + pW + '" height="' + pH + '"></canvas>');
+                ctx = document.getElementById('roi-canvas').getContext('2d');
+                marks = [];
+                $('#marks').val('');
+                bindCanvasEvents();
+            });
+        }
+
+        function renderDetections(list) {
+            if (!Array.isArray(list) || list.length === 0) {
+                $('#detection-body').html('<tr><td colspan="5">未检测到目标</td></tr>');
+                return;
+            }
+            let html = '';
+            for (let i = 0; i < list.length; i++) {
+                let it = list[i] || {};
+                let type = it.type || '-';
+                let confidence = (it.confidence === undefined || it.confidence === null) ? '-' : Number(it.confidence).toFixed(3);
+                let position = Array.isArray(it.position) ? JSON.stringify(it.position) : '-';
+                let algorithmName = it.algorithm_name || (it.algorithm_id ? ('#' + it.algorithm_id) : '-');
+                html += '<tr>'
+                    + '<td>' + (i + 1) + '</td>'
+                    + '<td>' + type + '</td>'
+                    + '<td>' + confidence + '</td>'
+                    + '<td>' + position + '</td>'
+                    + '<td>' + algorithmName + '</td>'
+                    + '</tr>';
+            }
+            $('#detection-body').html(html);
+        }
+
+        function createUploader() {
+            if (uploader) {
                 uploader.destroy();
                 uploader = null;
             }
-
-            // create
             uploader = WebUploader.create({
                 auto: true,
                 swf: '/static/js/webuploader/Uploader.swf',
                 server: '/model/test/upload',
                 pick: '#picker',
-                dnd: ".maskUpload",
+                dnd: '#drop-zone',
                 resize: false,
                 accept: {
                     title: 'Images',
                     extensions: 'jpg,jpeg,bmp,png',
                     mimeTypes: 'image/*'
-                },
-            });
-
-            uploader.on('uploadSuccess', function(file, res) {
-                if(res.code == 0) {
-                    $('#drag_txt').css('display', 'none');
-                    $('#fileName').val(res.data);
-                    $('#upload_picc').html('');
-                    $('#upload_picc').append('<img src="/model/test/stream?file=' + res.data + '&_=' + (new Date()).getTime() + '" style="width: 100%; height: 100%;" onload="handleMask(this);" />');
-                    $('#upload_pic').html('');
-                    $('#upload_pic').append('<img id="upload_pic_el" src="/model/test/stream?file=' + res.data + '&_=' + (new Date()).getTime() + '" style="width: 100%; height: 100%;"/>');
-                } else {
-                    $('#drag_txt').css('display', 'block');
-                    popup.failure(res.msg);
                 }
             });
 
-            uploader.on('uploadError', function( file, a, b, c ) {
-                alert('upload error')
+            uploader.on('uploadSuccess', function(file, res) {
+                if (!res || res.code !== 0) {
+                    popup.failure((res && res.msg) || '上传失败');
+                    return;
+                }
+                $('#fileName').val(res.data);
+                renderSourceImage(res.data);
             });
 
-            uploader.on('uploadComplete', function( file, a, b, c ) {
-                marks = [];
-                $('#marks').val('');
+            uploader.on('uploadError', function() {
+                popup.failure('上传失败');
+            });
+
+            uploader.on('uploadComplete', function() {
                 uploader.reset();
             });
         }
 
-        $(document).ready(function() {
-            window.createUploader();
+        $('#reset-roi').on('click', function() {
+            marks = [];
+            $('#marks').val('');
+            redrawPolygon();
         });
-    })
+
+        $('#capture-frame-btn').on('click', function() {
+            let rtspUrl = ($('#captureRtspUrl').val() || '').trim();
+            if (!rtspUrl) {
+                popup.failure('请输入 RTSP 地址');
+                return;
+            }
+            let loading = layer.load(2);
+            $.post('/model/test/capture', { rtspUrl: rtspUrl }, function(res) {
+                layer.close(loading);
+                if (!res || res.code !== 0) {
+                    popup.failure((res && res.msg) || '抓拍失败');
+                    return;
+                }
+                $('#fileName').val(res.data);
+                renderSourceImage(res.data);
+                popup.success('抓拍成功');
+            });
+        });
+
+        form.on('submit(predict-submit)', function() {
+            if (!$('#fileName').val()) {
+                popup.failure('请先上传测试图片');
+                return false;
+            }
+
+            let algorithms = [];
+            $('input[name="algorithms"]').each(function() {
+                if ($(this).prop('checked')) {
+                    algorithms.push($(this).val());
+                }
+            });
+            if (algorithms.length === 0) {
+                popup.failure('请选择至少一个算法');
+                return false;
+            }
+
+            let payload = {
+                file: $('#fileName').val(),
+                algorithms: JSON.stringify(algorithms),
+                marks: $('#marks').val(),
+                cameraId: $('#cameraId').val(),
+                imgHeight: $('#roi-image').height() || 0
+            };
+
+            let loading = layer.load(2);
+            $.post('/model/test/predict', payload, function(res) {
+                layer.close(loading);
+                if (!res || res.code !== 0) {
+                    popup.failure((res && res.msg) || '测试失败');
+                    return;
+                }
+
+                let data = res.data || {};
+                let detections = data.detections;
+                if (!Array.isArray(detections)) {
+                    detections = safeParse(data.json, []);
+                }
+                renderDetections(detections);
+                $('#json_result').text(data.rawJson || data.json || '');
+
+                if (data.resultFile) {
+                    let resultSrc = '/model/test/stream?file=' + encodeURIComponent(data.resultFile) + '&_=' + Date.now();
+                    $('#annotated-preview').html('<img src="' + resultSrc + '" />');
+                } else {
+                    $('#annotated-preview').html('<div style="color:#999;">暂无标注图</div>');
+                }
+            });
+            return false;
+        });
+
+        $(function() {
+            createUploader();
+        });
+    });
 </script>
+</body>
 </html>

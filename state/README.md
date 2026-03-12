@@ -6,4 +6,5 @@ This directory stores runtime collaboration state for multi-agent execution.
 1. `checkpoints/` key node snapshots saved by hooks.
 2. `compact/` compacted context snapshots for low-drift continuation.
 3. `locks/` task lock files used to avoid multi-agent edit conflicts.
-
+4. `progress/` phase-level status board and machine-readable status JSON.
+5. `local/` machine-local runtime context and sensitive connection files (ignored by git patterns).

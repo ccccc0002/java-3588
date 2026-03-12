@@ -4,8 +4,10 @@ import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
+import com.yihecode.camera.ai.entity.Algorithm;
 import com.yihecode.camera.ai.entity.Camera;
 import com.yihecode.camera.ai.entity.Report;
+import com.yihecode.camera.ai.enums.ReportType;
 import com.yihecode.camera.ai.service.AlgorithmService;
 import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
@@ -59,6 +61,9 @@ public class StatisticController {
         String endDate = DateUtil.formatDate(new Date());
         modelMap.addAttribute("startDate", startDate);
         modelMap.addAttribute("endDate", endDate);
+        modelMap.addAttribute("cameraList", cameraService.listData() == null ? new ArrayList<>() : cameraService.listData());
+        modelMap.addAttribute("algorithmList", algorithmService.list() == null ? new ArrayList<>() : algorithmService.list());
+        modelMap.addAttribute("typeList", ReportType.toList());
         int cameraCount = 0;
         List<Camera> cameraList = this.cameraService.listData();
         if (cameraList != null) {
@@ -91,20 +96,27 @@ public class StatisticController {
      */
     @PostMapping({"/algorithm/ratio"})
     @ResponseBody
-    public JsonResult listAlgorithmRatio(String startDate, String endDate) {
-        List<Map<String, Object>> results = this.reportService.findAlgorithmRatio(getStartDate(startDate), getEndDate(endDate));
-        if (results == null) {
-            results = new ArrayList<>();
-        }
+    public JsonResult listAlgorithmRatio(String startDate, String endDate, Long cameraId, Long algorithmId, Integer type) {
+        Date start = getStartDate(startDate);
+        Date end = getEndDate(endDate);
+        Long startMills = start == null ? null : start.getTime();
+        Long endMills = end == null ? null : end.getTime();
         Map<Long, String> algorithmMap = this.algorithmService.toMap();
         List<Map<String, Object>> dataList = new ArrayList<>();
-        for (Map<String, Object> result : results) {
-            Long algorithmId = Convert.toLong(result.get("algorithm_id"), 0L);
-            Integer count = Convert.toInt(result.get("cnt"), 0);
-            String algorithmName = algorithmMap.get(algorithmId);
+
+        List<Long> targetAlgorithmIds = new ArrayList<>();
+        if (algorithmId != null) {
+            targetAlgorithmIds.add(algorithmId);
+        } else {
+            targetAlgorithmIds.addAll(algorithmMap.keySet());
+        }
+
+        for (Long algorithmIdItem : targetAlgorithmIds) {
+            Integer count = reportService.getCount(startMills, endMills, cameraId, algorithmIdItem, type);
+            String algorithmName = algorithmMap.get(algorithmIdItem);
             Map<String, Object> dataMap = new HashMap<>();
             dataMap.put("name", algorithmName == null ? "Unknow" : algorithmName);
-            dataMap.put("value", count);
+            dataMap.put("value", count == null ? 0 : count);
             dataList.add(dataMap);
         }
         return JsonResultUtils.success(dataList);
@@ -118,31 +130,30 @@ public class StatisticController {
      */
     @PostMapping({"/camera"})
     @ResponseBody
-    public JsonResult listCamera(String startDate, String endDate) {
-        List<Map<String, Object>> results = this.reportService.findCamera(getStartDate(startDate), getEndDate(endDate));
-        if (results == null) {
-            results = new ArrayList<>();
-        }
-        //
-        Map<Long, Integer> cameraStatistics = new HashMap<>();
-        for(Map<String, Object> result : results) {
-            Long cameraId = Convert.toLong(result.get("camera_id"), 0L);
-            Integer count = Convert.toInt(result.get("cnt"), 0);
-            cameraStatistics.put(cameraId, count);
-        }
+    public JsonResult listCamera(String startDate, String endDate, Long cameraId, Long algorithmId, Integer type) {
+        Date start = getStartDate(startDate);
+        Date end = getEndDate(endDate);
+        Long startMills = start == null ? null : start.getTime();
+        Long endMills = end == null ? null : end.getTime();
 
-        //
         Map<Long, String> cameraMap = this.cameraService.toMap();
         ArrayList xAxiss = new ArrayList();
         ArrayList values = new ArrayList();
-        for (Long cameraId : cameraMap.keySet()) {
-            xAxiss.add(cameraMap.get(cameraId));
 
-            // values
-            if(cameraStatistics.get(cameraId) == null) {
+        List<Long> targetCameraIds = new ArrayList<>();
+        if (cameraId != null) {
+            targetCameraIds.add(cameraId);
+        } else {
+            targetCameraIds.addAll(cameraMap.keySet());
+        }
+
+        for (Long cameraIdItem : targetCameraIds) {
+            xAxiss.add(cameraMap.get(cameraIdItem));
+            Integer count = reportService.getCount(startMills, endMills, cameraIdItem, algorithmId, type);
+            if (count == null) {
                 values.add(0);
             } else {
-                values.add(cameraStatistics.get(cameraId));
+                values.add(count);
             }
         }
         Map<String, Object> dataMap = new HashMap<>();
@@ -159,45 +170,44 @@ public class StatisticController {
      */
     @PostMapping(value = "/camera2algorithm")
     @ResponseBody
-    public JsonResult listCameraAlgorithm(String startDate, String endDate) {
+    public JsonResult listCameraAlgorithm(String startDate, String endDate, Long cameraId, Long algorithmId, Integer type) {
         Date _startDate = getStartDate(startDate);
         Date _endDate = getEndDate(endDate);
+        Long startMills = _startDate == null ? null : _startDate.getTime();
+        Long endMills = _endDate == null ? null : _endDate.getTime();
 
         //
         Map<Long, String> cameraMap = this.cameraService.toMap();
         List<String> cameraNames = new ArrayList();
-        for (Long cameraId : cameraMap.keySet()) {
-            cameraNames.add(cameraMap.get(cameraId));
+        List<Long> cameraIds = new ArrayList<>();
+        if (cameraId != null) {
+            cameraIds.add(cameraId);
+        } else {
+            cameraIds.addAll(cameraMap.keySet());
+        }
+        for (Long cameraIdItem : cameraIds) {
+            cameraNames.add(cameraMap.get(cameraIdItem));
         }
 
         //
         Map<Long, String> algorithmMap = this.algorithmService.toMap();
         List<String> algorithmNames = new ArrayList();
-        for (Long algorithmId : algorithmMap.keySet()) {
-            algorithmNames.add(algorithmMap.get(algorithmId));
+        List<Long> algorithmIds = new ArrayList<>();
+        if (algorithmId != null) {
+            algorithmIds.add(algorithmId);
+        } else {
+            algorithmIds.addAll(algorithmMap.keySet());
         }
-
-        //
-        List<Map<String, Object>> results = this.reportService.findCameraAlgorithm(_startDate, _endDate);
-        if (results == null) {
-            results = new ArrayList<>();
-        }
-
-        // results list to map
-        Map<String, Integer> resultMap = new HashMap<>();
-        for(Map<String, Object> result : results) {
-            Long cameraId = Convert.toLong(result.get("camera_id"), 0L);
-            Long algorithmId = Convert.toLong(result.get("algorithm_id"), 0L);
-            Integer count = Convert.toInt(result.get("cnt"), 0);
-            resultMap.put(cameraId + "@" + algorithmId, count);
+        for (Long algorithmIdItem : algorithmIds) {
+            algorithmNames.add(algorithmMap.get(algorithmIdItem));
         }
 
         //
         List<Map<String, Object>> dataList = new ArrayList();
-        for (Long algorithmId : algorithmMap.keySet()) {
+        for (Long algorithmIdItem : algorithmIds) {
 
             Map<String, Object> dataMap = new HashMap();
-            dataMap.put("name", algorithmMap.get(algorithmId));
+            dataMap.put("name", algorithmMap.get(algorithmIdItem));
             dataMap.put("type", "bar");
             dataMap.put("barGap", 0);
             Map<String, Object> labelMap = new HashMap();
@@ -222,8 +232,8 @@ public class StatisticController {
 
             //
             List<Integer> values = new ArrayList();
-            for (Long cameraId : cameraMap.keySet()) {
-                Integer count = resultMap.get(cameraId + "@" + algorithmId);
+            for (Long cameraIdItem : cameraIds) {
+                Integer count = reportService.getCount(startMills, endMills, cameraIdItem, algorithmIdItem, type);
                 values.add(count == null ? 0 : count);
             }
             dataMap.put("data", values);

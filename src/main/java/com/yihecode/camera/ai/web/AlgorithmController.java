@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
@@ -9,6 +10,8 @@ import com.yihecode.camera.ai.entity.Algorithm;
 import com.yihecode.camera.ai.entity.Suanfa;
 import com.yihecode.camera.ai.service.AlgorithmService;
 import com.yihecode.camera.ai.service.CameraAlgorithmService;
+import com.yihecode.camera.ai.service.OperationLogService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.utils.*;
 import com.yihecode.camera.ai.web.api.StreamApiController;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,6 +56,12 @@ public class AlgorithmController {
     //
     @Autowired
     private CameraAlgorithmService cameraAlgorithmService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     /**
      * 打开算法列表页面
@@ -460,6 +469,9 @@ public class AlgorithmController {
     @PostMapping({"/save"})
     @ResponseBody
     public JsonResult save(Algorithm algorithm) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if (StrUtil.isBlank(algorithm.getName())) {
             return JsonResultUtils.fail("请输入算法名称");
         }
@@ -497,6 +509,7 @@ public class AlgorithmController {
         algorithm.setModelPath("/data/models/"+algorithm.getNameEn());
         algorithm.setUpdatedAt(new Date());
         this.algorithmService.saveOrUpdate(algorithm);
+        operationLogService.record("algorithm:save", "algorithmId=" + algorithm.getId(), true, "algorithm saved", algorithm.getNameEn());
         return JsonResultUtils.success();
     }
 
@@ -508,11 +521,23 @@ public class AlgorithmController {
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if (!this.cameraAlgorithmService.listByAlgorithm(id).isEmpty()) {
-            return JsonResultUtils.fail("摄像头已绑定该算法，请先从摄像头取消该算法关联");
+            return JsonResultUtils.fail(409, "algorithm is still bound to one or more cameras");
         }
         this.algorithmService.removeById(id);
+        operationLogService.record("algorithm:delete", "algorithmId=" + id, true, "algorithm deleted", "");
         return JsonResultUtils.success();
+    }
+
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void downloadFile(String remoteFilePath, String localFilePath) {

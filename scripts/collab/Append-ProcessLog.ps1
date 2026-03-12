@@ -18,12 +18,14 @@ if (-not (Test-Path $processDir)) {
 }
 
 if (-not (Test-Path $logFile)) {
-    @(
+    $initLines = @(
         "# Process Log",
         "",
         "| Time | Task | Stage | Event | Actor | Summary |",
         "|---|---|---|---|---|---|"
-    ) | Set-Content -Path $logFile -Encoding UTF8
+    )
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($logFile, (($initLines -join [Environment]::NewLine) + [Environment]::NewLine), $utf8NoBom)
 }
 
 $time = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
@@ -70,5 +72,7 @@ $latest = [ordered]@{
     summary = $Summary
 }
 
-$latest | ConvertTo-Json -Depth 5 | Set-Content -Path $latestFile -Encoding UTF8
+$latestJson = $latest | ConvertTo-Json -Depth 5
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($latestFile, $latestJson, $utf8NoBom)
 Write-Output "OK: process log appended"
