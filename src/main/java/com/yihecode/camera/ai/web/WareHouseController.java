@@ -139,6 +139,7 @@ public class WareHouseController {
     @ResponseBody
     public JsonResult sync2all() {
         if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            operationLogService.record("warehouse:sync_all", "warehouse", false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         List<WareHouse> wareHouses = wareHouseService.list();
@@ -172,6 +173,7 @@ public class WareHouseController {
     @ResponseBody
     public JsonResult sync2node(String indexCode) {
         if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            operationLogService.record("warehouse:sync_node", "indexCode=" + indexCode, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if(StrUtil.isBlank(indexCode)) {
@@ -208,6 +210,7 @@ public class WareHouseController {
     @ResponseBody
     public JsonResult pullRtsp(String indexCode) {
         if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            operationLogService.record("warehouse:pull_rtsp", "indexCode=" + indexCode, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if(StrUtil.isBlank(indexCode)) {
@@ -259,6 +262,7 @@ public class WareHouseController {
     @ResponseBody
     public JsonResult select2export(String ids) {
         if (!roleAccessService.canSyncWarehouse(currentAccountId())) {
+            operationLogService.record("warehouse:select_export", "ids=" + ids, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if(StrUtil.isBlank(ids)) {

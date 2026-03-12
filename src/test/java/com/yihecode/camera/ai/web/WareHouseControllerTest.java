@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -153,6 +154,41 @@ class WareHouseControllerTest {
         when(roleAccessService.canSyncWarehouse(any())).thenReturn(false);
         JsonResult result = wareHouseController.sync2all();
         assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("warehouse:sync_all"), eq("warehouse"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void sync2nodeShouldDenyWhenNoPermission() {
+        when(roleAccessService.canSyncWarehouse(any())).thenReturn(false);
+
+        JsonResult result = wareHouseController.sync2node("IDX-TEST");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("warehouse:sync_node"), eq("indexCode=IDX-TEST"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void pullRtspShouldDenyWhenNoPermission() {
+        when(roleAccessService.canSyncWarehouse(any())).thenReturn(false);
+
+        JsonResult result = wareHouseController.pullRtsp("IDX-TEST");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("warehouse:pull_rtsp"), eq("indexCode=IDX-TEST"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void select2exportShouldDenyWhenNoPermission() {
+        when(roleAccessService.canSyncWarehouse(any())).thenReturn(false);
+
+        JsonResult result = wareHouseController.select2export("100,200");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("warehouse:select_export"), eq("ids=100,200"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
