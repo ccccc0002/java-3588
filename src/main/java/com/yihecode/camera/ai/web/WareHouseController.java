@@ -299,6 +299,10 @@ public class WareHouseController {
     public JsonResult save(WareHouse wareHouse,
                            @RequestParam(value = "title", required = false) String title,
                            @RequestParam(value = "parentId", required = false) Long parentId) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("warehouse:save", "warehouse", false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
         if(wareHouse == null) {
             wareHouse = new WareHouse();
         }
@@ -346,12 +350,17 @@ public class WareHouseController {
         }
 
         wareHouseService.saveOrUpdate(wareHouse);
+        operationLogService.record("warehouse:save", "warehouseId=" + wareHouse.getId(), true, "warehouse saved", wareHouse.getName());
         return JsonResultUtils.success();
     }
 
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("warehouse:delete", "warehouseId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
         if(id == null) {
             return JsonResultUtils.fail("Invalid parameter");
         }
@@ -390,6 +399,7 @@ public class WareHouseController {
 
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("deleted", deleted);
+        operationLogService.record("warehouse:delete", "warehouseId=" + id, true, "warehouse deleted", "deleted=" + deleted);
         return JsonResultUtils.success(dataMap);
     }
 

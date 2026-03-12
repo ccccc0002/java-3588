@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,7 +48,7 @@ class WareHouseControllerTest {
 
     @BeforeEach
     void setupPermissionDefaults() {
-        when(roleAccessService.canSyncWarehouse(any())).thenReturn(true);
+        lenient().when(roleAccessService.canSyncWarehouse(any())).thenReturn(true);
     }
 
     @Test
@@ -152,6 +153,30 @@ class WareHouseControllerTest {
         when(roleAccessService.canSyncWarehouse(any())).thenReturn(false);
         JsonResult result = wareHouseController.sync2all();
         assertEquals(500, result.getCode());
+    }
+
+    @Test
+    void saveShouldDenyWhenNoWritePermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+        WareHouse wareHouse = new WareHouse();
+        wareHouse.setName("node-a");
+
+        JsonResult result = wareHouseController.save(wareHouse, null, null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(wareHouseService, never()).saveOrUpdate(any(WareHouse.class));
+    }
+
+    @Test
+    void deleteShouldDenyWhenNoWritePermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = wareHouseController.delete(1L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(wareHouseService, never()).removeById(1L);
     }
 
     private WareHouse createCameraNode(Long id, String name, String rtsp) {
