@@ -24,8 +24,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -165,5 +166,52 @@ class ConfigControllerTest {
         when(roleAccessService.canWriteSystem(any())).thenReturn(false);
         JsonResult result = configController.saveNetworkConfig("eth0", null, "192.168.1.10", "192.168.1.1", "8.8.8.8");
         assertEquals(500, result.getCode());
+        verify(operationLogService).record(eq("network:save"), eq("interface=eth0"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void saveShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+        Config config = new Config();
+        config.setTag("wsUrl");
+
+        JsonResult result = configController.save(config);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("config:save"), eq("tag=wsUrl"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void deleteShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = configController.delete(99L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("config:delete"), eq("id=99"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void saveLicenseShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = configController.saveLicense("k", null, 8, null, "2099-01-01", null, "tenant-a");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("license:save"), eq("license"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void deleteNetworkConfigShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = configController.deleteNetworkConfig("eth1", null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("network:delete"), eq("interface=eth1"), eq(false), eq("permission denied"), eq(""));
     }
 }

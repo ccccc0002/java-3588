@@ -120,6 +120,7 @@ public class ConfigController {
     @ResponseBody
     public JsonResult save(Config config) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("config:save", "tag=" + (config == null ? "" : config.getTag()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (StrUtil.isBlank(config.getName())) {
@@ -141,6 +142,7 @@ public class ConfigController {
     @ResponseBody
     public JsonResult delete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("config:delete", "id=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         Config config = configService.getById(id);
@@ -206,6 +208,7 @@ public class ConfigController {
             String tenant
     ) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("license:save", "license", false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         String finalLicenseKey = StrUtil.isBlank(licenseKey) ? license_key : licenseKey;
@@ -246,6 +249,8 @@ public class ConfigController {
     @ResponseBody
     public JsonResult saveNetworkConfig(String interfaceName, String interface_name, String ip, String gateway, String dns) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            String finalInterfaceName = StrUtil.isBlank(interfaceName) ? interface_name : interfaceName;
+            operationLogService.record("network:save", "interface=" + defaultString(finalInterfaceName), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         String finalInterfaceName = StrUtil.isBlank(interfaceName) ? interface_name : interfaceName;
@@ -286,6 +291,8 @@ public class ConfigController {
     @ResponseBody
     public JsonResult deleteNetworkConfig(String interfaceName, String interface_name) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            String finalInterfaceName = StrUtil.isBlank(interfaceName) ? interface_name : interfaceName;
+            operationLogService.record("network:delete", "interface=" + defaultString(finalInterfaceName), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         String finalInterfaceName = StrUtil.isBlank(interfaceName) ? interface_name : interfaceName;
