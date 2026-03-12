@@ -565,3 +565,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-185157-PHASE2-EXEC.json |
 | 2026-03-12 18:51:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |
+| 2026-03-12 19:05:09 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-190509-PHASE2-EXEC.json |
+| 2026-03-12 19:05:09 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 audit hardening: warehouse sync permission-denied branches now emit operation logs (sync2all/sync2node/pullRtsp/select2export); deny-path tests added; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-190519-PHASE2-EXEC.json |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | warehouse sync deny branches now audited; edge regression 33/33 passed; synced commit 0fc2e97 |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-190520-PHASE2-EXEC.json |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: warehouse sync deny branches now audited; edge regression 33/33 passed; synced commit 0fc2e97 |

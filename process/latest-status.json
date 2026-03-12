@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-12 18:51:57",
+    "time":  "2026-03-12 19:05:20",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase8",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green"
+    "summary":  "compact after checkpoint: warehouse sync deny branches now audited; edge regression 33/33 passed; synced commit 0fc2e97"
 }

@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T18:51:44+08:00",
-                                  "summary":  "Phase8 UI permission closure: smsphone/period pages now enforce can_write_system with button-level disable and write-action guards; edge targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-12T19:05:09+08:00",
+                                  "summary":  "Phase8 audit hardening: warehouse sync permission-denied branches now emit operation logs (sync2all/sync2node/pullRtsp/select2export); deny-path tests added; RK3588 targeted regression passed; milestone synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "9d259dc",
-                                                       "updated_at":  "2026-03-12T18:51:44+08:00"
+                                                       "github_sync_ref":  "0fc2e97",
+                                                       "updated_at":  "2026-03-12T19:05:09+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -311,6 +311,16 @@
                         "edge_test_command":  "mvn -Dtest=WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "9d259dc"
+                    },
+                    {
+                        "timestamp":  "2026-03-12T19:05:09+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 audit hardening: warehouse sync permission-denied branches now emit operation logs (sync2all/sync2node/pullRtsp/select2export); deny-path tests added; RK3588 targeted regression passed; milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=WareHouseControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest,CameraControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "0fc2e97"
                     }
                 ]
 }

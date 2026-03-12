@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-12 18:51:57
+- generated_at: 2026-03-12 19:05:20
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-12T19:05:20+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
+- 2026-03-12T19:05:20+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
+- 2026-03-12T19:05:09+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:51:57+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T18:51:56+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T18:51:44+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:33:05+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T18:33:04+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
-- 2026-03-12T18:32:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
-| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
-| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green. |
-| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Camera module RBAC closure done with test verification. |
-| 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
-| 2026-03-12 17:01:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera module RBAC closure done with test verification. |
 | 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
 | 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: LocationController write APIs (save/delete) now RBAC-guarded with operation logs; camera tree/location actions permission-gated on UI; added LocationControllerTest deny-path coverage and regressions green. |
 | 2026-03-12 17:16:52 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-171651-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-185156-PHASE2-EXEC.json |
 | 2026-03-12 18:51:56 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |
 | 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-185157-PHASE2-EXEC.json |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 18:51:57 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: UI permission gating fixed without encoding drift; synced to edge and GitHub commit 9d259dc; targeted regression green |
+| 2026-03-12 19:05:09 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-190509-PHASE2-EXEC.json |
+| 2026-03-12 19:05:09 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 audit hardening: warehouse sync permission-denied branches now emit operation logs (sync2all/sync2node/pullRtsp/select2export); deny-path tests added; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-190519-PHASE2-EXEC.json |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | warehouse sync deny branches now audited; edge regression 33/33 passed; synced commit 0fc2e97 |
+| 2026-03-12 19:05:20 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-190520-PHASE2-EXEC.json |
