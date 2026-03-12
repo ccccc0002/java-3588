@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-12 18:08:17",
+    "time":  "2026-03-12 18:33:05",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase8",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Report batchRemove/audit RBAC closure done with deny-path tests; RK3588 verification passed; pushed commit 7d068cf."
+    "summary":  "compact after checkpoint: Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb."
 }

@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-12 18:08:17
+- generated_at: 2026-03-12 18:33:05
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-12T18:33:05+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
+- 2026-03-12T18:33:04+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
+- 2026-03-12T18:32:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T18:08:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-12T18:08:00+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-12T17:48:39+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-12T17:48:26+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-12T17:16:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-12T17:16:52+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
-- 2026-03-12T17:01:55+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-153431-PHASE2-EXEC.json |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Camera + Report write-path RBAC hardening finished with tests. |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-153432-PHASE2-EXEC.json |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera save/delete now RBAC-protected with operation logs; report module frontend+backend push-target permission closure completed; targeted controller regressions all green. |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-153432-PHASE2-EXEC.json |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 15:34:32 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera + Report write-path RBAC hardening finished with tests. |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Algorithm+Model RBAC closure complete (backend+frontend+tests). |
@@ -61,3 +54,10 @@
 | 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-180816-PHASE2-EXEC.json |
 | 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Report batchRemove/audit RBAC closure done with deny-path tests; RK3588 verification passed; pushed commit 7d068cf. |
 | 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-180817-PHASE2-EXEC.json |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 18:08:17 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Report batchRemove/audit RBAC closure done with deny-path tests; RK3588 verification passed; pushed commit 7d068cf. |
+| 2026-03-12 18:32:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-183252-PHASE2-EXEC.json |
+| 2026-03-12 18:32:52 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel hardening: WareHouseController /save and /delete now RBAC-guarded with operation logs; deny-path tests added; local+RK3588 targeted regressions green; synced to GitHub. |
+| 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-183304-PHASE2-EXEC.json |
+| 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Warehouse save/delete RBAC closure done; 30-case local+edge regression passed; pushed commit 76addcb. |
+| 2026-03-12 18:33:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-183305-PHASE2-EXEC.json |
