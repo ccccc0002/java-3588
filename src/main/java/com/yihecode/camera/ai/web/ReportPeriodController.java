@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.yihecode.camera.ai.entity.Algorithm;
 import com.yihecode.camera.ai.entity.Camera;
@@ -10,7 +11,9 @@ import com.yihecode.camera.ai.enums.CameraAction;
 import com.yihecode.camera.ai.service.AlgorithmService;
 import com.yihecode.camera.ai.service.CameraAlgorithmService;
 import com.yihecode.camera.ai.service.CameraService;
+import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportPeriodService;
+import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.utils.PageResult;
@@ -30,8 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 告警时段管理
- *
+ * 閸涘﹨顒熼弮鑸殿唽缁狅紕鎮? *
  * @author zhoumingxing
  * @mail 465769438@qq.com
  */
@@ -56,6 +58,12 @@ public class ReportPeriodController {
     //
     @Autowired
     private CameraAlgorithmService cameraAlgorithmService;
+
+    @Autowired
+    private RoleAccessService roleAccessService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     /**
      *
@@ -202,37 +210,35 @@ public class ReportPeriodController {
     @PostMapping({"/save"})
     @ResponseBody
     public JsonResult save(ReportPeriod reportPeriod) {
-        if(reportPeriod.getCameraId() == null) {
-            return JsonResultUtils.fail("请选择摄像头");
+        Long cameraIdForLog = reportPeriod == null ? null : reportPeriod.getCameraId();
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("report_period:save", "cameraId=" + cameraIdForLog, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        if (reportPeriod == null || reportPeriod.getCameraId() == null) {
+            return JsonResultUtils.fail("camera is required");
+        }
+        if (reportPeriod.getAlgorithmId() == null) {
+            return JsonResultUtils.fail("algorithm is required");
+        }
+        if (StrUtil.isBlank(reportPeriod.getStartText())) {
+            return JsonResultUtils.fail("start time is required");
+        }
+        if (StrUtil.isBlank(reportPeriod.getEndText())) {
+            return JsonResultUtils.fail("end time is required");
         }
 
-        if(reportPeriod.getAlgorithmId() == null) {
-            return JsonResultUtils.fail("请选择算法");
-        }
-
-        if(StrUtil.isBlank(reportPeriod.getStartText())) {
-            return JsonResultUtils.fail("请选择开始时点");
-        }
-
-        if(StrUtil.isBlank(reportPeriod.getEndText())) {
-            return JsonResultUtils.fail("请选择结束时点");
-        }
-
-        //
         Integer startTime = Integer.valueOf(reportPeriod.getStartText().replaceAll(":", ""));
         Integer endTime = Integer.valueOf(reportPeriod.getEndText().replaceAll(":", ""));
-        if(endTime <= startTime) {
-            return JsonResultUtils.fail("开始时点必须小于结束时点");
+        if (endTime <= startTime) {
+            return JsonResultUtils.fail("start time must be earlier than end time");
         }
 
-        //
         reportPeriod.setStartTime(startTime);
         reportPeriod.setEndTime(endTime);
         reportPeriodService.saveOrUpdate(reportPeriod);
-
-        //
         cameraService.updateActionByCamera(reportPeriod.getCameraId(), CameraAction.ACTION_UPD.getType());
-
+        operationLogService.record("report_period:save", "periodId=" + reportPeriod.getId(), true, "report period saved", "cameraId=" + reportPeriod.getCameraId());
         return JsonResultUtils.success();
     }
 
@@ -244,16 +250,23 @@ public class ReportPeriodController {
     @PostMapping({"/delete"})
     @ResponseBody
     public JsonResult delete(Long id) {
-        //
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("report_period:delete", "periodId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
         ReportPeriod reportPeriod = reportPeriodService.getById(id);
-
-        //
         reportPeriodService.removeById(id);
-
-        //
-        if(reportPeriod != null && reportPeriod.getCameraId() != null) {
+        if (reportPeriod != null && reportPeriod.getCameraId() != null) {
             cameraService.updateActionByCamera(reportPeriod.getCameraId(), CameraAction.ACTION_UPD.getType());
         }
+        operationLogService.record("report_period:delete", "periodId=" + id, true, "report period deleted", "");
         return JsonResultUtils.success();
+    }
+    private Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

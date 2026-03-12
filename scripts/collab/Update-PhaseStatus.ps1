@@ -3,6 +3,10 @@ param(
     [Parameter(Mandatory = $true)][string]$PhaseId,
     [Parameter(Mandatory = $true)][ValidateSet("pending", "in_progress", "completed", "blocked")][string]$Status,
     [string]$Summary = "",
+    [ValidateSet("", "pending", "passed", "failed", "skipped")][string]$EdgeTestStatus = "",
+    [string]$EdgeTestCommand = "",
+    [ValidateSet("", "pending", "synced", "skipped", "failed")][string]$GithubSyncStatus = "",
+    [string]$GithubSyncRef = "",
     [string]$Root = (Get-Location).Path
 )
 
@@ -71,6 +75,20 @@ $phase = $state.phases.$PhaseId
 $phase.status = $Status
 $phase.updated_at = $now
 $phase.summary = $Summary
+if (-not ($phase.PSObject.Properties.Name -contains "quality_gate")) {
+    $phase | Add-Member -NotePropertyName "quality_gate" -NotePropertyValue ([pscustomobject]@{}) -Force
+}
+$edgeState = if ([string]::IsNullOrWhiteSpace($EdgeTestStatus)) { "pending" } else { $EdgeTestStatus }
+$syncState = if ([string]::IsNullOrWhiteSpace($GithubSyncStatus)) { "pending" } else { $GithubSyncStatus }
+$phase.quality_gate = [pscustomobject]@{
+    edge_test_required = $true
+    edge_test_status = $edgeState
+    edge_test_command = $EdgeTestCommand
+    github_sync_required_on_milestone = $true
+    github_sync_status = $syncState
+    github_sync_ref = $GithubSyncRef
+    updated_at = $now
+}
 
 $history = @()
 if ($null -ne $state.history) {
@@ -81,6 +99,10 @@ $history += [pscustomobject]@{
     phase_id = $PhaseId
     status = $Status
     summary = $Summary
+    edge_test_status = $edgeState
+    edge_test_command = $EdgeTestCommand
+    github_sync_status = $syncState
+    github_sync_ref = $GithubSyncRef
 }
 if ($history.Count -gt 400) {
     $history = @($history | Select-Object -Last 400)

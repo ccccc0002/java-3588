@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "task_id": "PHASE2-EXEC",
+  "updated_at": "2026-03-12T17:45:00+08:00",
+  "constraints": {
+    "edge_test_required_for_every_functional_change": true,
+    "github_sync_required_for_milestones": true,
+    "github_sync_not_required_for_every_micro_change": true
+  },
+  "edge_environment": {
+    "host": "192.168.1.104",
+    "username": "zql",
+    "workdir": "/home/zql/ks/java-rk3588"
+  },
+  "github": {
+    "remote": "https://github.com/ccccc0002/java-3588",
+    "branch": "main"
+  }
+}
