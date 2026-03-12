@@ -117,6 +117,29 @@
         let form = layui.form;
         let layer = layui.layer;
         let dropdown = layui.dropdown;
+        let canWriteSystem = false;
+
+        function loadPermissionMatrix(done) {
+            $.post('/account/permissions', {}, function(res) {
+                if (res && res.code === 0 && res.data) {
+                    canWriteSystem = !!res.data.can_write_system;
+                } else {
+                    canWriteSystem = false;
+                }
+            }).always(function() {
+                if (typeof done === 'function') {
+                    done();
+                }
+            });
+        }
+
+        function guardWriteAction() {
+            if (!canWriteSystem) {
+                popup.failure('无权限操作');
+                return false;
+            }
+            return true;
+        }
 
         //
         form.on('submit(query)', function(data) {
@@ -231,6 +254,9 @@
 
         //
         window.addForm = function(locationId) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '新增摄像头',
@@ -242,6 +268,9 @@
 
         //
         window.editForm = function(obj) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '编辑摄像头',
@@ -253,6 +282,9 @@
 
         //
         window.editPeriod = function(obj) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '时段配置',
@@ -269,6 +301,9 @@
 
         //
         window.removeData = function (obj) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.confirm('确定删除该摄像头吗?', {
                 icon: 3,
                 title: '提示'
@@ -310,6 +345,9 @@
 
         //
         window.switchRunning = function(id) {
+            if (!guardWriteAction()) {
+                return;
+            }
             $.post('/camera/switchRunning', {'id': id}, function(res) {
                 if(res.code == 0) {
                     table.reload('table');
@@ -322,6 +360,9 @@
 
         //
         window.switchRtspType = function(id, rtspType) {
+            if (!guardWriteAction()) {
+                return;
+            }
             $.post('/camera/switchRtspType', {'id': id, 'rtspType': rtspType}, function(res) {
                 if(res.code == 0) {
                     table.reload('table');
@@ -345,6 +386,9 @@
 
         //
         window.handleAddLocation = function(parentId) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '新增区域节点',
@@ -356,6 +400,9 @@
 
         //
         window.handleEditLocation = function(locationId) {
+            if (!guardWriteAction()) {
+                return;
+            }
             layer.open({
                 type: 2,
                 title: '编辑区域节点',
@@ -422,6 +469,9 @@
                         "del":{
                             "label":"删除该区域",
                             "action":function(data) {
+                                if (!guardWriteAction()) {
+                                    return;
+                                }
                                 var inst = $.jstree.reference(data.reference),
                                     jsonData = inst.get_node(data.reference).original;
                                 layer.confirm('删除该区域将同时摄像摄像头,确定删除吗?', {
@@ -454,6 +504,9 @@
                         "camera":{
                             "label":"创建摄像头",
                             "action":function(data) {
+                                if (!guardWriteAction()) {
+                                    return;
+                                }
                                 var inst = $.jstree.reference(data.reference),
                                     jsonData = inst.get_node(data.reference).original;
                                 window.addForm(jsonData['meId']);
@@ -484,7 +537,9 @@
 
         //
         $(document).ready(function() {
-            window.createTree();
+            loadPermissionMatrix(function() {
+                window.createTree();
+            });
         });
     })
 </script>

@@ -523,3 +523,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-161507-PHASE2-EXEC.json |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 16:15:07 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Algorithm+Model RBAC closure complete (backend+frontend+tests). |
+| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
+| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
+| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green. |
+| 2026-03-12 17:01:54 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Camera module RBAC closure done with test verification. |
+| 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-170154-PHASE2-EXEC.json |
+| 2026-03-12 17:01:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 17:01:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Camera module RBAC closure done with test verification. |

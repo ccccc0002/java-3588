@@ -99,6 +99,17 @@ class CameraControllerTest {
         verify(cameraService, never()).saveCamera(any(), any(), any(), any(), any());
     }
 
+    @Test
+    void switchRunningShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = cameraController.switchRunning(1L);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(cameraService, never()).updateRunning(any(), any());
+    }
+
     private Camera createValidCamera() {
         Camera camera = new Camera();
         camera.setName("cam-1");

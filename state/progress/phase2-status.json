@@ -45,8 +45,8 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T16:15:06+08:00",
-                                  "summary":  "Phase8 parallel hardening expanded: algorithm/model write APIs and algorithm package lifecycle now RBAC-guarded with operation logs; algorithm/model pages now use /account/permissions for button-level write gating; new permission-deny unit tests added and targeted regressions green."
+                                  "updated_at":  "2026-03-12T17:01:54+08:00",
+                                  "summary":  "Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green."
                               },
                    "Phase9":  {
                                   "status":  "pending",
@@ -250,6 +250,12 @@
                         "phase_id":  "Phase8",
                         "status":  "in_progress",
                         "summary":  "Phase8 parallel hardening expanded: algorithm/model write APIs and algorithm package lifecycle now RBAC-guarded with operation logs; algorithm/model pages now use /account/permissions for button-level write gating; new permission-deny unit tests added and targeted regressions green."
+                    },
+                    {
+                        "timestamp":  "2026-03-12T17:01:54+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 parallel: camera write paths (switchRunning/switchRtspType/updateRtsp) now RBAC-guarded with operation logs; camera page actions/tree contextmenu now permission-gated via /account/permissions; added deny-path test and regressions green."
                     }
                 ]
 }

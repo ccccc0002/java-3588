@@ -398,6 +398,9 @@ public class CameraController {
     @RequestMapping({"/switchRunning"})
     @ResponseBody
     public JsonResult switchRunning(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         Camera camera = cameraService.getById(id);
         if(camera == null) {
             return JsonResultUtils.fail("找不到摄像头");
@@ -411,6 +414,7 @@ public class CameraController {
 
         //
         cameraService.updateRunning(id, running == 0 ? 1 : 0);
+        operationLogService.record("camera:switch_running", "cameraId=" + id, true, "camera running switched", "to=" + (running == 0 ? 1 : 0));
 
         return JsonResultUtils.success();
     }
@@ -423,6 +427,9 @@ public class CameraController {
     @RequestMapping({"/switchRtspType"})
     @ResponseBody
     public JsonResult switchRtspType(Long id, Integer rtspType) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         if(id == null) {
             return JsonResultUtils.fail("找不到摄像头");
         }
@@ -440,6 +447,7 @@ public class CameraController {
 
         //
         cameraService.updateRtspType(id, rtspType);
+        operationLogService.record("camera:switch_rtsp_type", "cameraId=" + id, true, "camera rtsp type switched", "type=" + rtspType);
 
         return JsonResultUtils.success();
     }
@@ -452,6 +460,9 @@ public class CameraController {
     @RequestMapping({"/updateRtsp"})
     @ResponseBody
     public JsonResult updateRtsp(Long id) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            return JsonResultUtils.fail("permission denied");
+        }
         Camera camera = cameraService.getById(id);
         if(camera == null) {
             return JsonResultUtils.fail("找不到摄像头");
@@ -469,6 +480,7 @@ public class CameraController {
         }
 
         //
+        operationLogService.record("camera:update_rtsp", "cameraId=" + id, true, "camera rtsp updated from warehouse", "");
         return JsonResultUtils.success("");
     }
 
