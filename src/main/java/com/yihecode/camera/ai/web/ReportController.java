@@ -324,6 +324,10 @@ public class ReportController {
     @PostMapping({"/batchRemove"})
     @ResponseBody
     public JsonResult batchRemove(String ids) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("report:batch_remove", "ids=" + ids, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
         if(StrUtil.isBlank(ids)) {
             return JsonResultUtils.fail("娌℃湁閫変腑鏁版嵁");
         }
@@ -499,7 +503,12 @@ public class ReportController {
     @PostMapping("/audit")
     @ResponseBody
     public JsonResult doAudit(Long id, Integer result) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("report:audit", "reportId=" + id, false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
         reportService.updateAudit(id, result);
+        operationLogService.record("report:audit", "reportId=" + id, true, "audit updated", "result=" + result);
         return JsonResultUtils.success();
     }
 
@@ -915,6 +924,5 @@ public class ReportController {
         return PageResultUtils.success(pageResult.getTotal(), dataList);
     }
 }
-
 
 

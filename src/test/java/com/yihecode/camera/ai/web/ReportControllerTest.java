@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
@@ -90,6 +91,7 @@ class ReportControllerTest {
     @BeforeEach
     void setUp() {
         lenient().when(roleAccessService.canManagePushTargets(any())).thenReturn(true);
+        lenient().when(roleAccessService.canWriteSystem(any())).thenReturn(true);
     }
 
     @Test
@@ -226,6 +228,28 @@ class ReportControllerTest {
 
         assertEquals(500, result.getCode());
         assertTrue(result.getMsg() != null && !result.getMsg().isEmpty());
+    }
+
+    @Test
+    void batchRemoveShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = reportController.batchRemove("1,2");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(reportService, never()).updateDisplay(any(), any());
+    }
+
+    @Test
+    void doAuditShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = reportController.doAudit(1L, 1);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(reportService, never()).updateAudit(any(), any());
     }
 
     @Test
