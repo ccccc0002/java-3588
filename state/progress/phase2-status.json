@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T20:07:40+08:00",
-                                  "summary":  "Phase8 camera audit hardening: save/delete/switchRunning/switchRtspType/updateRtsp permission-denied branches now emit operation logs; CameraController deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-12T20:14:26+08:00",
+                                  "summary":  "Phase8 location audit hardening: location save/delete permission-denied branches now emit operation logs; deny-path tests updated; RK3588 targeted regression passed; milestone synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "33a7d69",
-                                                       "updated_at":  "2026-03-12T20:07:40+08:00"
+                                                       "github_sync_ref":  "0f5325a",
+                                                       "updated_at":  "2026-03-12T20:14:26+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -351,6 +351,16 @@
                         "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "33a7d69"
+                    },
+                    {
+                        "timestamp":  "2026-03-12T20:14:26+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 location audit hardening: location save/delete permission-denied branches now emit operation logs; deny-path tests updated; RK3588 targeted regression passed; milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "0f5325a"
                     }
                 ]
 }

@@ -593,3 +593,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200804-PHASE2-EXEC.json |
 | 2026-03-12 20:08:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: camera controller deny audit completed; edge regression 53/53 passed; synced commit 33a7d69 |
+| 2026-03-12 20:14:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-201426-PHASE2-EXEC.json |
+| 2026-03-12 20:14:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 location audit hardening: location save/delete permission-denied branches now emit operation logs; deny-path tests updated; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-12 20:14:43 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-201442-PHASE2-EXEC.json |
+| 2026-03-12 20:14:43 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | location controller deny audit completed; edge regression 53/53 passed; synced commit 0f5325a |
+| 2026-03-12 20:14:43 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-201443-PHASE2-EXEC.json |
+| 2026-03-12 20:14:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-12 20:14:43 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: location controller deny audit completed; edge regression 53/53 passed; synced commit 0f5325a |
