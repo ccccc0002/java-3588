@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 13:31:27
+- generated_at: 2026-03-13 13:32:59
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,26 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T13:32:58+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-13T13:32:57+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
+- 2026-03-13T13:31:44+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-13T13:31:27+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T13:27:29+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-13T13:27:16+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T13:27:14+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T13:27:13+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
-- 2026-03-13T13:27:12+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
-- 2026-03-13T13:20:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T13:20:13+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-131359-PHASE2-EXEC.json |
-| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 acceptance execution improved: added run_phase10_acceptance preset runner + shell entry, and linux gate orchestrator now supports optional runtime_stack_smoke stage composition with threshold passthrough; RK3588 python regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 9/9); GitHub synced to 1e45b22. |
-| 2026-03-13 13:14:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 13:14:12 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131412-PHASE2-EXEC.json |
-| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9). |
-| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131413-PHASE2-EXEC.json |
-| 2026-03-13 13:14:13 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9). |
-| 2026-03-13 13:16:12 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-131612-PHASE2-EXEC.json |
 | 2026-03-13 13:16:12 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 execution UX improved: added RK3588 launcher script Run-Phase10-Acceptance.sh to invoke preset acceptance gate flow directly on board; dry-run execution validated on RK3588 and completed with passed summary; GitHub synced to 0c80590. |
 | 2026-03-13 13:16:26 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:16:27 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131626-PHASE2-EXEC.json |
@@ -61,3 +52,12 @@
 | 2026-03-13 13:31:27 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-133127-PHASE2-EXEC.json |
 | 2026-03-13 13:31:27 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 checkpoint: handoff orchestration + RK3588 evidence snapshots saved under state/local/phase11-handoff-20260313-133057*.json. |
 | 2026-03-13 13:31:27 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-133127-PHASE2-EXEC.json |
+| 2026-03-13 13:31:27 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:31:27 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 checkpoint: handoff orchestration + RK3588 evidence snapshots saved under state/local/phase11-handoff-20260313-133057*.json. |
+| 2026-03-13 13:31:44 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-133144-PHASE2-EXEC.json |
+| 2026-03-13 13:31:44 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | Phase11 validation pipeline landed: new run_phase11_handoff orchestrates phase10 acceptance (+soak) and captures before/after CPU load, memory usage and top-process snapshots; RK3588 tests passed and non-dry-run handoff run passed at runtime/test-out/phase11-handoff-20260313-133057. |
+| 2026-03-13 13:32:57 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-133257-PHASE2-EXEC.json |
+| 2026-03-13 13:32:57 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | Phase11 validation pipeline landed and synced: run_phase11_handoff now orchestrates phase10 acceptance (+soak) with resource evidence snapshots; RK3588 unittest + non-dry-run handoff passed at runtime/test-out/phase11-handoff-20260313-133057; GitHub synced to 4ce3aee. |
+| 2026-03-13 13:32:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-133258-PHASE2-EXEC.json |
+| 2026-03-13 13:32:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 sync checkpoint: handoff runner + rk3588 evidence committed and pushed (4ce3aee). |
+| 2026-03-13 13:32:58 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-133258-PHASE2-EXEC.json |
