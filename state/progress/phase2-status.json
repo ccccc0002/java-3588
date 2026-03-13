@@ -35,16 +35,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T14:16:51+08:00",
-                                  "summary":  "Phase6 inference quality diagnostics synced: 30-iteration RK3588 run passed with zero invalid bbox/score and stable latency distribution; diagnostics runner + evidence pushed to GitHub.",
+                                  "updated_at":  "2026-03-13T16:11:59+08:00",
+                                  "summary":  "Phase6 dispatch-source hardening synced: /dispatch and replay paths no longer silently fallback to test://frame when camera RTSP/source is missing; /test keeps synthetic fallback for diagnostics only. RK3588 edge regression passed (InferenceApiControllerSourceResolutionTest, InferenceApiControllerTest, ActiveCameraInferenceSchedulerServiceTest, InferenceReportBridgeServiceTest), runtime rebuilt/restarted, web_ui_live_smoke 35/35, alarm-stream annotation verify passed.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source test://frame --plugin-id yolov8n --iterations 30 --interval-ms 200 --timeout-sec 30 --output-dir runtime/test-out/inference-quality-20260313-141500",
+                                                       "edge_test_command":  "mvn -Dtest=InferenceApiControllerSourceResolutionTest,InferenceApiControllerTest,ActiveCameraInferenceSchedulerServiceTest,InferenceReportBridgeServiceTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://192.168.1.104:18082 --username admin --password admin123 --timeout-sec 25 \u0026\u0026 python3 scripts/testing/verify_alarm_stream_annotation.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --plugin-id yolov8n --timeout-sec 60",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "ddb9b3a",
-                                                       "updated_at":  "2026-03-13T14:16:51+08:00"
+                                                       "github_sync_ref":  "da411cb",
+                                                       "updated_at":  "2026-03-13T16:11:59+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -977,6 +977,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_phase11_launcher.py \u0026\u0026 bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-launcher-dryrun-20260313-142405",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "3ac2560"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T16:11:59+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 dispatch-source hardening synced: /dispatch and replay paths no longer silently fallback to test://frame when camera RTSP/source is missing; /test keeps synthetic fallback for diagnostics only. RK3588 edge regression passed (InferenceApiControllerSourceResolutionTest, InferenceApiControllerTest, ActiveCameraInferenceSchedulerServiceTest, InferenceReportBridgeServiceTest), runtime rebuilt/restarted, web_ui_live_smoke 35/35, alarm-stream annotation verify passed.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=InferenceApiControllerSourceResolutionTest,InferenceApiControllerTest,ActiveCameraInferenceSchedulerServiceTest,InferenceReportBridgeServiceTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://192.168.1.104:18082 --username admin --password admin123 --timeout-sec 25 \u0026\u0026 python3 scripts/testing/verify_alarm_stream_annotation.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --plugin-id yolov8n --timeout-sec 60",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "da411cb"
                     }
                 ]
 }
