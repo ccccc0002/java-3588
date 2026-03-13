@@ -332,6 +332,14 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['plan_summary']['concurrency_pressure'], 1.0)
         self.assertEqual(payload['plugin']['plugin_id'], 'yolov8n')
 
+    def test_normalize_decode_mode_prefers_mpp_rga_aliases(self):
+        self.assertEqual('mpp-rga', rk3588_runtime_bridge.normalize_decode_mode('mpp-rga'))
+        self.assertEqual('mpp-rga', rk3588_runtime_bridge.normalize_decode_mode('mpp'))
+        self.assertEqual('mpp-rga', rk3588_runtime_bridge.normalize_decode_mode('rk3588_mpp_rga'))
+        self.assertEqual('stub', rk3588_runtime_bridge.normalize_decode_mode('stub'))
+        self.assertEqual('echo-roi', rk3588_runtime_bridge.normalize_decode_mode('echo-roi'))
+        self.assertEqual('mpp-rga', rk3588_runtime_bridge.normalize_decode_mode(''))
+
 
 if __name__ == '__main__':
     unittest.main()

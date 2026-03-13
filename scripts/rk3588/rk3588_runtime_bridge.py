@@ -22,6 +22,7 @@ from plugin_runtime import EXPECTED_PLUGIN_RUNTIME, PluginPackageManager, Plugin
 
 BRIDGE_VERSION = '0.3.0'
 AUTH_ERROR_CODES = {'invalid_token', 'token_invalid', 'token_expired', 'unauthorized', 'access_denied'}
+DEFAULT_DECODE_MODE = 'mpp-rga'
 
 
 class RuntimeBridgeError(RuntimeError):
@@ -40,7 +41,7 @@ class RuntimeBridgeConfig:
     bootstrap_header_name: str = 'X-Bootstrap-Token'
     timeout_sec: float = 5.0
     default_plan_budget: float = 10.0
-    decode_mode: str = 'stub'
+    decode_mode: str = DEFAULT_DECODE_MODE
     bridge_version: str = BRIDGE_VERSION
     plugins_root: str = ''
     default_plugin_id: str = ''
@@ -160,7 +161,7 @@ class RuntimeBridgeService:
         runtime_client: RuntimeApiClient,
         token_provider: Optional[TokenProvider],
         bridge_version: str = BRIDGE_VERSION,
-        decode_mode: str = 'stub',
+        decode_mode: str = DEFAULT_DECODE_MODE,
         default_plan_budget: float = 10.0,
         now_ms: Optional[Callable[[], int]] = None,
         plugin_manager: Optional[PluginPackageManager] = None,
@@ -410,8 +411,14 @@ def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
 
 
 def normalize_decode_mode(value: str) -> str:
-    mode = str(value or 'stub').strip().lower()
-    return 'echo-roi' if mode == 'echo-roi' else 'stub'
+    mode = str(value or DEFAULT_DECODE_MODE).strip().lower()
+    if mode == 'echo-roi':
+        return 'echo-roi'
+    if mode in {'stub', 'mock', 'none'}:
+        return 'stub'
+    if mode in {'mpp-rga', 'mpp', 'rga', 'rk3588', 'rk3588-mpp-rga', 'rk3588_mpp_rga'}:
+        return 'mpp-rga'
+    return DEFAULT_DECODE_MODE
 
 
 def normalize_bbox(value: Any) -> list[float]:
@@ -450,7 +457,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--bootstrap-header-name', default='X-Bootstrap-Token')
     parser.add_argument('--timeout-sec', type=float, default=5.0)
     parser.add_argument('--plan-budget', type=float, default=10.0)
-    parser.add_argument('--decode-mode', default='stub')
+    parser.add_argument('--decode-mode', default=DEFAULT_DECODE_MODE)
     parser.add_argument('--bridge-version', default=BRIDGE_VERSION)
     parser.add_argument('--plugins-root', default=str(SCRIPT_DIR / 'plugins'))
     parser.add_argument('--default-plugin-id', default='')
