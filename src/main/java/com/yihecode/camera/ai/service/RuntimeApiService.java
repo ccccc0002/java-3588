@@ -21,19 +21,22 @@ public class RuntimeApiService {
     private final InferenceDeadLetterService inferenceDeadLetterService;
     private final ConfigService configService;
     private final MediaStreamUrlService mediaStreamUrlService;
+    private final ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService;
 
     public RuntimeApiService(CameraService cameraService,
                              VideoPlayService videoPlayService,
                              PluginRegistryService pluginRegistryService,
                              InferenceDeadLetterService inferenceDeadLetterService,
                              ConfigService configService,
-                             MediaStreamUrlService mediaStreamUrlService) {
+                             MediaStreamUrlService mediaStreamUrlService,
+                             ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService) {
         this.cameraService = cameraService;
         this.videoPlayService = videoPlayService;
         this.pluginRegistryService = pluginRegistryService;
         this.inferenceDeadLetterService = inferenceDeadLetterService;
         this.configService = configService;
         this.mediaStreamUrlService = mediaStreamUrlService;
+        this.activeCameraInferenceSchedulerService = activeCameraInferenceSchedulerService;
     }
 
     public Map<String, Object> buildRuntimeSnapshot() {
@@ -97,12 +100,42 @@ public class RuntimeApiService {
         }
 
         Map<String, Object> data = new LinkedHashMap<>();
+        Map<String, Object> scheduler = activeCameraInferenceSchedulerService == null
+                ? Collections.emptyMap()
+                : activeCameraInferenceSchedulerService.getLastSummary();
+        Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), normalizedBudget);
+
         data.put("budget", normalizedBudget);
         data.put("stream_count", activeCameras.size());
         data.put("ready_stream_count", activeStreams.size());
         data.put("media", buildMediaConfig());
+        data.put("scheduler", scheduler);
+        data.put("throttle_hint", throttleHint);
         data.put("items", items);
         return data;
+    }
+
+    private Map<String, Object> buildThrottleHint(Map<String, Object> scheduler, int streamCount, double budget) {
+        double pressure = toPositiveDouble(scheduler == null ? null : scheduler.get("concurrency_pressure"), 1.0D);
+        int concurrencyLevel = toInt(scheduler == null ? null : scheduler.get("concurrency_level"));
+        int maxEffectiveCooldown = toInt(scheduler == null ? null : scheduler.get("max_effective_cooldown_ms"));
+
+        int recommendedFrameStride;
+        if (pressure >= 2.0D || maxEffectiveCooldown >= 5000) {
+            recommendedFrameStride = 3;
+        } else if (pressure >= 1.2D || maxEffectiveCooldown >= 2500) {
+            recommendedFrameStride = 2;
+        } else {
+            recommendedFrameStride = 1;
+        }
+
+        Map<String, Object> hint = new LinkedHashMap<>();
+        hint.put("concurrency_pressure", pressure);
+        hint.put("concurrency_level", concurrencyLevel);
+        hint.put("recommended_frame_stride", recommendedFrameStride);
+        hint.put("estimated_budget_per_stream", streamCount <= 0 ? budget : budget / streamCount);
+        hint.put("strategy_source", "scheduler_feedback");
+        return hint;
     }
 
     private List<Map<String, Object>> buildStreamItems(List<VideoPlay> activeStreams, Map<Long, Camera> cameraMap) {
@@ -179,7 +212,30 @@ public class RuntimeApiService {
         if (value instanceof Number) {
             return ((Number) value).intValue();
         }
+        if (value != null) {
+            try {
+                return Integer.parseInt(String.valueOf(value).trim());
+            } catch (Exception ignored) {
+                return 0;
+            }
+        }
         return 0;
+    }
+
+    private double toPositiveDouble(Object value, double defaultValue) {
+        if (value instanceof Number) {
+            double number = ((Number) value).doubleValue();
+            return number > 0D ? number : defaultValue;
+        }
+        if (value != null) {
+            try {
+                double number = Double.parseDouble(String.valueOf(value).trim());
+                return number > 0D ? number : defaultValue;
+            } catch (Exception ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     private int toPositiveInt(String value, int defaultValue) {

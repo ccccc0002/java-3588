@@ -2,6 +2,7 @@ package com.yihecode.camera.ai.service;
 
 import com.yihecode.camera.ai.entity.Camera;
 import com.yihecode.camera.ai.entity.VideoPlay;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,8 +41,16 @@ class RuntimeApiServiceTest {
     @Mock
     private MediaStreamUrlService mediaStreamUrlService;
 
+    @Mock
+    private ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService;
+
     @InjectMocks
     private RuntimeApiService runtimeApiService;
+
+    @BeforeEach
+    void setupDefaults() {
+        lenient().when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Collections.emptyMap());
+    }
 
     @Test
     void buildRuntimeSnapshot_shouldExposeCountsAndQueueStats() {
@@ -84,6 +94,11 @@ class RuntimeApiServiceTest {
         when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
         when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
         when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
+        when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Map.of(
+                "concurrency_level", 4,
+                "concurrency_pressure", 2.2D,
+                "max_effective_cooldown_ms", 5200
+        ));
         stubMediaConfig();
 
         Map<String, Object> plan = runtimeApiService.buildInferencePlan(12.5D);
@@ -100,6 +115,15 @@ class RuntimeApiServiceTest {
         assertEquals(Boolean.FALSE, items.get(1).get("ready"));
         assertEquals("", items.get(1).get("play_url"));
         assertEquals("", items.get(1).get("push_url"));
+
+        Map<String, Object> scheduler = (Map<String, Object>) plan.get("scheduler");
+        assertEquals(4, scheduler.get("concurrency_level"));
+        assertEquals(2.2D, ((Number) scheduler.get("concurrency_pressure")).doubleValue());
+
+        Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
+        assertEquals(3, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
+        assertEquals(6.25D, ((Number) throttleHint.get("estimated_budget_per_stream")).doubleValue(), 0.0001D);
     }
     @Test
     void buildRuntimeSnapshot_shouldFallbackToCameraLookupForRequestedStreams() {
