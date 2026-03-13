@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:27:50+08:00",
-                                   "summary":  "Phase10 cockpit observability refinement: dashboard scheduler card now displays telemetry_error details with i18n and keeps status badge, improving degraded-state diagnosability; RK3588 targeted tests passed; GitHub synced to c2e356e.",
+                                   "updated_at":  "2026-03-13T11:30:43+08:00",
+                                   "summary":  "Phase10 runtime API resilience completed for snapshot/plan paths: exceptions now return structured 503 (runtime_snapshot_failed/inference_plan_failed) instead of 500; controller tests expanded; RK3588 targeted tests passed; GitHub synced to efdcb8e.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "c2e356e",
-                                                        "updated_at":  "2026-03-13T11:27:50+08:00"
+                                                        "github_sync_ref":  "efdcb8e",
+                                                        "updated_at":  "2026-03-13T11:30:43+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -639,6 +639,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "c2e356e"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:30:43+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 runtime API resilience completed for snapshot/plan paths: exceptions now return structured 503 (runtime_snapshot_failed/inference_plan_failed) instead of 500; controller tests expanded; RK3588 targeted tests passed; GitHub synced to efdcb8e.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "efdcb8e"
                     }
                 ]
 }

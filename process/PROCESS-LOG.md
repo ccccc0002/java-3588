@@ -781,3 +781,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112805-PHASE2-EXEC.json |
 | 2026-03-13 11:28:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at c2e356e: cockpit scheduler card now exposes telemetry_error text and preserves status badge semantics; RK3588 targeted regression green. |
+| 2026-03-13 11:30:44 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-113043-PHASE2-EXEC.json |
+| 2026-03-13 11:30:44 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 runtime API resilience completed for snapshot/plan paths: exceptions now return structured 503 (runtime_snapshot_failed/inference_plan_failed) instead of 500; controller tests expanded; RK3588 targeted tests passed; GitHub synced to efdcb8e. |
+| 2026-03-13 11:30:54 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:30:55 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-113054-PHASE2-EXEC.json |
+| 2026-03-13 11:30:55 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at efdcb8e: runtime snapshot/inference plan endpoints now degrade with 503 structured error codes; RK3588 targeted regression green. |
+| 2026-03-13 11:30:55 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-113055-PHASE2-EXEC.json |
+| 2026-03-13 11:30:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:30:55 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at efdcb8e: runtime snapshot/inference plan endpoints now degrade with 503 structured error codes; RK3588 targeted regression green. |

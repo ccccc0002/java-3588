@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 11:28:05",
+    "time":  "2026-03-13 11:30:55",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at c2e356e: cockpit scheduler card now exposes telemetry_error text and preserves status badge semantics; RK3588 targeted regression green."
+    "summary":  "compact after checkpoint: GitHub sync complete at efdcb8e: runtime snapshot/inference plan endpoints now degrade with 503 structured error codes; RK3588 targeted regression green."
 }
