@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:17:25",
+    "time":  "2026-03-13 09:22:05",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Auto frame-throttle v1 landed: ActiveCameraInferenceSchedulerService computes concurrency pressure from active dispatch contexts and applies it to latency-based cooldown; diagnostics now include concurrency metadata; added scheduler concurrency-pressure test and RK3588 edge test passed (7/7)."
+    "summary":  "compact after checkpoint: Runtime scheduler introspection API landed: /api/v1/runtime/scheduler/summary and /api/v1/runtime/scheduler/dispatch (auth protected). Active scheduler now snapshots last summary for external readback. RK3588 targeted tests passed (14/14) and commit f8a911a pushed."
 }
