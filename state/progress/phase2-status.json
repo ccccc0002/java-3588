@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T09:21:53+08:00",
-                                   "summary":  "Phase10 observability wiring completed: added runtime scheduler summary/dispatch APIs and scheduler last-summary snapshot, so concurrency-pressure and cooldown diagnostics are externally queryable; RK3588 targeted tests passed and synced.",
+                                   "updated_at":  "2026-03-13T09:31:25+08:00",
+                                   "summary":  "Phase10 config-loop landed: added scheduler management APIs (/config/scheduler/info,/config/scheduler/save) + scheduler config page and config-index entry, enabling runtime tuning of enabled/max_cameras/cooldown/latency_factor/concurrency_baseline; RK3588 targeted tests passed and synced.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,RuntimeApiControllerTest test",
+                                                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,ActiveCameraInferenceSchedulerServiceTest,RuntimeApiControllerTest test",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "f8a911a",
-                                                        "updated_at":  "2026-03-13T09:21:53+08:00"
+                                                        "github_sync_ref":  "75f4f7b",
+                                                        "updated_at":  "2026-03-13T09:31:25+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -459,6 +459,16 @@
                         "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,RuntimeApiControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "f8a911a"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T09:31:25+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 config-loop landed: added scheduler management APIs (/config/scheduler/info,/config/scheduler/save) + scheduler config page and config-index entry, enabling runtime tuning of enabled/max_cameras/cooldown/latency_factor/concurrency_baseline; RK3588 targeted tests passed and synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,ActiveCameraInferenceSchedulerServiceTest,RuntimeApiControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "75f4f7b"
                     }
                 ]
 }
