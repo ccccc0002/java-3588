@@ -1,0 +1,113 @@
+{
+  "started_at": "2026-03-13T05:30:57.680077Z",
+  "finished_at": "2026-03-13T05:31:03.993443Z",
+  "status": "passed",
+  "phase10_exit_code": 0,
+  "phase10_output_dir": "runtime/test-out/phase11-handoff-20260313-133057/phase10-acceptance",
+  "dry_run": false,
+  "resource": {
+    "before": {
+      "label": "before",
+      "timestamp": "2026-03-13T05:30:57.680100Z",
+      "cpu": {
+        "loadavg_1m": 3.62,
+        "loadavg_5m": 3.05,
+        "loadavg_15m": 2.88
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 2911.94,
+        "used_mb": 4997.8
+      },
+      "top_processes": [
+        {
+          "pid": 1800489,
+          "cpu_percent": 23.2,
+          "mem_percent": 1.0,
+          "rss_mb": 86.24,
+          "command": "python3"
+        },
+        {
+          "pid": 1800591,
+          "cpu_percent": 20.4,
+          "mem_percent": 3.3,
+          "rss_mb": 266.47,
+          "command": "python3"
+        },
+        {
+          "pid": 1800604,
+          "cpu_percent": 20.0,
+          "mem_percent": 3.4,
+          "rss_mb": 276.36,
+          "command": "python3"
+        },
+        {
+          "pid": 1800619,
+          "cpu_percent": 19.9,
+          "mem_percent": 3.3,
+          "rss_mb": 265.33,
+          "command": "python3"
+        },
+        {
+          "pid": 1800747,
+          "cpu_percent": 18.0,
+          "mem_percent": 0.8,
+          "rss_mb": 67.58,
+          "command": "python3"
+        }
+      ]
+    },
+    "after": {
+      "label": "after",
+      "timestamp": "2026-03-13T05:31:03.956977Z",
+      "cpu": {
+        "loadavg_1m": 3.57,
+        "loadavg_5m": 3.05,
+        "loadavg_15m": 2.88
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 2907.61,
+        "used_mb": 5002.13
+      },
+      "top_processes": [
+        {
+          "pid": 1800489,
+          "cpu_percent": 23.2,
+          "mem_percent": 1.0,
+          "rss_mb": 86.24,
+          "command": "python3"
+        },
+        {
+          "pid": 1800591,
+          "cpu_percent": 20.4,
+          "mem_percent": 3.3,
+          "rss_mb": 267.24,
+          "command": "python3"
+        },
+        {
+          "pid": 1800604,
+          "cpu_percent": 20.0,
+          "mem_percent": 3.4,
+          "rss_mb": 276.36,
+          "command": "python3"
+        },
+        {
+          "pid": 1800619,
+          "cpu_percent": 19.9,
+          "mem_percent": 3.3,
+          "rss_mb": 268.68,
+          "command": "python3"
+        },
+        {
+          "pid": 1800747,
+          "cpu_percent": 18.0,
+          "mem_percent": 0.8,
+          "rss_mb": 67.58,
+          "command": "python3"
+        }
+      ]
+    },
+    "memory_used_delta_mb": 4.33
+  }
+}

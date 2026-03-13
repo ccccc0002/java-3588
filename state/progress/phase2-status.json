@@ -72,23 +72,32 @@
                                                    }
                               },
                    "Phase10":  {
-                                   "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T13:20:13+08:00",
-                                   "summary":  "Phase10 gate traceability hardened: run_linux_gates now parses runtime_stack_smoke stdout JSON when stage summary file is absent, preserving structured acceptance payload in stage summary; tests expanded and RK3588 regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 10/10); GitHub synced to 12d95e4.",
+                                   "status":  "completed",
+                                   "updated_at":  "2026-03-13T13:27:12+08:00",
+                                   "summary":  "Phase10 accepted on RK3588 (non-dry-run): scripts/rk3588/Run-Phase10-Acceptance.sh passed 4/4 stages at runtime/test-out/phase10-acceptance-20260313-132550 using base-url=18082/runtime-api=18081/bridge=19080; runtime_stack_smoke gates met (telemetry ok/ok, concurrency_pressure=1.0\u003c=1.0, suggested_min_dispatch_ms=1000\u003c=1500).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
+                                                        "edge_test_command":  "./scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-20260313-132550",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "12d95e4",
-                                                        "updated_at":  "2026-03-13T13:20:13+08:00"
+                                                        "github_sync_ref":  "b59059a",
+                                                        "updated_at":  "2026-03-13T13:27:12+08:00"
                                                     }
                                },
                    "Phase11":  {
-                                   "status":  "pending",
-                                   "updated_at":  "",
-                                   "summary":  ""
+                                   "status":  "in_progress",
+                                   "updated_at":  "2026-03-13T13:31:44+08:00",
+                                   "summary":  "Phase11 validation pipeline landed: new run_phase11_handoff orchestrates phase10 acceptance (+soak) and captures before/after CPU load, memory usage and top-process snapshots; RK3588 tests passed and non-dry-run handoff run passed at runtime/test-out/phase11-handoff-20260313-133057.",
+                                   "quality_gate":  {
+                                                        "edge_test_required":  true,
+                                                        "edge_test_status":  "passed",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --output-dir runtime/test-out/phase11-handoff-20260313-133057",
+                                                        "github_sync_required_on_milestone":  true,
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "",
+                                                        "updated_at":  "2026-03-13T13:31:44+08:00"
+                                                    }
                                }
                },
     "history":  [
@@ -779,6 +788,36 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "12d95e4"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:27:12+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 accepted on RK3588 (non-dry-run): scripts/rk3588/Run-Phase10-Acceptance.sh passed 4/4 stages at runtime/test-out/phase10-acceptance-20260313-132550 using base-url=18082/runtime-api=18081/bridge=19080; runtime_stack_smoke gates met (telemetry ok/ok, concurrency_pressure=1.0\u003c=1.0, suggested_min_dispatch_ms=1000\u003c=1500).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "./scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-20260313-132550",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b59059a"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:27:28+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "in_progress",
+                        "summary":  "Phase11 started: integrate long-run validation, package resource-health evidence, and finalize acceptance handoff artifacts for phase2 closeout.",
+                        "edge_test_status":  "pending",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b59059a"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:31:44+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "in_progress",
+                        "summary":  "Phase11 validation pipeline landed: new run_phase11_handoff orchestrates phase10 acceptance (+soak) and captures before/after CPU load, memory usage and top-process snapshots; RK3588 tests passed and non-dry-run handoff run passed at runtime/test-out/phase11-handoff-20260313-133057.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --output-dir runtime/test-out/phase11-handoff-20260313-133057",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }

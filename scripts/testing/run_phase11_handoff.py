@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Phase11 orchestration: run acceptance + soak and capture resource evidence."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Sequence
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import run_phase10_acceptance
+
+
+DEFAULT_OUTPUT_DIR = "scripts/testing/out/phase11-handoff"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run Phase11 handoff validation and resource evidence collection.")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8080")
+    parser.add_argument("--runtime-api-url", default="http://127.0.0.1:18081")
+    parser.add_argument("--bridge-url", default="http://127.0.0.1:19080")
+    parser.add_argument("--bootstrap-token", default="edge-demo-bootstrap")
+    parser.add_argument("--plugin-id", default="yolov8n")
+    parser.add_argument("--camera-id", type=int, default=1)
+    parser.add_argument("--model-id", type=int, default=1)
+    parser.add_argument("--algorithm-id", type=int, default=1)
+    parser.add_argument("--source", default="test://frame")
+    parser.add_argument("--timeout-sec", type=int, default=30)
+    parser.add_argument("--runtime-stack-budget", type=float, default=10.0)
+    parser.add_argument("--expect-runtime-api-backend", default="")
+    parser.add_argument("--expect-snapshot-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-plan-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--max-plan-concurrency-pressure", type=float, default=0.0)
+    parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
+    parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
+    parser.add_argument("--min-plan-ready-stream-count", type=int, default=0)
+    parser.add_argument("--cookie", default="")
+    parser.add_argument("--auth-header-name", default="")
+    parser.add_argument("--auth-header-value", default="")
+    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--manage-bridge", action="store_true")
+    parser.add_argument("--bridge-bootstrap-token", default="")
+    parser.add_argument("--bridge-wait-seconds", type=int, default=20)
+    parser.add_argument("--bridge-poll-interval", type=int, default=1)
+    parser.add_argument("--soak-duration-sec", type=int, default=120)
+    parser.add_argument("--soak-interval-sec", type=int, default=5)
+    parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--dry-run", action="store_true")
+    return parser.parse_args(argv)
+
+
+def parse_meminfo(meminfo_path: str = "/proc/meminfo") -> Dict[str, float]:
+    values: Dict[str, float] = {}
+    if not os.path.exists(meminfo_path):
+        return values
+    with open(meminfo_path, "r", encoding="utf-8") as handle:
+        for raw in handle:
+            line = raw.strip()
+            if not line or ":" not in line:
+                continue
+            key, rest = line.split(":", 1)
+            token = rest.strip().split(" ", 1)[0]
+            try:
+                values[key] = float(token)
+            except ValueError:
+                continue
+    total_kb = values.get("MemTotal")
+    avail_kb = values.get("MemAvailable")
+    if total_kb is None or avail_kb is None:
+        return {}
+    used_kb = max(total_kb - avail_kb, 0.0)
+    return {
+        "total_mb": round(total_kb / 1024.0, 2),
+        "available_mb": round(avail_kb / 1024.0, 2),
+        "used_mb": round(used_kb / 1024.0, 2),
+    }
+
+
+def parse_loadavg(loadavg_path: str = "/proc/loadavg") -> Dict[str, float]:
+    if not os.path.exists(loadavg_path):
+        return {}
+    with open(loadavg_path, "r", encoding="utf-8") as handle:
+        raw = handle.read().strip()
+    parts = raw.split()
+    if len(parts) < 3:
+        return {}
+    result: Dict[str, float] = {}
+    labels = ["loadavg_1m", "loadavg_5m", "loadavg_15m"]
+    for index, label in enumerate(labels):
+        try:
+            result[label] = float(parts[index])
+        except ValueError:
+            continue
+    return result
+
+
+def top_processes(limit: int = 5) -> List[Dict[str, Any]]:
+    cmd = ["ps", "-eo", "pid,pcpu,pmem,rss,comm", "--sort=-pcpu"]
+    try:
+        completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except FileNotFoundError:
+        return []
+    if completed.returncode != 0:
+        return []
+    lines = [line.strip() for line in (completed.stdout or "").splitlines() if line.strip()]
+    if len(lines) <= 1:
+        return []
+    result: List[Dict[str, Any]] = []
+    for line in lines[1 : limit + 1]:
+        cols = line.split(None, 4)
+        if len(cols) < 5:
+            continue
+        pid_raw, cpu_raw, mem_raw, rss_raw, cmd_raw = cols
+        try:
+            pid = int(pid_raw)
+            cpu = float(cpu_raw)
+            mem = float(mem_raw)
+            rss_kb = int(rss_raw)
+        except ValueError:
+            continue
+        result.append(
+            {
+                "pid": pid,
+                "cpu_percent": cpu,
+                "mem_percent": mem,
+                "rss_mb": round(rss_kb / 1024.0, 2),
+                "command": cmd_raw,
+            }
+        )
+    return result
+
+
+def collect_resource_snapshot(label: str) -> Dict[str, Any]:
+    return {
+        "label": label,
+        "timestamp": utc_now(),
+        "cpu": parse_loadavg(),
+        "memory": parse_meminfo(),
+        "top_processes": top_processes(),
+    }
+
+
+def build_phase10_argv(args: argparse.Namespace, phase10_output_dir: str) -> List[str]:
+    argv: List[str] = [
+        "--base-url",
+        args.base_url,
+        "--runtime-api-url",
+        args.runtime_api_url,
+        "--bridge-url",
+        args.bridge_url,
+        "--bootstrap-token",
+        args.bootstrap_token,
+        "--plugin-id",
+        args.plugin_id,
+        "--camera-id",
+        str(args.camera_id),
+        "--model-id",
+        str(args.model_id),
+        "--algorithm-id",
+        str(args.algorithm_id),
+        "--source",
+        args.source,
+        "--timeout-sec",
+        str(args.timeout_sec),
+        "--runtime-stack-budget",
+        str(float(args.runtime_stack_budget)),
+        "--expect-runtime-api-backend",
+        args.expect_runtime_api_backend,
+        "--expect-snapshot-telemetry-status",
+        args.expect_snapshot_telemetry_status,
+        "--expect-plan-telemetry-status",
+        args.expect_plan_telemetry_status,
+        "--max-plan-concurrency-pressure",
+        str(float(args.max_plan_concurrency_pressure)),
+        "--max-plan-suggested-min-dispatch-ms",
+        str(int(args.max_plan_suggested_min_dispatch_ms)),
+        "--min-snapshot-ready-stream-count",
+        str(int(args.min_snapshot_ready_stream_count)),
+        "--min-plan-ready-stream-count",
+        str(int(args.min_plan_ready_stream_count)),
+        "--output-dir",
+        phase10_output_dir,
+        "--include-soak",
+        "--soak-duration-sec",
+        str(int(args.soak_duration_sec)),
+        "--soak-interval-sec",
+        str(int(args.soak_interval_sec)),
+        "--soak-max-iterations",
+        str(int(args.soak_max_iterations)),
+    ]
+    if args.cookie:
+        argv.extend(["--cookie", args.cookie])
+    if args.auth_header_name:
+        argv.extend(["--auth-header-name", args.auth_header_name])
+    if args.auth_header_value:
+        argv.extend(["--auth-header-value", args.auth_header_value])
+    if args.manage_bridge:
+        argv.append("--manage-bridge")
+    if args.bridge_bootstrap_token:
+        argv.extend(["--bridge-bootstrap-token", args.bridge_bootstrap_token])
+    argv.extend(["--bridge-wait-seconds", str(int(args.bridge_wait_seconds))])
+    argv.extend(["--bridge-poll-interval", str(int(args.bridge_poll_interval))])
+    if args.dry_run:
+        argv.append("--dry-run")
+    return argv
+
+
+def build_summary(
+    args: argparse.Namespace,
+    started_at: str,
+    finished_at: str,
+    phase10_exit_code: int,
+    phase10_output_dir: str,
+    before: Dict[str, Any],
+    after: Dict[str, Any],
+) -> Dict[str, Any]:
+    status = "passed" if phase10_exit_code == 0 else "failed"
+    memory_delta_mb: Optional[float] = None
+    before_used = ((before.get("memory") or {}) if isinstance(before, dict) else {}).get("used_mb")
+    after_used = ((after.get("memory") or {}) if isinstance(after, dict) else {}).get("used_mb")
+    if isinstance(before_used, (int, float)) and isinstance(after_used, (int, float)):
+        memory_delta_mb = round(float(after_used) - float(before_used), 2)
+    return {
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "status": status,
+        "phase10_exit_code": int(phase10_exit_code),
+        "phase10_output_dir": phase10_output_dir,
+        "dry_run": bool(args.dry_run),
+        "resource": {
+            "before": before,
+            "after": after,
+            "memory_used_delta_mb": memory_delta_mb,
+        },
+    }
+
+
+def main(
+    argv: Optional[Sequence[str]] = None,
+    phase10_runner: Optional[Callable[[Optional[Sequence[str]]], int]] = None,
+    resource_collector: Optional[Callable[[str], Dict[str, Any]]] = None,
+) -> int:
+    args = parse_args(argv)
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = output_dir / "summary.json"
+
+    started_at = utc_now()
+    collector = resource_collector or collect_resource_snapshot
+    before = collector("before")
+
+    phase10_output_dir = str(output_dir / "phase10-acceptance")
+    phase10_argv = build_phase10_argv(args, phase10_output_dir)
+    runner = phase10_runner or run_phase10_acceptance.main
+    phase10_exit_code = int(runner(phase10_argv))
+
+    after = collector("after")
+    finished_at = utc_now()
+
+    summary = build_summary(
+        args=args,
+        started_at=started_at,
+        finished_at=finished_at,
+        phase10_exit_code=phase10_exit_code,
+        phase10_output_dir=phase10_output_dir,
+        before=before,
+        after=after,
+    )
+    summary_path.write_text(json.dumps(summary, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=True, indent=2))
+    return 0 if phase10_exit_code == 0 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
