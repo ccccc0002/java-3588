@@ -63,6 +63,36 @@ def validate_response(payload: Dict[str, Any], expected_plugin_id: str = '') -> 
         raise RuntimeError(f'plugin_id mismatch: expected {expected_plugin_id}, got {plugin_id or "<empty>"}')
     if expected_plugin_id and not plugin_id:
         raise RuntimeError('plugin_id is missing from infer response')
+    plan_summary = payload.get('plan_summary') if isinstance(payload.get('plan_summary'), dict) else {}
+    telemetry_status = str(plan_summary.get('telemetry_status', 'ok')).strip().lower()
+    if telemetry_status != 'degraded':
+        telemetry_status = 'ok'
+    telemetry_error = str(plan_summary.get('telemetry_error', '')).strip()
+    strategy_source = str(plan_summary.get('strategy_source', 'scheduler_feedback')).strip() or 'scheduler_feedback'
+    try:
+        recommended_frame_stride = int(plan_summary.get('recommended_frame_stride', 1))
+    except (TypeError, ValueError):
+        recommended_frame_stride = 1
+    if recommended_frame_stride <= 0:
+        recommended_frame_stride = 1
+    try:
+        suggested_min_dispatch_ms = int(plan_summary.get('suggested_min_dispatch_ms', 1000))
+    except (TypeError, ValueError):
+        suggested_min_dispatch_ms = 1000
+    if suggested_min_dispatch_ms <= 0:
+        suggested_min_dispatch_ms = 1000
+    try:
+        concurrency_pressure = float(plan_summary.get('concurrency_pressure', 1.0))
+    except (TypeError, ValueError):
+        concurrency_pressure = 1.0
+    if concurrency_pressure <= 0:
+        concurrency_pressure = 1.0
+    try:
+        concurrency_level = int(plan_summary.get('concurrency_level', 0))
+    except (TypeError, ValueError):
+        concurrency_level = 0
+    if concurrency_level < 0:
+        concurrency_level = 0
     return {
         'backend_type': backend_type,
         'plugin_id': plugin_id,
@@ -70,6 +100,15 @@ def validate_response(payload: Dict[str, Any], expected_plugin_id: str = '') -> 
         'alert_count': len(payload.get('alerts') or []),
         'latency_ms': payload.get('latency_ms'),
         'labels': [item.get('label') for item in detections if isinstance(item, dict)],
+        'plan_summary': {
+            'telemetry_status': telemetry_status,
+            'telemetry_error': telemetry_error,
+            'strategy_source': strategy_source,
+            'recommended_frame_stride': recommended_frame_stride,
+            'suggested_min_dispatch_ms': suggested_min_dispatch_ms,
+            'concurrency_pressure': round(concurrency_pressure, 4),
+            'concurrency_level': concurrency_level,
+        },
     }
 
 
