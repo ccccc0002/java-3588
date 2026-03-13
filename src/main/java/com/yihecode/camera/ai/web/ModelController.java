@@ -166,6 +166,7 @@ public class ModelController {
     @ResponseBody
     public JsonResult save(Model model) throws Exception {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("model:save", "modelId=" + (model == null ? null : model.getId()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         //
@@ -191,6 +192,7 @@ public class ModelController {
     @ResponseBody
     public JsonResult startModel(Long modelId) throws Exception {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("model:start", "modelId=" + modelId, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         //
@@ -216,6 +218,7 @@ public class ModelController {
     @ResponseBody
     public JsonResult delete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("model:delete", "modelId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         Model model = modelService.getById(id);
@@ -654,6 +657,7 @@ public class ModelController {
                             @RequestParam(value = "md5File") String md5File,
                             @RequestParam(value = "name") String name) throws Exception {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("model:merge", "modelFile=" + name, false, "permission denied", "md5=" + md5File);
             return JsonResultUtils.fail("permission denied");
         }
         //
@@ -712,6 +716,7 @@ public class ModelController {
     @ResponseBody
     public JsonResult fileRename(@RequestParam(value = "fileName") String fileName) throws Exception {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("model:rename", "modelFile=" + fileName, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         //

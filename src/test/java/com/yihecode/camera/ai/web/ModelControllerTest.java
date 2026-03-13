@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,6 +74,7 @@ class ModelControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(modelService, never()).saveModel(any());
+        verify(operationLogService).record(eq("model:save"), eq("modelId=null"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -84,6 +86,7 @@ class ModelControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(modelService, never()).updateModelEnable(any());
+        verify(operationLogService).record(eq("model:start"), eq("modelId=10"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -95,6 +98,7 @@ class ModelControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(modelService, never()).removeById(anyLong());
+        verify(operationLogService).record(eq("model:delete"), eq("modelId=10"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -105,5 +109,17 @@ class ModelControllerTest {
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("model:merge"), eq("modelFile=demo.onnx"), eq(false), eq("permission denied"), eq("md5=abc"));
+    }
+
+    @Test
+    void renameShouldFailWhenPermissionDenied() throws Exception {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = modelController.fileRename("demo.onnx");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("model:rename"), eq("modelFile=demo.onnx"), eq(false), eq("permission denied"), eq(""));
     }
 }
