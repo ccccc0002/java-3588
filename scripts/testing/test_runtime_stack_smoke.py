@@ -118,6 +118,12 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertEqual(5200, result['runtime_api']['plan']['throttle_hint']['suggested_min_dispatch_ms'])
         self.assertEqual(1.8, result['runtime_api']['plan']['throttle_hint']['concurrency_pressure'])
         self.assertEqual(4, result['runtime_api']['plan']['throttle_hint']['concurrency_level'])
+        self.assertEqual('any', result['acceptance_gates']['expected_snapshot_telemetry_status'])
+        self.assertEqual('any', result['acceptance_gates']['expected_plan_telemetry_status'])
+        self.assertEqual(1, result['acceptance_gates']['actual']['snapshot_ready_stream_count'])
+        self.assertEqual(1, result['acceptance_gates']['actual']['plan_ready_stream_count'])
+        self.assertEqual(1.8, result['acceptance_gates']['actual']['plan_concurrency_pressure'])
+        self.assertEqual(5200, result['acceptance_gates']['actual']['plan_suggested_min_dispatch_ms'])
         self.assertEqual('ok', result['bridge']['health']['status'])
         self.assertEqual(1, result['bridge']['infer']['detection_count'])
         self.assertTrue(result['zlm']['play_check']['readable'])
@@ -154,6 +160,8 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertEqual(1.0, result['runtime_api']['snapshot']['throttle_hint']['concurrency_pressure'])
         self.assertEqual(0, result['runtime_api']['snapshot']['throttle_hint']['concurrency_level'])
         self.assertEqual('scheduler_feedback', result['runtime_api']['snapshot']['throttle_hint']['strategy_source'])
+        self.assertEqual(0.0, result['acceptance_gates']['max_plan_concurrency_pressure'])
+        self.assertEqual(0, result['acceptance_gates']['max_plan_suggested_min_dispatch_ms'])
 
 
     def test_run_stack_smoke_rejects_unexpected_runtime_backend(self):

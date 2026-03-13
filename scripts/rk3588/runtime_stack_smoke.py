@@ -251,6 +251,23 @@ def run_stack_smoke(
         raise RuntimeError(f'play_url is missing from runtime snapshot: {snapshot_payload}')
     play_check = verify_play_url(play_url)
 
+    acceptance_gates = {
+        'expected_snapshot_telemetry_status': expected_snapshot_status,
+        'expected_plan_telemetry_status': expected_plan_status,
+        'max_plan_concurrency_pressure': float(max_plan_concurrency_pressure) if max_plan_concurrency_pressure else 0.0,
+        'max_plan_suggested_min_dispatch_ms': int(max_plan_suggested_min_dispatch_ms) if max_plan_suggested_min_dispatch_ms else 0,
+        'min_snapshot_ready_stream_count': int(min_snapshot_ready_stream_count) if min_snapshot_ready_stream_count else 0,
+        'min_plan_ready_stream_count': int(min_plan_ready_stream_count) if min_plan_ready_stream_count else 0,
+        'actual': {
+            'snapshot_telemetry_status': snapshot_telemetry['telemetry']['status'],
+            'plan_telemetry_status': plan_telemetry['telemetry']['status'],
+            'snapshot_ready_stream_count': snapshot_ready_stream_count,
+            'plan_ready_stream_count': plan_ready_stream_count,
+            'plan_concurrency_pressure': float(plan_telemetry['throttle_hint']['concurrency_pressure']),
+            'plan_suggested_min_dispatch_ms': int(plan_telemetry['throttle_hint']['suggested_min_dispatch_ms']),
+        },
+    }
+
     return {
         'runtime_api': {
             'health': {'backend': runtime_backend, 'status': ((runtime_health.get('data') or {}) if isinstance(runtime_health, dict) else {}).get('status', '')},
@@ -281,6 +298,7 @@ def run_stack_smoke(
         'zlm': {
             'play_check': play_check,
         },
+        'acceptance_gates': acceptance_gates,
     }
 
 
