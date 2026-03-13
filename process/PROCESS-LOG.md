@@ -719,3 +719,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
 | 2026-03-13 10:11:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:11:39 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |
+| 2026-03-13 10:12:39 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101239-PHASE2-EXEC.json |
+| 2026-03-13 10:12:39 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 resilience checkpoint synced: dashboardSummary now tolerates runtime snapshot errors, returns stable payload for cockpit rendering; RK3588 targeted tests passed (23/23); GitHub synced to a915597. |
+| 2026-03-13 10:12:49 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101249-PHASE2-EXEC.json |
+| 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at a915597: dashboard summary fallback path prevents runtime telemetry failures from breaking cockpit overview. |
+| 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101250-PHASE2-EXEC.json |
+| 2026-03-13 10:12:50 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at a915597: dashboard summary fallback path prevents runtime telemetry failures from breaking cockpit overview. |
