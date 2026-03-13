@@ -1,0 +1,19 @@
+{
+  "started_at": "2026-03-13T05:34:08.805713Z",
+  "finished_at": "2026-03-13T05:35:09.709288Z",
+  "base_url": "http://127.0.0.1:18082",
+  "camera_id": 1,
+  "model_id": 1,
+  "algorithm_id": 1,
+  "duration_sec": 60,
+  "interval_sec": 10,
+  "max_iterations": 6,
+  "dry_run": false,
+  "manage_bridge": false,
+  "fail_fast": false,
+  "iterations_completed": 6,
+  "total_events": 24,
+  "failed_steps": 0,
+  "status": "passed",
+  "last_error": null
+}

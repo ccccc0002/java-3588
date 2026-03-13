@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 13:32:59",
+    "time":  "2026-03-13 13:35:35",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase11",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Phase11 sync checkpoint: handoff runner + rk3588 evidence committed and pushed (4ce3aee)."
+    "summary":  "compact after checkpoint: Phase11 completion checkpoint: long-run RK3588 handoff evidence saved to state/local/phase11-handoff-20260313-133407-long-*.json."
 }
