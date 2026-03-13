@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T12:05:20+08:00",
-                                   "summary":  "Phase10 gate observability improved: runtime_stack_smoke now returns acceptance_gates (configured thresholds + actual telemetry/ready-stream/pressure/dispatch values), making edge gate outcomes auditable; RK3588 python test passed (12/12); GitHub synced to c87c2a7.",
+                                   "updated_at":  "2026-03-13T13:09:52+08:00",
+                                   "summary":  "Phase10 gate orchestration upgraded: run_linux_gates now supports optional runtime_stack_smoke stage with telemetry/capacity threshold args passthrough, enabling one-command Linux gate composition; tests expanded and RK3588 python test passed (6/6); GitHub synced to 4216178.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "c87c2a7",
-                                                        "updated_at":  "2026-03-13T12:05:20+08:00"
+                                                        "github_sync_ref":  "4216178",
+                                                        "updated_at":  "2026-03-13T13:09:52+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -739,6 +739,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "c87c2a7"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:09:52+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 gate orchestration upgraded: run_linux_gates now supports optional runtime_stack_smoke stage with telemetry/capacity threshold args passthrough, enabling one-command Linux gate composition; tests expanded and RK3588 python test passed (6/6); GitHub synced to 4216178.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "4216178"
                     }
                 ]
 }

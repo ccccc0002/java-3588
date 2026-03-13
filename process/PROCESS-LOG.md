@@ -861,3 +861,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 12:05:35 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-120535-PHASE2-EXEC.json |
 | 2026-03-13 12:05:36 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 12:05:36 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at c87c2a7: runtime_stack_smoke output now includes acceptance_gates with thresholds and actual telemetry/capacity metrics for auditable edge gating; RK3588 python regression passed (12/12). |
+| 2026-03-13 13:09:52 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-130952-PHASE2-EXEC.json |
+| 2026-03-13 13:09:52 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 gate orchestration upgraded: run_linux_gates now supports optional runtime_stack_smoke stage with telemetry/capacity threshold args passthrough, enabling one-command Linux gate composition; tests expanded and RK3588 python test passed (6/6); GitHub synced to 4216178. |
+| 2026-03-13 13:10:06 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:10:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131006-PHASE2-EXEC.json |
+| 2026-03-13 13:10:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6). |
+| 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131006-PHASE2-EXEC.json |
+| 2026-03-13 13:10:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6). |
