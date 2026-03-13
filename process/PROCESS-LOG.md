@@ -726,3 +726,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101250-PHASE2-EXEC.json |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at a915597: dashboard summary fallback path prevents runtime telemetry failures from breaking cockpit overview. |
+| 2026-03-13 10:17:04 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101704-PHASE2-EXEC.json |
+| 2026-03-13 10:17:04 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 cockpit telemetry status indicator added: dashboardSummary now returns telemetry_status/telemetry_error and frontend shows scheduler telemetry health badge (ok/degraded); added fallback assertions; RK3588 targeted tests passed (23/23). |
+| 2026-03-13 10:17:17 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101717-PHASE2-EXEC.json |
+| 2026-03-13 10:17:17 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | telemetry_status/telemetry_error contract landed in dashboard summary; cockpit now displays telemetry health badge; RK3588 targeted tests green. |
+| 2026-03-13 10:17:18 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101717-PHASE2-EXEC.json |
+| 2026-03-13 10:17:18 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:17:18 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: telemetry_status/telemetry_error contract landed in dashboard summary; cockpit now displays telemetry health badge; RK3588 targeted tests green. |
