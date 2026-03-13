@@ -84,6 +84,10 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "ok",
                 "--expect-plan-telemetry-status",
                 "ok",
+                "--expect-bridge-decode-runtime-status",
+                "degraded",
+                "--expect-bridge-decode-mode",
+                "ffmpeg",
                 "--max-plan-concurrency-pressure",
                 "1",
                 "--max-plan-suggested-min-dispatch-ms",
@@ -96,10 +100,19 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertIn("--include-soak", argv)
         self.assertIn("--expect-snapshot-telemetry-status", argv)
         self.assertIn("ok", argv)
+        self.assertIn("--expect-bridge-decode-runtime-status", argv)
+        self.assertIn("degraded", argv)
+        self.assertIn("--expect-bridge-decode-mode", argv)
+        self.assertIn("ffmpeg", argv)
         self.assertIn("--max-plan-concurrency-pressure", argv)
         self.assertIn("1.0", argv)
         self.assertIn("--output-dir", argv)
         self.assertIn("tmp/out/phase10-acceptance", argv)
+
+    def test_parse_args_defaults_strict_decode_gates(self):
+        args = run_phase11_handoff.parse_args([])
+        self.assertEqual(args.expect_bridge_decode_runtime_status, "ok")
+        self.assertEqual(args.expect_bridge_decode_mode, "mpp-rga")
 
     def test_build_alarm_preview_argv_includes_expected_flags(self):
         args = run_phase11_handoff.parse_args(

@@ -42,6 +42,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--expect-runtime-api-backend", default="")
     parser.add_argument("--expect-snapshot-telemetry-status", default="any", choices=["any", "ok", "degraded"])
     parser.add_argument("--expect-plan-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-bridge-decode-runtime-status", default="ok", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-bridge-decode-mode", default="mpp-rga")
     parser.add_argument("--max-plan-concurrency-pressure", type=float, default=0.0)
     parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
     parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
@@ -188,6 +190,10 @@ def build_phase10_argv(args: argparse.Namespace, phase10_output_dir: str) -> Lis
         args.expect_snapshot_telemetry_status,
         "--expect-plan-telemetry-status",
         args.expect_plan_telemetry_status,
+        "--expect-bridge-decode-runtime-status",
+        args.expect_bridge_decode_runtime_status,
+        "--expect-bridge-decode-mode",
+        args.expect_bridge_decode_mode,
         "--max-plan-concurrency-pressure",
         str(float(args.max_plan_concurrency_pressure)),
         "--max-plan-suggested-min-dispatch-ms",
