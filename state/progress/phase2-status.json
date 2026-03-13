@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T10:23:59+08:00",
-                                   "summary":  "Phase10 runtime-api contract checkpoint synced: RuntimeApiControllerTest enforces throttle_hint.suggested_min_dispatch_ms for snapshot/plan success paths; RK3588 targeted tests passed (24/24); GitHub synced to 45a0593.",
+                                   "updated_at":  "2026-03-13T11:19:10+08:00",
+                                   "summary":  "Phase10 runtime telemetry degrade hardening: runtime snapshot/inference plan now expose telemetry_status+telemetry_error and dashboard reuses runtime telemetry with graceful fallback; RK3588 targeted tests passed; GitHub synced to e41a749.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,StreamControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "45a0593",
-                                                        "updated_at":  "2026-03-13T10:23:59+08:00"
+                                                        "github_sync_ref":  "e41a749",
+                                                        "updated_at":  "2026-03-13T11:19:10+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -599,6 +599,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,StreamControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "45a0593"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:19:10+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 runtime telemetry degrade hardening: runtime snapshot/inference plan now expose telemetry_status+telemetry_error and dashboard reuses runtime telemetry with graceful fallback; RK3588 targeted tests passed; GitHub synced to e41a749.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "e41a749"
                     }
                 ]
 }

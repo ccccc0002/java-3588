@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 10:22:32
+- generated_at: 2026-03-13 11:19:24
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,27 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T11:19:24+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T11:19:10+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
+- 2026-03-13T10:23:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T10:22:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T10:22:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T10:22:20+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T10:18:45+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T10:18:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T10:17:18+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T10:17:04+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T10:12:50+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-13 10:08:33 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-100833-PHASE2-EXEC.json |
-| 2026-03-13 10:08:34 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 telemetry refinement synced: throttle_hint now includes suggested_min_dispatch_ms and dashboard uses it directly; RK3588 targeted tests passed (22/22); GitHub synced to 65ac12b. |
-| 2026-03-13 10:08:42 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-100842-PHASE2-EXEC.json |
-| 2026-03-13 10:08:42 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path. |
-| 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-100843-PHASE2-EXEC.json |
-| 2026-03-13 10:08:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path. |
-| 2026-03-13 10:11:28 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101128-PHASE2-EXEC.json |
-| 2026-03-13 10:11:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 dashboard resilience hardening: dashboardSummary now degrades gracefully when runtime snapshot throws, returning overview/charts with empty scheduler telemetry maps; added fallback unit test and RK3588 targeted tests passed (23/23). |
-| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
 | 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |
 | 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
 | 2026-03-13 10:11:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +51,13 @@
 | 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-102231-PHASE2-EXEC.json |
 | 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | runtime api controller contract tests now lock suggested_min_dispatch_ms for snapshot/plan authorized responses; RK3588 targeted tests all green. |
 | 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-102232-PHASE2-EXEC.json |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: runtime api controller contract tests now lock suggested_min_dispatch_ms for snapshot/plan authorized responses; RK3588 targeted tests all green. |
+| 2026-03-13 10:23:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-102359-PHASE2-EXEC.json |
+| 2026-03-13 10:23:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 runtime-api contract checkpoint synced: RuntimeApiControllerTest enforces throttle_hint.suggested_min_dispatch_ms for snapshot/plan success paths; RK3588 targeted tests passed (24/24); GitHub synced to 45a0593. |
+| 2026-03-13 11:19:10 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-111910-PHASE2-EXEC.json |
+| 2026-03-13 11:19:11 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 runtime telemetry degrade hardening: runtime snapshot/inference plan now expose telemetry_status+telemetry_error and dashboard reuses runtime telemetry with graceful fallback; RK3588 targeted tests passed; GitHub synced to e41a749. |
+| 2026-03-13 11:19:23 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:19:23 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-111923-PHASE2-EXEC.json |
+| 2026-03-13 11:19:23 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at e41a749: runtime telemetry degrade contract (telemetry_status/telemetry_error) unified across RuntimeApiService and dashboard summary, validated on RK3588. |
+| 2026-03-13 11:19:24 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-111923-PHASE2-EXEC.json |
