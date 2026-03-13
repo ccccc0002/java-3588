@@ -8,6 +8,7 @@ import com.yihecode.camera.ai.service.CameraService;
 import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.LocationService;
 import com.yihecode.camera.ai.service.MediaStreamUrlService;
+import com.yihecode.camera.ai.service.OnvifDiscoveryService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportPeriodService;
 import com.yihecode.camera.ai.service.RoleAccessService;
@@ -20,6 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +46,7 @@ class CameraControllerTest {
     @Mock private TakePhoto takePhoto;
     @Mock private ConfigService configService;
     @Mock private MediaStreamUrlService mediaStreamUrlService;
+    @Mock private OnvifDiscoveryService onvifDiscoveryService;
     @Mock private RoleAccessService roleAccessService;
     @Mock private OperationLogService operationLogService;
 
@@ -146,6 +151,40 @@ class CameraControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(operationLogService).record(eq("camera:update_rtsp"), eq("cameraId=4"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void scanOnvifShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = cameraController.scanOnvif("192.168.1.0/24", null, 16, null, 500, null, "admin", "123456");
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("camera:onvif_scan"), eq("cidr=192.168.1.0/24"), eq(false), eq("permission denied"), eq(""));
+        verify(onvifDiscoveryService, never()).scan(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void scanOnvifShouldReturnDiscoveryItems() {
+        when(onvifDiscoveryService.scan("192.168.1.0/24", 32, 600, "admin", "123456"))
+                .thenReturn(List.of(Map.of(
+                        "ip", "192.168.1.245",
+                        "source_type", "onvif",
+                        "rtsp_url", "rtsp://admin:123456@192.168.1.245:554/h264/ch1/main/av_stream"
+                )));
+
+        JsonResult result = cameraController.scanOnvif("192.168.1.0/24", null, 32, null, 600, null, "admin", "123456");
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("192.168.1.0/24", data.get("cidr"));
+        assertEquals(1, data.get("count"));
+        List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
+        assertEquals(1, items.size());
+        assertEquals("192.168.1.245", items.get(0).get("ip"));
+        verify(operationLogService).record(eq("camera:onvif_scan"), eq("cidr=192.168.1.0/24"), eq(true), eq("onvif scan finished"), eq("count=1"));
     }
 
     private Camera createValidCamera() {

@@ -25,8 +25,17 @@
                               },
                    "Phase4":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-11T16:39:52+08:00",
-                                  "summary":  "Algorithm package lifecycle endpoints wired: /algorithm/package/import + /algorithm/forceDelete; algorithm page import/delete fallback added; unit tests added (pending execution: local maven missing)."
+                                  "updated_at":  "2026-03-13T21:04:03+08:00",
+                                  "summary":  "Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=CameraControllerTest,OnvifDiscoveryServiceTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "51c1bec",
+                                                       "updated_at":  "2026-03-13T21:04:03+08:00"
+                                                   }
                               },
                    "Phase5":  {
                                   "status":  "in_progress",
@@ -1126,6 +1135,16 @@
                         "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "240e396"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T21:04:03+08:00",
+                        "phase_id":  "Phase4",
+                        "status":  "in_progress",
+                        "summary":  "Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=CameraControllerTest,OnvifDiscoveryServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "51c1bec"
                     }
                 ]
 }

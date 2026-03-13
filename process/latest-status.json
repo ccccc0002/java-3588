@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 20:53:58",
+    "time":  "2026-03-13 21:04:03",
     "task_id":  "PHASE2-EXEC",
-    "stage":  "Phase9",
+    "stage":  "Phase4",
     "event":  "phase_started",
     "actor":  "codex-agent",
-    "summary":  "Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588)."
+    "summary":  "Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy."
 }

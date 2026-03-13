@@ -60,6 +60,10 @@
                                 <i class="layui-icon layui-icon-refresh"></i>
                                 重置
                             </button>
+                            <button type="button" class="pear-btn pear-btn-md pear-btn-warming" id="onvifScanBtn">
+                                <i class="layui-icon layui-icon-search"></i>
+                                ONVIF扫描
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -140,6 +144,121 @@
             }
             return true;
         }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderOnvifResults(items) {
+            if (!items || items.length === 0) {
+                return '<div style="padding:10px 0;color:#999;">未发现可用 ONVIF 设备</div>';
+            }
+            let rows = [];
+            for (let i = 0; i < items.length; i++) {
+                let item = items[i] || {};
+                rows.push(
+                    '<tr>' +
+                    '<td style="padding:6px;border-bottom:1px solid #f2f2f2;">' + escapeHtml(item.ip) + '</td>' +
+                    '<td style="padding:6px;border-bottom:1px solid #f2f2f2;word-break:break-all;">' + escapeHtml(item.rtsp_url) + '</td>' +
+                    '<td style="padding:6px;border-bottom:1px solid #f2f2f2;">' + (item.rtsp_reachable ? 'YES' : 'NO') + '</td>' +
+                    '<td style="padding:6px;border-bottom:1px solid #f2f2f2;"><button type="button" class="layui-btn layui-btn-xs layui-btn-primary copy-rtsp-btn" data-rtsp="' + escapeHtml(item.rtsp_url) + '">复制</button></td>' +
+                    '</tr>'
+                );
+            }
+            return '<div style="max-height:260px;overflow:auto;margin-top:8px;">' +
+                '<table style="width:100%;font-size:12px;border-collapse:collapse;">' +
+                '<thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #e6e6e6;">IP</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e6e6e6;">RTSP</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e6e6e6;">RTSP端口</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e6e6e6;">操作</th></tr></thead>' +
+                '<tbody>' + rows.join('') + '</tbody></table></div>';
+        }
+
+        window.openOnvifScanDialog = function() {
+            if (!guardWriteAction()) {
+                return;
+            }
+            let html = '' +
+                '<div style="padding:12px;">' +
+                '  <div class="layui-form-item" style="margin-bottom:8px;">' +
+                '    <label style="display:inline-block;width:80px;">网段</label>' +
+                '    <input id="onvif-cidr" class="layui-input" style="display:inline-block;width:280px;" value="192.168.1.0/24" />' +
+                '  </div>' +
+                '  <div class="layui-form-item" style="margin-bottom:8px;">' +
+                '    <label style="display:inline-block;width:80px;">用户名</label>' +
+                '    <input id="onvif-username" class="layui-input" style="display:inline-block;width:130px;" value="admin" />' +
+                '    <label style="display:inline-block;width:60px;margin-left:12px;">密码</label>' +
+                '    <input id="onvif-password" class="layui-input" style="display:inline-block;width:130px;" type="password" value="Admin123" />' +
+                '  </div>' +
+                '  <div class="layui-form-item" style="margin-bottom:8px;">' +
+                '    <label style="display:inline-block;width:80px;">主机数</label>' +
+                '    <input id="onvif-max-hosts" class="layui-input" style="display:inline-block;width:80px;" type="number" min="1" max="254" value="254" />' +
+                '    <label style="display:inline-block;width:90px;margin-left:12px;">超时(ms)</label>' +
+                '    <input id="onvif-timeout" class="layui-input" style="display:inline-block;width:80px;" type="number" min="100" max="5000" value="600" />' +
+                '    <button id="onvif-scan-run" class="layui-btn layui-btn-sm layui-btn-normal" style="margin-left:12px;">开始扫描</button>' +
+                '  </div>' +
+                '  <div id="onvif-scan-result" style="margin-top:8px;"></div>' +
+                '</div>';
+
+            layer.open({
+                type: 1,
+                title: 'ONVIF扫描',
+                area: ['860px', '520px'],
+                content: html,
+                success: function(layero) {
+                    $(layero).on('click', '#onvif-scan-run', function() {
+                        let cidr = ($(layero).find('#onvif-cidr').val() || '').trim();
+                        let username = ($(layero).find('#onvif-username').val() || '').trim();
+                        let password = ($(layero).find('#onvif-password').val() || '').trim();
+                        let maxHosts = parseInt(($(layero).find('#onvif-max-hosts').val() || '254'), 10) || 254;
+                        let timeoutMs = parseInt(($(layero).find('#onvif-timeout').val() || '600'), 10) || 600;
+                        let loading = layer.load(2);
+                        $.post('/camera/onvif/scan', {
+                            cidr: cidr,
+                            username: username,
+                            password: password,
+                            max_hosts: maxHosts,
+                            timeout_ms: timeoutMs
+                        }, function(res) {
+                            layer.close(loading);
+                            if (!res || res.code !== 0 || !res.data) {
+                                popup.failure((res && res.msg) || 'ONVIF扫描失败');
+                                return;
+                            }
+                            let items = res.data.items || [];
+                            $(layero).find('#onvif-scan-result').html(
+                                '<div style="color:#666;">扫描结果：' + items.length + ' 台设备</div>' + renderOnvifResults(items)
+                            );
+                        }).fail(function() {
+                            layer.close(loading);
+                            popup.failure('ONVIF扫描失败');
+                        });
+                    });
+
+                    $(layero).on('click', '.copy-rtsp-btn', function() {
+                        let rtsp = $(this).attr('data-rtsp') || '';
+                        if (!rtsp) {
+                            return;
+                        }
+                        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(rtsp).then(function() {
+                                popup.success('RTSP已复制');
+                            }, function() {
+                                popup.failure('复制失败');
+                            });
+                        } else {
+                            popup.failure('当前浏览器不支持自动复制');
+                        }
+                    });
+                }
+            });
+        }
+
+        $('#onvifScanBtn').on('click', function() {
+            window.openOnvifScanDialog();
+        });
 
         //
         form.on('submit(query)', function(data) {

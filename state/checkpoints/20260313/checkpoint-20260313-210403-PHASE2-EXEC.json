@@ -1,0 +1,25 @@
+{
+    "timestamp":  "2026-03-13T21:04:03+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase4",
+    "event":  "phase_started",
+    "summary":  "Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M process/PROCESS-LOG.md",
+                       " M process/latest-status.json",
+                       " M src/main/java/com/yihecode/camera/ai/web/CameraController.java",
+                       " M src/main/resources/templates/camera/index.ftl",
+                       " M src/test/java/com/yihecode/camera/ai/web/CameraControllerTest.java",
+                       " M state/progress/phase2-status.json",
+                       "?? runtime/",
+                       "?? src/main/java/com/yihecode/camera/ai/service/OnvifDiscoveryService.java",
+                       "?? src/test/java/com/yihecode/camera/ai/service/OnvifDiscoveryServiceTest.java",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-210403-PHASE2-EXEC.json"
+                   ]
+}

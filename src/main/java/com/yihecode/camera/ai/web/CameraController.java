@@ -78,6 +78,9 @@ public class CameraController {
     @Autowired
     private OperationLogService operationLogService;
 
+    @Autowired
+    private OnvifDiscoveryService onvifDiscoveryService;
+
     /**
      * 打开摄像头管理页面
      * @return
@@ -390,6 +393,26 @@ public class CameraController {
             return JsonResultUtils.fail("拍照失败，请确保视频流正常并重新尝试");
         }
         return JsonResultUtils.success(fileName);
+    }
+
+    @PostMapping({"/onvif/scan"})
+    @ResponseBody
+    public JsonResult scanOnvif(String cidr, String networkCidr, Integer maxHosts, Integer max_hosts, Integer timeoutMs, Integer timeout_ms, String username, String password) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("camera:onvif_scan", "cidr=" + StrUtil.blankToDefault(cidr, networkCidr), false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        String finalCidr = StrUtil.isBlank(cidr) ? networkCidr : cidr;
+        Integer finalMaxHosts = maxHosts != null ? maxHosts : max_hosts;
+        Integer finalTimeoutMs = timeoutMs != null ? timeoutMs : timeout_ms;
+        List<Map<String, Object>> items = onvifDiscoveryService.scan(finalCidr, finalMaxHosts, finalTimeoutMs, username, password);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("cidr", finalCidr);
+        data.put("count", items.size());
+        data.put("items", items);
+        operationLogService.record("camera:onvif_scan", "cidr=" + StrUtil.blankToDefault(finalCidr, ""), true, "onvif scan finished", "count=" + items.size());
+        return JsonResultUtils.success(data);
     }
 
     /**
