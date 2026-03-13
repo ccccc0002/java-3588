@@ -307,6 +307,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     var staticsStore = new Map();
     var gridRestoreTimer = null;
     var gridRenderSeq = 0;
+    var alarmToastLayerIndex = null;
+    var lastAutoAlertTs = 0;
 
     var trendChart = null;
     var pieChart = null;
@@ -499,7 +501,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         var containerIds = getGridContainerIds();
         var size = Math.min(containerIds.length, cameraIds.length);
         for (var i = 0; i < size; i++) {
-            window.selectRtsp(containerIds[i], cameraIds[i]);
+            window.selectRtsp(containerIds[i], cameraIds[i], { silent: true });
         }
     }
 
@@ -508,7 +510,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         var vh = $('#video-list-wrapper').height();
         var gap = 8;
         var cellH = parseInt((vh - (dim - 1) * gap) / dim, 10);
-        if (isNaN(cellH) || cellH < 120) cellH = 120;
+        if (isNaN(cellH)) cellH = 48;
+        if (cellH < 48) cellH = 48;
         $('#video-list').css('grid-template-columns', 'repeat(' + dim + ', minmax(0, 1fr))');
         $('#video-list').css('grid-auto-rows', cellH + 'px');
     }
@@ -535,13 +538,34 @@ layui.use(['jquery', 'loading', 'popup'], function() {
             '  </div>' +
             '  <div class="detail-detections">' + formatAlarmDetections(data.params) + '</div>' +
             '</div>';
+        if (autoClose) {
+            if (alarmToastLayerIndex !== null) {
+                try { layer.close(alarmToastLayerIndex); } catch (e) {}
+                alarmToastLayerIndex = null;
+            }
+            alarmToastLayerIndex = layer.open({
+                type: 1,
+                title: '实时告警',
+                shade: false,
+                closeBtn: 0,
+                resize: false,
+                maxmin: false,
+                offset: 'rb',
+                area: ['460px', '360px'],
+                time: 3000,
+                content: html,
+                end: function() { alarmToastLayerIndex = null; }
+            });
+            return;
+        }
+
         layer.open({
             type: 1,
-            title: autoClose ? '实时告警' : '告警详情',
+            title: '告警详情',
             shade: 0.15,
-            maxmin: !autoClose,
+            maxmin: true,
             area: [detailWidth + 'px', detailHeight + 'px'],
-            time: autoClose ? 8000 : 0,
+            time: 0,
             shadeClose: true,
             content: html
         });
@@ -605,6 +629,9 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     };
 
     window.addAlarmAlert = function(json) {
+        var now = Date.now();
+        if (now - lastAutoAlertTs < 1200) return;
+        lastAutoAlertTs = now;
         renderAlarmDetail(window.buildAlarmTemplateData(json), true);
     };
 
@@ -762,25 +789,29 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         return '';
     };
 
-    window.selectRtsp = function(containerId, cameraId) {
-        loading.block({ type: 2, elem: '.lo' + containerId, msg: '' });
+    window.selectRtsp = function(containerId, cameraId, opts) {
+        var options = opts || {};
+        var withLoading = !options.silent;
+        if (withLoading) {
+            loading.block({ type: 2, elem: '.lo' + containerId, msg: '' });
+        }
 
         if (cameraMap.has(cameraId)) {
             popup.warning('摄像头不允许重复播放');
-            loading.blockRemove('.lo' + containerId, 1000);
+            if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
             return;
         }
 
         $.post('/camera/selectPlay', { cameraId: cameraId }, function(res) {
             if (res.code !== 0) {
-                loading.blockRemove('.lo' + containerId, 1000);
+                if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                 popup.failure(res.msg);
                 return;
             }
 
             var playUrl = window.resolvePlayUrl(res.data, cameraId);
             if (!playUrl) {
-                loading.blockRemove('.lo' + containerId, 1000);
+                if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                 popup.failure('未获取到可用播放地址');
                 return;
             }
@@ -807,7 +838,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                 containerMap.set(containerId, cameraId);
 
                 flvPlayer.on(flvjs.Events.ERROR, function(err) {
-                    loading.blockRemove('.lo' + containerId, 1000);
+                    if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                     if (err === flvjs.ErrorTypes.MEDIA_ERROR) popup.failure('不支持的视频流格式');
                     if (err === flvjs.ErrorTypes.NETWORK_ERROR) popup.failure('网络异常，请稍后重试');
                     if (err === flvjs.ErrorTypes.OTHER_ERROR) popup.failure('摄像头异常，请稍后重试');
@@ -816,7 +847,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
 
                 flvPlayer.on(flvjs.Events.METADATA_ARRIVED, function() {
                     $('#' + containerId).show();
-                    loading.blockRemove('.lo' + containerId, 1000);
+                    if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                     $('#cl_' + containerId).hide();
                     flvPlayer.play();
                 });
@@ -842,7 +873,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                     }
                 });
             } catch (e) {
-                loading.blockRemove('.lo' + containerId, 1000);
+                if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                 popup.failure('摄像头异常，请稍后重试');
             }
         });
@@ -991,7 +1022,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                     wrappers.push($(this).attr('id').replace('wrapper_', ''));
                 });
                 for (var i = 0; i < size; i++) {
-                    window.selectRtsp(wrappers[i], actives[i].id);
+                    window.selectRtsp(wrappers[i], actives[i].id, { silent: true });
                 }
             }
         });
