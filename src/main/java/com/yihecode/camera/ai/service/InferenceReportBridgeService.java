@@ -30,6 +30,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -213,7 +215,7 @@ public class InferenceReportBridgeService {
     }
 
     private String resolveAlertImage(Camera camera, InferenceResult inferenceResult, List<Map<String, Object>> alarmPayload) {
-        String annotatedPath = saveAnnotatedImageFromInference(inferenceResult);
+        String annotatedPath = saveAnnotatedImageFromInference(inferenceResult, alarmPayload);
         if (StrUtil.isNotBlank(annotatedPath)) {
             return annotatedPath;
         }
@@ -224,20 +226,48 @@ public class InferenceReportBridgeService {
         return annotateSnapshot(snapshotPath, alarmPayload);
     }
 
-    private String saveAnnotatedImageFromInference(InferenceResult inferenceResult) {
+    private String saveAnnotatedImageFromInference(InferenceResult inferenceResult, List<Map<String, Object>> alarmPayload) {
         if (inferenceResult == null || inferenceResult.getFrame() == null || inferenceResult.getFrame().isEmpty()) {
             return "";
         }
-        String imageBase64 = firstNonBlank(
-                asString(inferenceResult.getFrame().get("annotated_image_base64")),
-                asString(inferenceResult.getFrame().get("alarm_image_base64")),
-                asString(inferenceResult.getFrame().get("image_base64"))
-        );
+        String traceId = inferenceResult.getTraceId();
+        String annotatedImageBase64 = asString(inferenceResult.getFrame().get("annotated_image_base64"));
+        String alarmImageBase64 = asString(inferenceResult.getFrame().get("alarm_image_base64"));
+        String rawImageBase64 = asString(inferenceResult.getFrame().get("image_base64"));
+
+        String outputPath = saveInferenceFrameCandidate(annotatedImageBase64, false, alarmPayload, traceId);
+        if (StrUtil.isNotBlank(outputPath)) {
+            return outputPath;
+        }
+        outputPath = saveInferenceFrameCandidate(alarmImageBase64, false, alarmPayload, traceId);
+        if (StrUtil.isNotBlank(outputPath)) {
+            return outputPath;
+        }
+        outputPath = saveInferenceFrameCandidate(rawImageBase64, true, alarmPayload, traceId);
+        if (StrUtil.isNotBlank(outputPath)) {
+            return outputPath;
+        }
+        return "";
+    }
+
+    private String saveInferenceFrameCandidate(String imageBase64,
+                                               boolean annotateRawImage,
+                                               List<Map<String, Object>> alarmPayload,
+                                               String traceId) {
         if (StrUtil.isBlank(imageBase64)) {
             return "";
         }
         try {
-            byte[] payload = Base64.getDecoder().decode(imageBase64);
+            byte[] payload = decodeBase64Payload(imageBase64);
+            if (payload.length == 0) {
+                return "";
+            }
+            if (annotateRawImage && alarmPayload != null && !alarmPayload.isEmpty()) {
+                byte[] annotatedPayload = annotateImagePayload(payload, alarmPayload);
+                if (annotatedPayload != null && annotatedPayload.length > 0) {
+                    payload = annotatedPayload;
+                }
+            }
             File outputDir = ensureUploadDirectory();
             if (outputDir == null) {
                 return "";
@@ -249,8 +279,41 @@ public class InferenceReportBridgeService {
             }
             return outputFile.getAbsolutePath();
         } catch (Exception ex) {
-            log.warn("save annotated image from inference failed, trace_id={}, ex={}", inferenceResult.getTraceId(), ex.getMessage());
+            log.warn("save annotated image from inference failed, trace_id={}, ex={}", traceId, ex.getMessage());
             return "";
+        }
+    }
+
+    private byte[] decodeBase64Payload(String imageBase64) {
+        String normalized = StrUtil.trimToEmpty(imageBase64);
+        int markerIndex = normalized.indexOf("base64,");
+        if (markerIndex >= 0) {
+            normalized = normalized.substring(markerIndex + "base64,".length());
+        } else if (normalized.startsWith("data:")) {
+            int commaIndex = normalized.indexOf(',');
+            if (commaIndex >= 0 && commaIndex + 1 < normalized.length()) {
+                normalized = normalized.substring(commaIndex + 1);
+            }
+        }
+        return Base64.getDecoder().decode(normalized);
+    }
+
+    private byte[] annotateImagePayload(byte[] payload, List<Map<String, Object>> alarmPayload) {
+        if (payload == null || payload.length == 0 || alarmPayload == null || alarmPayload.isEmpty()) {
+            return payload;
+        }
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(payload));
+            if (image == null) {
+                return payload;
+            }
+            drawAlertOverlay(image, alarmPayload);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpg", outputStream);
+            return outputStream.toByteArray();
+        } catch (Exception ex) {
+            log.warn("annotate image payload failed, ex={}", ex.getMessage());
+            return payload;
         }
     }
 
@@ -279,7 +342,20 @@ public class InferenceReportBridgeService {
             if (image == null) {
                 return imageFile.getAbsolutePath();
             }
-            Graphics2D graphics = image.createGraphics();
+            drawAlertOverlay(image, alarmPayload);
+            ImageIO.write(image, "jpg", imageFile);
+        } catch (Exception ex) {
+            log.warn("annotate snapshot failed, path={}, ex={}", snapshotPath, ex.getMessage());
+        }
+        return imageFile.getAbsolutePath();
+    }
+
+    private void drawAlertOverlay(BufferedImage image, List<Map<String, Object>> alarmPayload) {
+        if (image == null || alarmPayload == null || alarmPayload.isEmpty()) {
+            return;
+        }
+        Graphics2D graphics = image.createGraphics();
+        try {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             graphics.setColor(new Color(255, 59, 48));
             graphics.setStroke(new BasicStroke(Math.max(2F, image.getWidth() / 480F)));
@@ -298,12 +374,9 @@ public class InferenceReportBridgeService {
                 graphics.drawRect(x1, y1, width, height);
                 drawLabel(graphics, buildAlertLabelText(item), x1, y1, image.getWidth());
             }
+        } finally {
             graphics.dispose();
-            ImageIO.write(image, "jpg", imageFile);
-        } catch (Exception ex) {
-            log.warn("annotate snapshot failed, path={}, ex={}", snapshotPath, ex.getMessage());
         }
-        return imageFile.getAbsolutePath();
     }
 
     private void drawLabel(Graphics2D graphics, String text, int x, int y, int imageWidth) {

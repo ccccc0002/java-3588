@@ -23,8 +23,10 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -135,6 +137,99 @@ class InferenceReportBridgeServiceTest {
     }
 
     @Test
+    void persistAndBroadcast_shouldAcceptDataUriAnnotatedImageWithoutSnapshotFallback() throws Exception {
+        ReflectionTestUtils.setField(inferenceReportBridgeService, "uploadDir", tempDir.toFile().getAbsolutePath() + File.separator);
+
+        Camera camera = new Camera();
+        camera.setId(32L);
+        camera.setName("Camera-C");
+        camera.setRtspUrl("rtsp://demo/stream-c");
+        camera.setIntervalTime(0F);
+        camera.setWareHouseId(0L);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(42L);
+        algorithm.setName("YoloV8n");
+
+        when(cameraService.getById(32L)).thenReturn(camera);
+        when(algorithmService.getById(42L)).thenReturn(algorithm);
+        when(configService.getByValTag("webUrl")).thenReturn("http://demo-web");
+        doAnswer(invocation -> {
+            Report report = invocation.getArgument(0);
+            report.setId(3002L);
+            return true;
+        }).when(reportService).save(any(Report.class));
+
+        InferenceResult result = new InferenceResult();
+        result.setTraceId("trace-data-uri-frame");
+        result.setCameraId(32L);
+        result.setAlerts(List.of(
+                mapOf("label", "person", "label_zh", "人员", "score", 0.82, "bbox", List.of(6, 8, 30, 36))
+        ));
+        result.setEvents(List.of(mapOf("event_type", "vision.alert", "label", "person")));
+        result.setFrame(Map.of("annotated_image_base64", "data:image/jpeg;base64," + createAnnotatedJpegBase64()));
+
+        Map<String, Object> response = inferenceReportBridgeService.persistAndBroadcast(32L, 42L, result, "trace-data-uri-frame");
+
+        assertEquals("ok", response.get("status"));
+        ArgumentCaptor<Report> reportCaptor = ArgumentCaptor.forClass(Report.class);
+        verify(reportService).save(reportCaptor.capture());
+        Report persistedReport = reportCaptor.getValue();
+        assertTrue(persistedReport.getFileName().endsWith(".jpg"));
+        assertTrue(Files.exists(Path.of(persistedReport.getFileName())));
+        verify(takePhoto, never()).take(any(), any());
+    }
+
+    @Test
+    void persistAndBroadcast_shouldAnnotateRawImageBase64WhenOnlyImageBase64Provided() throws Exception {
+        ReflectionTestUtils.setField(inferenceReportBridgeService, "uploadDir", tempDir.toFile().getAbsolutePath() + File.separator);
+
+        Camera camera = new Camera();
+        camera.setId(33L);
+        camera.setName("Camera-D");
+        camera.setRtspUrl("rtsp://demo/stream-d");
+        camera.setIntervalTime(0F);
+        camera.setWareHouseId(0L);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(43L);
+        algorithm.setName("YoloV8n");
+
+        when(cameraService.getById(33L)).thenReturn(camera);
+        when(algorithmService.getById(43L)).thenReturn(algorithm);
+        when(configService.getByValTag("webUrl")).thenReturn("http://demo-web");
+        doAnswer(invocation -> {
+            Report report = invocation.getArgument(0);
+            report.setId(3003L);
+            return true;
+        }).when(reportService).save(any(Report.class));
+
+        byte[] rawJpeg = createJpegBytes(96, 72);
+        InferenceResult result = new InferenceResult();
+        result.setTraceId("trace-raw-frame");
+        result.setCameraId(33L);
+        result.setAlerts(List.of(
+                mapOf("label", "person", "label_zh", "人员", "score", 0.95, "bbox", List.of(20, 16, 80, 56))
+        ));
+        result.setEvents(List.of(mapOf("event_type", "vision.alert", "label", "person")));
+        result.setFrame(Map.of("image_base64", Base64.getEncoder().encodeToString(rawJpeg)));
+
+        Map<String, Object> response = inferenceReportBridgeService.persistAndBroadcast(33L, 43L, result, "trace-raw-frame");
+
+        assertEquals("ok", response.get("status"));
+        ArgumentCaptor<Report> reportCaptor = ArgumentCaptor.forClass(Report.class);
+        verify(reportService).save(reportCaptor.capture());
+        Report persistedReport = reportCaptor.getValue();
+        assertTrue(persistedReport.getFileName().endsWith(".jpg"));
+        Path persistedImagePath = Path.of(persistedReport.getFileName());
+        assertTrue(Files.exists(persistedImagePath));
+
+        byte[] persistedBytes = Files.readAllBytes(persistedImagePath);
+        assertFalse(Arrays.equals(rawJpeg, persistedBytes));
+        verify(takePhoto, never()).take(any(), any());
+    }
+
+    @Test
     void persistAndBroadcast_shouldPersistAlertPayloadCaptureSnapshotAndBroadcastOverlay() {
         ReflectionTestUtils.setField(
                 inferenceReportBridgeService,
@@ -234,6 +329,13 @@ class InferenceReportBridgeServiceTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(image, "jpg", outputStream);
         return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+    }
+
+    private byte[] createJpegBytes(int width, int height) throws IOException {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", outputStream);
+        return outputStream.toByteArray();
     }
 
     private Map<String, Object> mapOf(Object... pairs) {

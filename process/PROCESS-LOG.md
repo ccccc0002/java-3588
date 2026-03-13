@@ -931,3 +931,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 13:36:17 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-133617-PHASE2-EXEC.json |
 | 2026-03-13 13:36:17 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:36:17 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 completed and synced: full acceptance+long soak handoff passed on RK3588 (runtime/test-out/phase11-handoff-20260313-133407-long, iterations=6/6, failed_steps=0) with stable resource evidence; GitHub synced to 8ee741d. |
+| 2026-03-13 13:54:15 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-135414-PHASE2-EXEC.json |
+| 2026-03-13 13:54:15 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 alert-image closure: inference report bridge now supports data URI base64 decoding and enforces annotation overlay when only raw image_base64 is provided; prevents raw-image alarm records and stabilizes preview availability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). |
+| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-135415-PHASE2-EXEC.json |
+| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | alert image pipeline hardened: data-uri + raw image annotation fallback; rk3588 tests green. |
+| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135416-PHASE2-EXEC.json |
+| 2026-03-13 13:54:16 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: alert image pipeline hardened: data-uri + raw image annotation fallback; rk3588 tests green. |

@@ -35,8 +35,17 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-11T18:02:43+08:00",
-                                  "summary":  "Phase6 advanced: report list now supports camera/algorithm/type/time combo filters with quick ranges; statistic page/interfaces now accept camera/algorithm/type + date combined filtering."
+                                  "updated_at":  "2026-03-13T13:54:14+08:00",
+                                  "summary":  "Phase6 alert-image closure: inference report bridge now supports data URI base64 decoding and enforces annotation overlay when only raw image_base64 is provided; prevents raw-image alarm records and stabilizes preview availability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest).",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "",
+                                                       "updated_at":  "2026-03-13T13:54:14+08:00"
+                                                   }
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
@@ -848,6 +857,16 @@
                         "edge_test_command":  "python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 60 --soak-interval-sec 10 --soak-max-iterations 6 --output-dir runtime/test-out/phase11-handoff-20260313-133407-long",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "8ee741d"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:54:14+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 alert-image closure: inference report bridge now supports data URI base64 decoding and enforces annotation overlay when only raw image_base64 is provided; prevents raw-image alarm records and stabilizes preview availability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }
