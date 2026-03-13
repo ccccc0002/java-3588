@@ -18,9 +18,18 @@
                                                    }
                               },
                    "Phase1":  {
-                                  "status":  "in_progress",
-                                  "updated_at":  "2026-03-11T14:27:17+08:00",
-                                  "summary":  "Phase1 milestone completed: cockpit layout + 1/4/9/16 + dashboard api + targeted tests pass"
+                                  "status":  "completed",
+                                  "updated_at":  "2026-03-13T22:45:47+08:00",
+                                  "summary":  "Phase1 closeout passed on RK3588: Stream/Index/Login + stream template dashboard tests all green via phase2-closeout lane.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=StreamControllerTest,StreamTemplateAlarmRenderingTest,IndexControllerTest,LoginControllerTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:47+08:00"
+                                                   }
                               },
                    "Phase2":  {
                                   "status":  "completed",
@@ -57,91 +66,100 @@
                               },
                    "Phase5":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-11T17:41:48+08:00",
-                                  "summary":  "Phase5-M3 dual-path model testing enabled: image upload + RTSP one-frame capture feed into predict; backend now outputs detections and annotated image."
-                              },
-                   "Phase6":  {
-                                  "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T21:39:02+08:00",
-                                  "summary":  "Phase6 nextwave convergence on RK3588: RTSP quality lane passed (8/8), dispatch source-policy retry passed against 18082 after web app start.",
+                                  "updated_at":  "2026-03-13T22:45:47+08:00",
+                                  "summary":  "Phase5 closeout lane passed on RK3588: package lifecycle + model capture/result tests stable (20 tests).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 8 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/nextwave-quality \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out/parallel/nextwave-source-policy-retry2",
+                                                       "edge_test_command":  "mvn -Dtest=AlgorithmPackageLifecycleServiceTest,AlgorithmPackageLifecycleControllerTest,ModelTestCaptureServiceTest,ModelTestResultServiceTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "e059f13",
-                                                       "updated_at":  "2026-03-13T21:39:02+08:00"
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:47+08:00"
+                                                   }
+                              },
+                   "Phase6":  {
+                                  "status":  "in_progress",
+                                  "updated_at":  "2026-03-13T22:45:48+08:00",
+                                  "summary":  "Phase6 closeout/nextwave both passed on RK3588: quality RTSP + source policy lanes green.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/closeout-quality \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out/parallel/nextwave-source-policy",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:48+08:00"
                                                    }
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T19:26:30+08:00",
-                                  "summary":  "tmux backlog lane validated Phase7 backend scope on RK3588: Config/Camera/WareHouse targeted tests passed",
+                                  "updated_at":  "2026-03-13T22:45:48+08:00",
+                                  "summary":  "Phase7 closeout lane reconfirmed on RK3588: Config/Camera/WareHouse controller suite passed (39 tests).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "08d014f",
-                                                       "updated_at":  "2026-03-13T19:26:30+08:00"
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:48+08:00"
                                                    }
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:29:05+08:00",
-                                  "summary":  "Autowave stabilized and synced: 8-lane parallel run passed 8/8 on RK3588 with tmux report + skip-capture smoke strategy.",
+                                  "updated_at":  "2026-03-13T22:45:49+08:00",
+                                  "summary":  "Phase8 nextwave lane passed on RK3588: UI smoke stabilized under parallel run (skip-capture policy).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
+                                                       "edge_test_command":  "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30 --retry-attempts 3 --retry-on-any-failure --skip-capture-endpoints",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "38d6051",
-                                                       "updated_at":  "2026-03-13T22:29:05+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:49+08:00"
                                                    }
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T21:39:28+08:00",
-                                  "summary":  "Phase9 nextwave api regression lane passed on RK3588 (RuntimeApiController/Service + InferenceApiController + Scheduler tests).",
+                                  "updated_at":  "2026-03-13T22:45:49+08:00",
+                                  "summary":  "Phase9 closeout/nextwave lanes passed on RK3588: runtime-api + scheduler regression suites green.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,InferenceApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "e059f13",
-                                                       "updated_at":  "2026-03-13T21:39:28+08:00"
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:45:49+08:00"
                                                    }
                               },
                    "Phase10":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-13T22:04:32+08:00",
-                                   "summary":  "Phase10 strict acceptance restored on RK3588: max-plan-suggested-min-dispatch-ms=1500 passes (actual 1448); code synced to GitHub.",
+                                   "updated_at":  "2026-03-13T22:45:49+08:00",
+                                   "summary":  "Phase10 acceptance lane reconfirmed on RK3588: strict 1500 gate passed in phase2-acceptance session.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,ActiveCameraInferenceSchedulerServiceTest test \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-strict-1500-after-cap",
+                                                        "edge_test_command":  "bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-nextwave",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "0d4ddb6",
-                                                        "updated_at":  "2026-03-13T22:04:32+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "local-uncommitted",
+                                                        "updated_at":  "2026-03-13T22:45:49+08:00"
                                                     }
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-13T14:25:34+08:00",
-                                   "summary":  "Phase11 launcher synced: Run-Phase11-Handoff.sh and launcher test added, RK3588 dry-run execution passed, artifacts persisted.",
+                                   "updated_at":  "2026-03-13T22:45:50+08:00",
+                                   "summary":  "Phase11 handoff dry-run reconfirmed on RK3588 in acceptance lane (2/2 pass).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_phase11_launcher.py \u0026\u0026 bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-launcher-dryrun-20260313-142405",
+                                                        "edge_test_command":  "bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "3ac2560",
-                                                        "updated_at":  "2026-03-13T14:25:34+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "local-uncommitted",
+                                                        "updated_at":  "2026-03-13T22:45:50+08:00"
                                                     }
                                }
                },
@@ -1313,6 +1331,86 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "38d6051"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:47+08:00",
+                        "phase_id":  "Phase1",
+                        "status":  "completed",
+                        "summary":  "Phase1 closeout passed on RK3588: Stream/Index/Login + stream template dashboard tests all green via phase2-closeout lane.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=StreamControllerTest,StreamTemplateAlarmRenderingTest,IndexControllerTest,LoginControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:47+08:00",
+                        "phase_id":  "Phase5",
+                        "status":  "in_progress",
+                        "summary":  "Phase5 closeout lane passed on RK3588: package lifecycle + model capture/result tests stable (20 tests).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=AlgorithmPackageLifecycleServiceTest,AlgorithmPackageLifecycleControllerTest,ModelTestCaptureServiceTest,ModelTestResultServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:48+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 closeout/nextwave both passed on RK3588: quality RTSP + source policy lanes green.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/closeout-quality \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out/parallel/nextwave-source-policy",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:48+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Phase7 closeout lane reconfirmed on RK3588: Config/Camera/WareHouse controller suite passed (39 tests).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:49+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 nextwave lane passed on RK3588: UI smoke stabilized under parallel run (skip-capture policy).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30 --retry-attempts 3 --retry-on-any-failure --skip-capture-endpoints",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:49+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 closeout/nextwave lanes passed on RK3588: runtime-api + scheduler regression suites green.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,InferenceApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:49+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 acceptance lane reconfirmed on RK3588: strict 1500 gate passed in phase2-acceptance session.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-nextwave",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:45:50+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Phase11 handoff dry-run reconfirmed on RK3588 in acceptance lane (2/2 pass).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
                     }
                 ]
 }
