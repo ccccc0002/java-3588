@@ -1,0 +1,23 @@
+{
+    "timestamp":  "2026-03-13T22:52:51+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase6",
+    "event":  "phase_checkpoint",
+    "summary":  "Bridge decode default switched to mpp-rga with compatibility preserved and tests green.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M process/PROCESS-LOG.md",
+                       " M process/latest-status.json",
+                       " M scripts/rk3588/Run-Runtime-Bridge.sh",
+                       " M scripts/rk3588/rk3588_runtime_bridge.py",
+                       " M scripts/testing/test_rk3588_runtime_bridge.py",
+                       " M state/progress/phase2-status.json",
+                       "?? runtime/",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-225239-PHASE2-EXEC.json"
+                   ]
+}

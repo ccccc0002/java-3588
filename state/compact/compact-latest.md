@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 22:47:23
+- generated_at: 2026-03-13 22:52:51
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T22:52:51+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
+- 2026-03-13T22:52:51+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
+- 2026-03-13T22:52:39+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-13T22:47:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T22:47:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-13T22:47:21+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T22:47:21+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T22:47:20+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T22:45:51+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-13T22:45:50+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
-- 2026-03-13T22:45:50+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 
 ## Recent Process Log Tail
 
-| 2026-03-13 22:45:48 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 closeout/nextwave both passed on RK3588: quality RTSP + source policy lanes green. |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224548-PHASE2-EXEC.json |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 closeout lane reconfirmed on RK3588: Config/Camera/WareHouse controller suite passed (39 tests). |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224549-PHASE2-EXEC.json |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 nextwave lane passed on RK3588: UI smoke stabilized under parallel run (skip-capture policy). |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224549-PHASE2-EXEC.json |
-| 2026-03-13 22:45:49 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 closeout/nextwave lanes passed on RK3588: runtime-api + scheduler regression suites green. |
 | 2026-03-13 22:45:50 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-224549-PHASE2-EXEC.json |
 | 2026-03-13 22:45:50 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 22:45:50 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | Phase10 acceptance lane reconfirmed on RK3588: strict 1500 gate passed in phase2-acceptance session. |
@@ -61,3 +54,10 @@
 | 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-224722-PHASE2-EXEC.json |
 | 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase quality gates synced to GitHub ref aa60e57 after parallel closeout wave. |
 | 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-224723-PHASE2-EXEC.json |
+| 2026-03-13 22:47:23 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase quality gates synced to GitHub ref aa60e57 after parallel closeout wave. |
+| 2026-03-13 22:52:39 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-225239-PHASE2-EXEC.json |
+| 2026-03-13 22:52:39 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept only for compatibility), with RK3588 bridge/python suites passing. |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225250-PHASE2-EXEC.json |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Bridge decode default switched to mpp-rga with compatibility preserved and tests green. |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225251-PHASE2-EXEC.json |

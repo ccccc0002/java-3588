@@ -1262,3 +1262,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-224723-PHASE2-EXEC.json |
 | 2026-03-13 22:47:23 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 22:47:23 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase quality gates synced to GitHub ref aa60e57 after parallel closeout wave. |
+| 2026-03-13 22:52:39 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-225239-PHASE2-EXEC.json |
+| 2026-03-13 22:52:39 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept only for compatibility), with RK3588 bridge/python suites passing. |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225250-PHASE2-EXEC.json |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Bridge decode default switched to mpp-rga with compatibility preserved and tests green. |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225251-PHASE2-EXEC.json |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Bridge decode default switched to mpp-rga with compatibility preserved and tests green. |

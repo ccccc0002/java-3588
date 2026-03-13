@@ -80,16 +80,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:47:19+08:00",
-                                  "summary":  "Phase6 closeout/nextwave both passed on RK3588: quality RTSP + source policy lanes green.",
+                                  "updated_at":  "2026-03-13T22:52:39+08:00",
+                                  "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept only for compatibility), with RK3588 bridge/python suites passing.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/closeout-quality \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out/parallel/nextwave-source-policy",
+                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "aa60e57",
-                                                       "updated_at":  "2026-03-13T22:47:19+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:52:39+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -1491,6 +1491,16 @@
                         "edge_test_command":  "bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "aa60e57"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:52:39+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept only for compatibility), with RK3588 bridge/python suites passing.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
                     }
                 ]
 }
