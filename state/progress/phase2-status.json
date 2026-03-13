@@ -81,16 +81,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T21:39:14+08:00",
-                                  "summary":  "Phase8 nextwave ui smoke converged on RK3588: initial lane failed due 18082 app down; after java_app_ctl start, web_ui_live_smoke passed 35/35.",
+                                  "updated_at":  "2026-03-13T22:11:56+08:00",
+                                  "summary":  "Phase8 parallel rerun stabilized on RK3588: web_ui_live_smoke isolated rerun passed 35/35 after tmux concurrent-load fluctuation.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/rk3588/java_app_ctl.py start \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30",
+                                                       "edge_test_command":  "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "e059f13",
-                                                       "updated_at":  "2026-03-13T21:39:14+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "c3ba89c",
+                                                       "updated_at":  "2026-03-13T22:11:56+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1244,6 +1244,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,ActiveCameraInferenceSchedulerServiceTest test \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-strict-1500-after-cap",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "0d4ddb6"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:11:56+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 parallel rerun stabilized on RK3588: web_ui_live_smoke isolated rerun passed 35/35 after tmux concurrent-load fluctuation.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "c3ba89c"
                     }
                 ]
 }

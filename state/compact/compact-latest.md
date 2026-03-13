@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 22:04:46
+- generated_at: 2026-03-13 22:12:07
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,27 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T22:12:06+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T22:11:56+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T22:04:46+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T22:04:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T22:02:47+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T22:02:38+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T21:45:49+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T21:45:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
-- 2026-03-13T21:45:34+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
-- 2026-03-13T21:39:40+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-13 21:32:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 21:32:12 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: tmux phase2-backlog(7 lanes) converged on RK3588: phase7/8/9/5/3/4 pass in first run; phase6 retried after runtime_stack start and passed (10/10). GitHub synced at 1edc631. |
-| 2026-03-13 21:32:21 | PHASE2-EXEC | phase2-backlog | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213220-PHASE2-EXEC.json |
-| 2026-03-13 21:32:21 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 21:32:21 | PHASE2-EXEC | phase2-backlog | session_compacted | codex-agent | post-backlog compact after 7-lane convergence and phase6 retry pass |
-| 2026-03-13 21:38:11 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213810-PHASE2-EXEC.json |
-| 2026-03-13 21:38:11 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 nextwave api regression lane passed on RK3588 (RuntimeApiController/Service + InferenceApiController + Scheduler tests). |
-| 2026-03-13 21:39:02 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213902-PHASE2-EXEC.json |
-| 2026-03-13 21:39:02 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 nextwave convergence on RK3588: RTSP quality lane passed (8/8), dispatch source-policy retry passed against 18082 after web app start. |
-| 2026-03-13 21:39:15 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213914-PHASE2-EXEC.json |
 | 2026-03-13 21:39:15 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 nextwave ui smoke converged on RK3588: initial lane failed due 18082 app down; after java_app_ctl start, web_ui_live_smoke passed 35/35. |
 | 2026-03-13 21:39:28 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213928-PHASE2-EXEC.json |
 | 2026-03-13 21:39:28 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 nextwave api regression lane passed on RK3588 (RuntimeApiController/Service + InferenceApiController + Scheduler tests). |
@@ -61,3 +51,13 @@
 | 2026-03-13 22:04:45 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-220445-PHASE2-EXEC.json |
 | 2026-03-13 22:04:45 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Phase10 strict gate fix pushed to GitHub: 0d4ddb6 |
 | 2026-03-13 22:04:46 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-220445-PHASE2-EXEC.json |
+| 2026-03-13 22:04:46 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:04:46 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Phase10 strict gate fix pushed to GitHub: 0d4ddb6 |
+| 2026-03-13 22:11:56 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-221156-PHASE2-EXEC.json |
+| 2026-03-13 22:11:56 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-221156-PHASE2-EXEC.json |
+| 2026-03-13 22:11:56 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 parallel rerun stabilized on RK3588: web_ui_live_smoke isolated rerun passed 35/35 after tmux concurrent-load fluctuation. |
+| 2026-03-13 22:11:56 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:11:56 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | Phase10 strict gate reconfirmed after parallel-load isolation: max-plan-suggested-min-dispatch-ms=1500 passed (actual 1454). |
+| 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-221206-PHASE2-EXEC.json |
+| 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Parallel lanes completed; flaky checks stabilized by isolated rerun: Phase8 35/35, Phase10 strict gate pass@1454ms. |
+| 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-221206-PHASE2-EXEC.json |
