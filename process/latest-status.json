@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 11:21:59",
+    "time":  "2026-03-13 11:25:14",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at a985e3c: RuntimeApiController now locks telemetry_status/telemetry_error passthrough contract for runtime snapshot and inference plan; RK3588 regression green."
+    "summary":  "compact after checkpoint: GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green."
 }

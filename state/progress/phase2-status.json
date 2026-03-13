@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:21:48+08:00",
-                                   "summary":  "Phase10 api-contract hardening: RuntimeApiController tests now assert telemetry_status/telemetry_error passthrough for snapshot/plan, aligned with degrade contract; RK3588 targeted tests passed; GitHub synced to a985e3c.",
+                                   "updated_at":  "2026-03-13T11:25:01+08:00",
+                                   "summary":  "Phase10 runtime endpoint resilience hardening: scheduler summary/dispatch now return 503 structured errors on scheduler exceptions (scheduler_summary_failed/scheduler_dispatch_failed); controller tests expanded; RK3588 targeted tests passed; GitHub synced to df47eb7.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "a985e3c",
-                                                        "updated_at":  "2026-03-13T11:21:48+08:00"
+                                                        "github_sync_ref":  "df47eb7",
+                                                        "updated_at":  "2026-03-13T11:25:01+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -619,6 +619,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "a985e3c"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:25:01+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 runtime endpoint resilience hardening: scheduler summary/dispatch now return 503 structured errors on scheduler exceptions (scheduler_summary_failed/scheduler_dispatch_failed); controller tests expanded; RK3588 targeted tests passed; GitHub synced to df47eb7.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "df47eb7"
                     }
                 ]
 }

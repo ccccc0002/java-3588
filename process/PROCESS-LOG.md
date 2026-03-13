@@ -765,3 +765,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112159-PHASE2-EXEC.json |
 | 2026-03-13 11:21:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at a985e3c: RuntimeApiController now locks telemetry_status/telemetry_error passthrough contract for runtime snapshot and inference plan; RK3588 regression green. |
+| 2026-03-13 11:25:01 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-112501-PHASE2-EXEC.json |
+| 2026-03-13 11:25:01 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 runtime endpoint resilience hardening: scheduler summary/dispatch now return 503 structured errors on scheduler exceptions (scheduler_summary_failed/scheduler_dispatch_failed); controller tests expanded; RK3588 targeted tests passed; GitHub synced to df47eb7. |
+| 2026-03-13 11:25:13 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:25:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112513-PHASE2-EXEC.json |
+| 2026-03-13 11:25:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green. |
+| 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112513-PHASE2-EXEC.json |
+| 2026-03-13 11:25:14 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green. |
