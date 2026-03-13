@@ -90,16 +90,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:11:56+08:00",
-                                  "summary":  "Phase8 parallel rerun stabilized on RK3588: web_ui_live_smoke isolated rerun passed 35/35 after tmux concurrent-load fluctuation.",
+                                  "updated_at":  "2026-03-13T22:19:52+08:00",
+                                  "summary":  "Autowave report convergence: tmux report found 8-lane run with 7 pass/1 fail (integration lane under concurrent load); isolated web_ui_live_smoke rerun passed 35/35.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30",
+                                                       "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8 \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 45",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "c3ba89c",
-                                                       "updated_at":  "2026-03-13T22:11:56+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-13T22:19:52+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1283,6 +1283,16 @@
                         "edge_test_command":  "python -m unittest scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 -m unittest scripts/testing/test_tmux_parallel_ctl.py (RK3588)",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "d794cc2"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:19:52+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Autowave report convergence: tmux report found 8-lane run with 7 pass/1 fail (integration lane under concurrent load); isolated web_ui_live_smoke rerun passed 35/35.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8 \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 45",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
                     }
                 ]
 }
