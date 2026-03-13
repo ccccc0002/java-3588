@@ -270,6 +270,23 @@ class ActiveCameraInferenceSchedulerServiceTest {
         verify(inferenceApiController, times(2)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void getLastSummary_shouldReturnSnapshotCopy() {
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("0");
+
+        Map<String, Object> first = schedulerService.dispatchActiveCameras();
+        Map<String, Object> snapshot = schedulerService.getLastSummary();
+        assertEquals(Boolean.FALSE, snapshot.get("enabled"));
+
+        ((List<Map<String, Object>>) first.get("skipped")).add(Map.of("reason", "mutated"));
+        first.put("enabled", true);
+
+        Map<String, Object> latest = schedulerService.getLastSummary();
+        assertEquals(Boolean.FALSE, latest.get("enabled"));
+        assertEquals(0, ((List<Map<String, Object>>) latest.get("skipped")).size());
+    }
+
     private Camera camera(Long id, String rtspUrl, Float intervalTime) {
         Camera camera = new Camera();
         camera.setId(id);

@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web.api;
 
 import cn.hutool.core.util.StrUtil;
+import com.yihecode.camera.ai.service.ActiveCameraInferenceSchedulerService;
 import com.yihecode.camera.ai.service.RuntimeAccessTokenService;
 import com.yihecode.camera.ai.service.RuntimeApiService;
 import org.springframework.http.HttpStatus;
@@ -23,11 +24,14 @@ public class RuntimeApiController {
 
     private final RuntimeAccessTokenService runtimeAccessTokenService;
     private final RuntimeApiService runtimeApiService;
+    private final ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService;
 
     public RuntimeApiController(RuntimeAccessTokenService runtimeAccessTokenService,
-                                RuntimeApiService runtimeApiService) {
+                                RuntimeApiService runtimeApiService,
+                                ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService) {
         this.runtimeAccessTokenService = runtimeAccessTokenService;
         this.runtimeApiService = runtimeApiService;
+        this.activeCameraInferenceSchedulerService = activeCameraInferenceSchedulerService;
     }
 
     @PostMapping("/auth/token")
@@ -71,6 +75,30 @@ public class RuntimeApiController {
         }
         Map<String, Object> request = payload == null ? Collections.emptyMap() : payload;
         return success(runtimeApiService.buildInferencePlan(asDouble(request.get("budget"), 10.0D)));
+    }
+
+    @GetMapping("/runtime/scheduler/summary")
+    public ResponseEntity<Map<String, Object>> schedulerSummary(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (!runtimeAccessTokenService.isAuthorized(authorization)) {
+            return error(HttpStatus.UNAUTHORIZED, "invalid_token", "token invalid or expired");
+        }
+        if (activeCameraInferenceSchedulerService == null) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_unavailable", "scheduler service unavailable");
+        }
+        return success(activeCameraInferenceSchedulerService.getLastSummary());
+    }
+
+    @PostMapping("/runtime/scheduler/dispatch")
+    public ResponseEntity<Map<String, Object>> schedulerDispatch(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (!runtimeAccessTokenService.isAuthorized(authorization)) {
+            return error(HttpStatus.UNAUTHORIZED, "invalid_token", "token invalid or expired");
+        }
+        if (activeCameraInferenceSchedulerService == null) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_unavailable", "scheduler service unavailable");
+        }
+        return success(activeCameraInferenceSchedulerService.dispatchActiveCameras());
     }
 
     private ResponseEntity<Map<String, Object>> success(Map<String, Object> data) {

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +40,7 @@ public class ActiveCameraInferenceSchedulerService {
 
     private final ConcurrentMap<String, Long> lastDispatchAtMs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Long> observedLatencyMs = new ConcurrentHashMap<>();
+    private volatile Map<String, Object> lastSummary = Collections.emptyMap();
 
     @Autowired
     private CameraService cameraService;
@@ -79,6 +81,7 @@ public class ActiveCameraInferenceSchedulerService {
         summary.put("executed_at_ms", nowMs);
 
         if (!Boolean.TRUE.equals(summary.get("enabled"))) {
+            lastSummary = snapshotSummary(summary);
             return summary;
         }
 
@@ -171,11 +174,16 @@ public class ActiveCameraInferenceSchedulerService {
             }
         }
 
+        lastSummary = snapshotSummary(summary);
         return summary;
     }
 
     protected long currentTimeMillis() {
         return System.currentTimeMillis();
+    }
+
+    public Map<String, Object> getLastSummary() {
+        return snapshotSummary(lastSummary);
     }
 
     private Map<String, Object> buildDispatchBody(Camera camera, Algorithm algorithm, long nowMs) {
@@ -527,6 +535,34 @@ public class ActiveCameraInferenceSchedulerService {
             return first;
         }
         return StrUtil.isNotBlank(second) ? second : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> snapshotSummary(Map<String, Object> source) {
+        if (source == null || source.isEmpty()) {
+            return new LinkedHashMap<>();
+        }
+        Map<String, Object> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map) {
+                copy.put(entry.getKey(), new LinkedHashMap<>((Map<String, Object>) value));
+            } else if (value instanceof List) {
+                List<?> list = (List<?>) value;
+                List<Object> copiedList = new ArrayList<>(list.size());
+                for (Object item : list) {
+                    if (item instanceof Map) {
+                        copiedList.add(new LinkedHashMap<>((Map<String, Object>) item));
+                    } else {
+                        copiedList.add(item);
+                    }
+                }
+                copy.put(entry.getKey(), copiedList);
+            } else {
+                copy.put(entry.getKey(), value);
+            }
+        }
+        return copy;
     }
 
     private static final class DispatchContext {

@@ -1,5 +1,6 @@
 package com.yihecode.camera.ai.web.api;
 
+import com.yihecode.camera.ai.service.ActiveCameraInferenceSchedulerService;
 import com.yihecode.camera.ai.service.RuntimeAccessTokenService;
 import com.yihecode.camera.ai.service.RuntimeApiService;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ class RuntimeApiControllerTest {
 
     @Mock
     private RuntimeApiService runtimeApiService;
+
+    @Mock
+    private ActiveCameraInferenceSchedulerService activeCameraInferenceSchedulerService;
 
     @InjectMocks
     private RuntimeApiController runtimeApiController;
@@ -69,6 +73,29 @@ class RuntimeApiControllerTest {
         when(runtimeAccessTokenService.isAuthorized("Bearer token-2")).thenReturn(false);
 
         ResponseEntity<Map<String, Object>> response = runtimeApiController.inferencePlan("Bearer token-2", Collections.singletonMap("budget", 10));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+    }
+
+    @Test
+    void schedulerSummary_shouldReturnDataWhenAuthorized() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-3")).thenReturn(true);
+        when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Collections.singletonMap("concurrency_level", 2));
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.schedulerSummary("Bearer token-3");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue((Boolean) response.getBody().get("success"));
+        assertEquals(2, ((Map<String, Object>) response.getBody().get("data")).get("concurrency_level"));
+        verify(activeCameraInferenceSchedulerService).getLastSummary();
+    }
+
+    @Test
+    void schedulerDispatch_shouldRejectUnauthorizedRequest() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-4")).thenReturn(false);
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.schedulerDispatch("Bearer token-4");
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertFalse((Boolean) response.getBody().get("success"));
