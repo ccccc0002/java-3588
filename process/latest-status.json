@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:05:44",
+    "time":  "2026-03-13 09:11:03",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase9",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731."
+    "summary":  "compact after checkpoint: Scheduler observability added: cooldown skip metadata includes source/base/latency/effective values; summary adds max declared/observed/effective + latency update counter; ActiveCameraInferenceSchedulerServiceTest passes on RK3588 and commit 9fa1eda pushed."
 }
