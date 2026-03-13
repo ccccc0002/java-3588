@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:31:36",
+    "time":  "2026-03-13 09:35:11",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Scheduler auto-throttle is now tunable from backend UI: new scheduler page + config endpoints for infer_scheduler_enabled/max_cameras/cooldown_ms/latency_factor/concurrency_baseline with RBAC+operation logs; ConfigController tests expanded; RK3588 targeted suite passed (29/29); commit 75f4f7b pushed."
+    "summary":  "compact after checkpoint: Inference plan now carries scheduler feedback for capacity tuning: added scheduler + throttle_hint payload (recommended_frame_stride, concurrency_pressure, estimated_budget_per_stream). RuntimeApiService tests updated and RK3588 targeted suite passed (17/17). Commit e7abaa7 pushed."
 }

@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 09:31:36
+- generated_at: 2026-03-13 09:35:11
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T09:35:11+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T09:34:57+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T09:31:25+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:22:05+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:22:04+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T09:21:53+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T09:17:25+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T09:17:24+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 08:53:47 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-085347-PHASE2-EXEC.json |
-| 2026-03-13 08:53:47 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 account audit hardening: account save/delete permission-denied branches now log operation events; currentAccountId fallback unified; new AccountController deny-path tests added; RK3588 targeted regression passed; milestone synced. |
-| 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
-| 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
-| 2026-03-13 08:53:58 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
-| 2026-03-13 08:53:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 08:53:59 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
 | 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-090531-PHASE2-EXEC.json |
 | 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced. |
 | 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-13 09:31:36 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-093135-PHASE2-EXEC.json |
 | 2026-03-13 09:31:36 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Scheduler auto-throttle is now tunable from backend UI: new scheduler page + config endpoints for infer_scheduler_enabled/max_cameras/cooldown_ms/latency_factor/concurrency_baseline with RBAC+operation logs; ConfigController tests expanded; RK3588 targeted suite passed (29/29); commit 75f4f7b pushed. |
 | 2026-03-13 09:31:36 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-093136-PHASE2-EXEC.json |
+| 2026-03-13 09:31:36 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:31:36 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Scheduler auto-throttle is now tunable from backend UI: new scheduler page + config endpoints for infer_scheduler_enabled/max_cameras/cooldown_ms/latency_factor/concurrency_baseline with RBAC+operation logs; ConfigController tests expanded; RK3588 targeted suite passed (29/29); commit 75f4f7b pushed. |
+| 2026-03-13 09:34:57 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-093457-PHASE2-EXEC.json |
+| 2026-03-13 09:34:57 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 capacity-evaluation enhancement: RuntimeApiService inference plan now embeds scheduler summary and throttle_hint (recommended_frame_stride + pressure + budget-per-stream), enabling front-end/runtime consumers to assess concurrent load adaptively; RK3588 targeted tests passed and synced. |
+| 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-093511-PHASE2-EXEC.json |
+| 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Inference plan now carries scheduler feedback for capacity tuning: added scheduler + throttle_hint payload (recommended_frame_stride, concurrency_pressure, estimated_budget_per_stream). RuntimeApiService tests updated and RK3588 targeted suite passed (17/17). Commit e7abaa7 pushed. |
+| 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-093511-PHASE2-EXEC.json |
