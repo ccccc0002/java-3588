@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:49:22+08:00",
-                                   "summary":  "Phase10 stack smoke gate strengthened: runtime_stack_smoke now normalizes and outputs snapshot/plan telemetry + throttle diagnostics (stride/min-dispatch/concurrency/source) for direct capacity checks; dedicated tests added; RK3588 python test passed (5/5); GitHub synced to 473f99c.",
+                                   "updated_at":  "2026-03-13T11:51:55+08:00",
+                                   "summary":  "Phase10 smoke gate strict mode added: runtime_stack_smoke now supports expected snapshot/plan telemetry status assertions (any|ok|degraded), enabling stricter acceptance gating for capacity checks; tests expanded and RK3588 python test passed (7/7); GitHub synced to b3d086c.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "473f99c",
-                                                        "updated_at":  "2026-03-13T11:49:22+08:00"
+                                                        "github_sync_ref":  "b3d086c",
+                                                        "updated_at":  "2026-03-13T11:51:55+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -689,6 +689,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "473f99c"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:51:55+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 smoke gate strict mode added: runtime_stack_smoke now supports expected snapshot/plan telemetry status assertions (any|ok|degraded), enabling stricter acceptance gating for capacity checks; tests expanded and RK3588 python test passed (7/7); GitHub synced to b3d086c.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b3d086c"
                     }
                 ]
 }

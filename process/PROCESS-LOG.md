@@ -821,3 +821,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:49:37 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-114936-PHASE2-EXEC.json |
 | 2026-03-13 11:49:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:49:37 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 473f99c: runtime_stack_smoke now emits normalized telemetry/throttle diagnostics for snapshot+plan and enables direct Phase10 capacity smoke verification; RK3588 python test passed. |
+| 2026-03-13 11:51:56 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-115155-PHASE2-EXEC.json |
+| 2026-03-13 11:51:56 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 smoke gate strict mode added: runtime_stack_smoke now supports expected snapshot/plan telemetry status assertions (any/ok/degraded), enabling stricter acceptance gating for capacity checks; tests expanded and RK3588 python test passed (7/7); GitHub synced to b3d086c. |
+| 2026-03-13 11:52:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:52:09 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-115209-PHASE2-EXEC.json |
+| 2026-03-13 11:52:09 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at b3d086c: runtime_stack_smoke strict telemetry expectation flags landed (snapshot/plan any/ok/degraded); RK3588 python regression passed. |
+| 2026-03-13 11:52:10 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-115209-PHASE2-EXEC.json |
+| 2026-03-13 11:52:10 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:52:10 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at b3d086c: runtime_stack_smoke strict telemetry expectation flags landed (snapshot/plan any/ok/degraded); RK3588 python regression passed. |
