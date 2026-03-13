@@ -83,6 +83,34 @@ class InferenceQualityDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["latency_ms"]["p50"], 30.0)
         self.assertEqual(summary["latency_ms"]["max"], 40.0)
 
+    def test_summarize_results_degrades_when_invalid_bbox_exceeds_threshold(self):
+        iteration_results = [
+            {
+                "status": "ok",
+                "metrics": {
+                    "latency_ms": 20.0,
+                    "detection_count": 1,
+                    "alert_count": 0,
+                    "invalid_bbox_count": 1,
+                    "invalid_score_count": 0,
+                    "empty_label_count": 0,
+                    "labels": ["person"],
+                },
+            },
+        ]
+        summary = run_inference_quality_diagnostics.summarize_results(
+            iteration_results,
+            expected_iterations=1,
+            max_invalid_bbox_count=0,
+        )
+        self.assertEqual("degraded", summary["status"])
+
+    def test_normalize_optional_threshold(self):
+        self.assertIsNone(run_inference_quality_diagnostics.normalize_optional_threshold(-1))
+        self.assertIsNone(run_inference_quality_diagnostics.normalize_optional_threshold("x"))
+        self.assertEqual(0, run_inference_quality_diagnostics.normalize_optional_threshold(0))
+        self.assertEqual(2, run_inference_quality_diagnostics.normalize_optional_threshold("2"))
+
     def test_main_writes_summary_with_fake_runner(self):
         responses = [
             {"trace_id": "t1", "latency_ms": 11, "detections": [{"label": "person", "bbox": [1, 2, 3, 4], "score": 0.5}], "alerts": []},
@@ -114,6 +142,40 @@ class InferenceQualityDiagnosticsTests(unittest.TestCase):
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             self.assertEqual(summary["successful_iterations"], 2)
             self.assertEqual(summary["failed_iterations"], 0)
+            self.assertEqual("passed", summary["status"])
+
+    def test_main_returns_nonzero_when_quality_gate_is_violated(self):
+        responses = [
+            {
+                "trace_id": "t1",
+                "latency_ms": 11,
+                "detections": [{"label": "person", "bbox": [3, 3, 3, 9], "score": 0.5}],
+                "alerts": [],
+            },
+        ]
+
+        def fake_post(*args, **kwargs):
+            return responses[0]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            exit_code = run_inference_quality_diagnostics.main(
+                [
+                    "--bridge-url",
+                    "http://127.0.0.1:19080",
+                    "--iterations",
+                    "1",
+                    "--max-invalid-bbox-count",
+                    "0",
+                    "--output-dir",
+                    temp_dir,
+                ],
+                infer_runner=fake_post,
+                sleep_fn=lambda *_: None,
+            )
+            self.assertEqual(exit_code, 1)
+            summary_path = pathlib.Path(temp_dir) / "summary.json"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            self.assertEqual("degraded", summary["status"])
 
 
 if __name__ == "__main__":

@@ -34,6 +34,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--interval-ms", type=int, default=200)
     parser.add_argument("--timeout-sec", type=float, default=30.0)
     parser.add_argument("--output-dir", default="")
+    parser.add_argument("--max-invalid-bbox-count", type=int, default=-1)
+    parser.add_argument("--max-invalid-score-count", type=int, default=-1)
+    parser.add_argument("--max-empty-label-count", type=int, default=-1)
     return parser.parse_args(argv)
 
 
@@ -151,7 +154,13 @@ def percentile(values: List[float], p: float) -> Optional[float]:
     return float(ordered[low] + (ordered[high] - ordered[low]) * weight)
 
 
-def summarize_results(iteration_results: List[Dict[str, Any]], expected_iterations: int) -> Dict[str, Any]:
+def summarize_results(
+    iteration_results: List[Dict[str, Any]],
+    expected_iterations: int,
+    max_invalid_bbox_count: Optional[int] = None,
+    max_invalid_score_count: Optional[int] = None,
+    max_empty_label_count: Optional[int] = None,
+) -> Dict[str, Any]:
     success = [item for item in iteration_results if item.get("status") == "ok"]
     failed = [item for item in iteration_results if item.get("status") != "ok"]
     latencies = [float(item["metrics"]["latency_ms"]) for item in success if item.get("metrics", {}).get("latency_ms") is not None]
@@ -180,6 +189,14 @@ def summarize_results(iteration_results: List[Dict[str, Any]], expected_iteratio
         "p95": round(percentile(latencies, 0.95), 4) if latencies else None,
     }
 
+    status = "passed" if len(failed) == 0 else "degraded"
+    if status == "passed" and max_invalid_bbox_count is not None and invalid_bbox_count > max_invalid_bbox_count:
+        status = "degraded"
+    if status == "passed" and max_invalid_score_count is not None and invalid_score_count > max_invalid_score_count:
+        status = "degraded"
+    if status == "passed" and max_empty_label_count is not None and empty_label_count > max_empty_label_count:
+        status = "degraded"
+
     return {
         "expected_iterations": int(expected_iterations),
         "completed_iterations": len(iteration_results),
@@ -192,13 +209,21 @@ def summarize_results(iteration_results: List[Dict[str, Any]], expected_iteratio
         "empty_label_count": int(empty_label_count),
         "label_histogram": label_histogram,
         "latency_ms": latency_summary,
-        "status": "passed" if len(failed) == 0 else "degraded",
+        "status": status,
     }
 
 
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+
+def normalize_optional_threshold(value: Any) -> Optional[int]:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return None if parsed < 0 else parsed
 
 
 def main(
@@ -244,7 +269,17 @@ def main(
             sleeper(interval_ms / 1000.0)
 
     finished_at = utc_now()
-    summary = summarize_results(events, expected_iterations=iterations)
+    max_invalid_bbox_count = normalize_optional_threshold(args.max_invalid_bbox_count)
+    max_invalid_score_count = normalize_optional_threshold(args.max_invalid_score_count)
+    max_empty_label_count = normalize_optional_threshold(args.max_empty_label_count)
+
+    summary = summarize_results(
+        events,
+        expected_iterations=iterations,
+        max_invalid_bbox_count=max_invalid_bbox_count,
+        max_invalid_score_count=max_invalid_score_count,
+        max_empty_label_count=max_empty_label_count,
+    )
     summary_payload = {
         "started_at": started_at,
         "finished_at": finished_at,
@@ -253,6 +288,11 @@ def main(
         "model_id": int(args.model_id),
         "source": args.source,
         "plugin_id": args.plugin_id,
+        "quality_gate": {
+            "max_invalid_bbox_count": max_invalid_bbox_count,
+            "max_invalid_score_count": max_invalid_score_count,
+            "max_empty_label_count": max_empty_label_count,
+        },
         **summary,
     }
 
@@ -264,7 +304,7 @@ def main(
     write_json(summary_path, summary_payload)
 
     print(json.dumps({"summary_path": str(summary_path), "summary": summary_payload}, ensure_ascii=True))
-    return 0 if summary_payload["failed_iterations"] == 0 else 1
+    return 0 if summary_payload.get("status") == "passed" else 1
 
 
 if __name__ == "__main__":
