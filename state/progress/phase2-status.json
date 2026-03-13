@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T20:14:26+08:00",
-                                  "summary":  "Phase8 location audit hardening: location save/delete permission-denied branches now emit operation logs; deny-path tests updated; RK3588 targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-13T08:44:27+08:00",
+                                  "summary":  "Phase8 algorithm package audit hardening: import/forceDelete/updateMetadata permission-denied branches now write operation logs; deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "0f5325a",
-                                                       "updated_at":  "2026-03-12T20:14:26+08:00"
+                                                       "github_sync_ref":  "57078fa",
+                                                       "updated_at":  "2026-03-13T08:44:27+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -361,6 +361,16 @@
                         "edge_test_command":  "mvn -Dtest=ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "0f5325a"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T08:44:27+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 algorithm package audit hardening: import/forceDelete/updateMetadata permission-denied branches now write operation logs; deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "57078fa"
                     }
                 ]
 }
