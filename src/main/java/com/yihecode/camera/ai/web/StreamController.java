@@ -1,6 +1,7 @@
 package com.yihecode.camera.ai.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateUtil;
@@ -23,6 +24,7 @@ import com.yihecode.camera.ai.service.ModelService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
 import com.yihecode.camera.ai.service.RoleAccessService;
+import com.yihecode.camera.ai.service.RuntimeAccessTokenService;
 import com.yihecode.camera.ai.service.RuntimeApiService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.utils.JsonResult;
@@ -36,6 +38,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -81,6 +84,9 @@ public class StreamController {
 
     @Autowired
     private RuntimeApiService runtimeApiService;
+
+    @Autowired
+    private RuntimeAccessTokenService runtimeAccessTokenService;
 
     @GetMapping({"", "/"})
     public String index(ModelMap modelMap) {
@@ -424,10 +430,13 @@ public class StreamController {
         return PageResultUtils.success(pageResult.getTotal(), dataList);
     }
 
+    @SaIgnore
     @PostMapping("/stop")
     @ResponseBody
-    public JsonResult stopStream(Long cameraId) {
-        if (!roleAccessService.canManageStream(currentAccountId())) {
+    public JsonResult stopStream(
+            Long cameraId,
+            @RequestHeader(value = "X-Bootstrap-Token", required = false) String bootstrapToken) {
+        if (!canManageStream(bootstrapToken)) {
             operationLogService.record("stream:stop", "cameraId=" + cameraId, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
@@ -449,10 +458,14 @@ public class StreamController {
         return JsonResultUtils.success(resMap);
     }
 
+    @SaIgnore
     @PostMapping("/start")
     @ResponseBody
-    public JsonResult startStream(Long cameraId, Integer videoPort) {
-        if (!roleAccessService.canManageStream(currentAccountId())) {
+    public JsonResult startStream(
+            Long cameraId,
+            Integer videoPort,
+            @RequestHeader(value = "X-Bootstrap-Token", required = false) String bootstrapToken) {
+        if (!canManageStream(bootstrapToken)) {
             operationLogService.record("stream:start", "cameraId=" + cameraId, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
@@ -497,6 +510,20 @@ public class StreamController {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private boolean canManageStream(String bootstrapToken) {
+        Long accountId = currentAccountId();
+        if (accountId != null) {
+            try {
+                if (roleAccessService.canManageStream(accountId)) {
+                    return true;
+                }
+            } catch (Exception ignored) {
+                // Fall through to bootstrap token validation for machine clients.
+            }
+        }
+        return runtimeAccessTokenService != null && runtimeAccessTokenService.isBootstrapTokenValid(bootstrapToken);
     }
 
     @SuppressWarnings("unchecked")

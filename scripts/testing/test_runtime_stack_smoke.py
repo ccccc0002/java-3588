@@ -163,6 +163,33 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertEqual(0.0, result['acceptance_gates']['max_plan_concurrency_pressure'])
         self.assertEqual(0, result['acceptance_gates']['max_plan_suggested_min_dispatch_ms'])
 
+    def test_run_stack_smoke_skips_play_check_when_no_ready_stream(self):
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}), \
+             mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {
+                 'streams': [],
+                 'stream_count': 1,
+                 'ready_stream_count': 0,
+                 'telemetry_status': 'ok',
+             }}), \
+             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {'ready_stream_count': 0, 'telemetry_status': 'ok'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [], 'alerts': []}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 0, 'alert_count': 0, 'labels': []}), \
+             mock.patch.object(runtime_stack_smoke, 'verify_play_url') as play_mock:
+            result = runtime_stack_smoke.run_stack_smoke(
+                runtime_api_url='http://127.0.0.1:18081',
+                bridge_url='http://127.0.0.1:19080',
+                bootstrap_token='edge-demo-bootstrap',
+                plugin_id='yolov8n',
+                source='test://frame',
+            )
+
+        self.assertEqual('', result['runtime_api']['snapshot']['play_url'])
+        self.assertEqual('skipped_no_ready_stream', result['zlm']['play_check']['status'])
+        self.assertEqual(0, result['zlm']['play_check']['ready_stream_count'])
+        play_mock.assert_not_called()
+
 
     def test_run_stack_smoke_rejects_unexpected_runtime_backend(self):
         with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}):

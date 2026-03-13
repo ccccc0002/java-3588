@@ -142,6 +142,19 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertNotIn('--dry-run', command)
         self.assertNotIn('--fail-fast', command)
 
+    def test_build_stage_definitions_uses_bootstrap_header_by_default(self):
+        args = run_linux_gates.parse_args([
+            '--base-url', 'http://127.0.0.1:8080',
+            '--bootstrap-token', 'edge-demo-bootstrap',
+        ])
+        stages = run_linux_gates.build_stage_definitions(args, pathlib.Path('tmp/out'))
+        first_stage = stages[0]
+        command = first_stage['command']
+        header_name_index = command.index('--auth-header-name') + 1
+        header_value_index = command.index('--auth-header-value') + 1
+        self.assertEqual('X-Bootstrap-Token', command[header_name_index])
+        self.assertEqual('edge-demo-bootstrap', command[header_value_index])
+
     def test_read_stage_summary_parses_runtime_stack_stdout_json(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             summary_path = pathlib.Path(temp_dir) / 'missing-summary.json'

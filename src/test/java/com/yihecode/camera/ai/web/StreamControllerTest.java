@@ -8,6 +8,7 @@ import com.yihecode.camera.ai.service.ModelService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
 import com.yihecode.camera.ai.service.RoleAccessService;
+import com.yihecode.camera.ai.service.RuntimeAccessTokenService;
 import com.yihecode.camera.ai.service.RuntimeApiService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.entity.Model;
@@ -47,6 +48,7 @@ class StreamControllerTest {
     @Mock private MediaStreamUrlService mediaStreamUrlService;
     @Mock private ModelService modelService;
     @Mock private RoleAccessService roleAccessService;
+    @Mock private RuntimeAccessTokenService runtimeAccessTokenService;
     @Mock private OperationLogService operationLogService;
     @Mock private RuntimeApiService runtimeApiService;
 
@@ -228,9 +230,7 @@ class StreamControllerTest {
 
     @Test
     void stopStreamShouldDenyWhenNoManagePermission() {
-        when(roleAccessService.canManageStream(any())).thenReturn(false);
-
-        JsonResult result = streamController.stopStream(1L);
+        JsonResult result = streamController.stopStream(1L, null);
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
@@ -239,12 +239,33 @@ class StreamControllerTest {
 
     @Test
     void startStreamShouldDenyWhenNoManagePermission() {
-        when(roleAccessService.canManageStream(any())).thenReturn(false);
-
-        JsonResult result = streamController.startStream(2L, 8080);
+        JsonResult result = streamController.startStream(2L, 8080, null);
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(operationLogService).record(eq("stream:start"), eq("cameraId=2"), eq(false), eq("permission denied"), eq(""));
+    }
+
+    @Test
+    void stopStreamShouldAllowWithBootstrapTokenWhenRoleDenied() {
+        when(runtimeAccessTokenService.isBootstrapTokenValid("edge-demo-bootstrap")).thenReturn(true);
+        when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
+
+        JsonResult result = streamController.stopStream(1L, "edge-demo-bootstrap");
+
+        assertEquals(0, result.getCode());
+        verify(cameraService).updatePlay(1L, 0);
+    }
+
+    @Test
+    void startStreamShouldAllowWithBootstrapTokenWhenRoleDenied() {
+        when(runtimeAccessTokenService.isBootstrapTokenValid("edge-demo-bootstrap")).thenReturn(true);
+        when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
+        when(cameraService.updatePlay(2L, 1)).thenReturn(true);
+        when(mediaStreamUrlService.buildPlayUrl(any(), any())).thenReturn("http://127.0.0.1/live/2.live.flv");
+
+        JsonResult result = streamController.startStream(2L, null, "edge-demo-bootstrap");
+
+        assertEquals(0, result.getCode());
     }
 }

@@ -125,8 +125,20 @@ def build_bridge_args(args: argparse.Namespace) -> List[str]:
     return bridge_args
 
 
+def resolve_auth_header(args: argparse.Namespace) -> Dict[str, str]:
+    header_name = str(getattr(args, "auth_header_name", "") or "").strip()
+    header_value = str(getattr(args, "auth_header_value", "") or "").strip()
+    bootstrap_token = str(getattr(args, "bootstrap_token", "") or "").strip()
+    if not header_name and bootstrap_token:
+        header_name = "X-Bootstrap-Token"
+    if header_name and not header_value and header_name.lower() == "x-bootstrap-token" and bootstrap_token:
+        header_value = bootstrap_token
+    return {"name": header_name, "value": header_value}
+
+
 def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List[Dict[str, Any]]:
     python_bin = sys.executable or "python3"
+    auth_header = resolve_auth_header(args)
     stages = [
         {
             "name": "inference_contracts",
@@ -142,8 +154,8 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--expected-override-source", args.expected_override_source,
                 "--timeout-sec", str(args.timeout_sec),
                 "--cookie", args.cookie,
-                "--auth-header-name", args.auth_header_name,
-                "--auth-header-value", args.auth_header_value,
+                "--auth-header-name", auth_header["name"],
+                "--auth-header-value", auth_header["value"],
             ],
         },
         {
@@ -158,8 +170,8 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--source", args.source,
                 "--timeout-sec", str(args.timeout_sec),
                 "--cookie", args.cookie,
-                "--auth-header-name", args.auth_header_name,
-                "--auth-header-value", args.auth_header_value,
+                "--auth-header-name", auth_header["name"],
+                "--auth-header-value", auth_header["value"],
             ],
         },
         {
@@ -174,8 +186,8 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 "--expected-override-source", args.expected_override_source,
                 "--timeout-sec", str(args.timeout_sec),
                 "--cookie", args.cookie,
-                "--auth-header-name", args.auth_header_name,
-                "--auth-header-value", args.auth_header_value,
+                "--auth-header-name", auth_header["name"],
+                "--auth-header-value", auth_header["value"],
             ],
         },
     ]
@@ -196,8 +208,8 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                     "--interval-sec", str(args.soak_interval_sec),
                     "--max-iterations", str(args.soak_max_iterations),
                     "--cookie", args.cookie,
-                    "--auth-header-name", args.auth_header_name,
-                    "--auth-header-value", args.auth_header_value,
+                    "--auth-header-name", auth_header["name"],
+                    "--auth-header-value", auth_header["value"],
                 ],
             }
         )

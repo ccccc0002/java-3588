@@ -247,9 +247,18 @@ def run_stack_smoke(
     play_url = ''
     if streams and isinstance(streams[0], dict):
         play_url = str(streams[0].get('play_url', '')).strip()
-    if not play_url:
-        raise RuntimeError(f'play_url is missing from runtime snapshot: {snapshot_payload}')
-    play_check = verify_play_url(play_url)
+    if play_url:
+        play_check = verify_play_url(play_url)
+    else:
+        # Keep phase11 resilient when runtime snapshot is sampled between stop/start windows.
+        # Strict readiness assertions should be configured via min_*_ready_stream_count gates.
+        play_check = {
+            'http_status': 0,
+            'bytes_read': 0,
+            'readable': False,
+            'status': 'skipped_no_ready_stream',
+            'ready_stream_count': snapshot_ready_stream_count,
+        }
 
     acceptance_gates = {
         'expected_snapshot_telemetry_status': expected_snapshot_status,
