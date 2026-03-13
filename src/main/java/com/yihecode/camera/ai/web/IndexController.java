@@ -36,7 +36,7 @@ public class IndexController {
         modelMap.addAttribute("uid", IdUtil.fastSimpleUUID());
         modelMap.addAttribute("wsUrl", wsUrl);
 
-        Long accountId = StpUtil.getLoginIdAsLong();
+        Long accountId = currentAccountId();
         Account account = accountService.getById(accountId);
         String accountName = account == null ? "unknown" : account.getName();
         String role = roleAccessService.getRoleByAccountId(accountId);
@@ -60,5 +60,13 @@ public class IndexController {
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? defaultValue : normalized;
+    }
+
+    Long currentAccountId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

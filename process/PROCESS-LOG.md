@@ -1079,3 +1079,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 20:15:09 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-201508-PHASE2-EXEC.json |
 | 2026-03-13 20:15:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 20:15:09 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | continuous parallel cycle checkpoint compact |
+| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-203239-PHASE2-EXEC.json |
+| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203239-PHASE2-EXEC.json |
+| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Phase8 branding closure: added /config/branding info/save APIs with RBAC guard and operation logging, config UI branding page, dynamic title/logo/login-background rendering on index/login, plus controller tests; RK3588 targeted maven tests passed (ConfigControllerTest, IndexControllerTest, LoginControllerTest). GitHub sync: 74a96e6. |
+| 2026-03-13 20:32:51 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203250-PHASE2-EXEC.json |
+| 2026-03-13 20:32:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 20:32:51 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | branding milestone compact: github synced 74a96e6, RK3588 tests green |
+| 2026-03-13 20:33:04 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-203304-PHASE2-EXEC.json |
+| 2026-03-13 20:33:04 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 branding milestone delivered: configurable title/logo/login background with backend APIs, RBAC+audit, config UI, and RK3588 targeted tests passed; synced to GitHub 74a96e6. |

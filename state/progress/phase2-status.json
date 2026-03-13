@@ -63,16 +63,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T19:26:31+08:00",
-                                  "summary":  "tmux backlog lane validated Phase8 RBAC/account scope on RK3588: Account/Model/Algorithm/AlgorithmPackageLifecycle targeted tests passed",
+                                  "updated_at":  "2026-03-13T20:33:04+08:00",
+                                  "summary":  "Phase8 branding milestone delivered: configurable title/logo/login background with backend APIs, RBAC+audit, config UI, and RK3588 targeted tests passed; synced to GitHub 74a96e6.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
-                                                       "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest test",
+                                                       "edge_test_status":  "pending",
+                                                       "edge_test_command":  "",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "08d014f",
-                                                       "updated_at":  "2026-03-13T19:26:31+08:00"
+                                                       "github_sync_ref":  "",
+                                                       "updated_at":  "2026-03-13T20:33:04+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1076,6 +1076,16 @@
                         "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "08d014f"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T20:33:04+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 branding milestone delivered: configurable title/logo/login background with backend APIs, RBAC+audit, config UI, and RK3588 targeted tests passed; synced to GitHub 74a96e6.",
+                        "edge_test_status":  "pending",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }
