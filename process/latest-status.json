@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 16:12:00",
+    "time":  "2026-03-13 16:15:49",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase6",
     "event":  "phase_started",
     "actor":  "codex-agent",
-    "summary":  "Phase6 dispatch-source hardening synced: /dispatch and replay paths no longer silently fallback to test://frame when camera RTSP/source is missing; /test keeps synthetic fallback for diagnostics only. RK3588 edge regression passed (InferenceApiControllerSourceResolutionTest, InferenceApiControllerTest, ActiveCameraInferenceSchedulerServiceTest, InferenceReportBridgeServiceTest), runtime rebuilt/restarted, web_ui_live_smoke 35/35, alarm-stream annotation verify passed."
+    "summary":  "Phase6 source-policy guard added: new validate_dispatch_source_policy script verifies valid dispatch resolves RTSP source and invalid-camera dead-letter does not carry synthetic test://frame fallback. Guards passed on RK3588 and synced to GitHub (8551886)."
 }
