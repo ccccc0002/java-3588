@@ -110,6 +110,52 @@ def verify_play_url(play_url: str, timeout_sec: float = 10.0, http_open=None) ->
         }
 
 
+def _normalize_runtime_telemetry(data: Dict[str, Any]) -> Dict[str, Any]:
+    telemetry_status = str(data.get('telemetry_status', 'ok')).strip().lower()
+    if telemetry_status != 'degraded':
+        telemetry_status = 'ok'
+    telemetry_error = str(data.get('telemetry_error', '')).strip()
+    throttle_hint = data.get('throttle_hint') if isinstance(data.get('throttle_hint'), dict) else {}
+    try:
+        recommended_frame_stride = int(throttle_hint.get('recommended_frame_stride', 1))
+    except (TypeError, ValueError):
+        recommended_frame_stride = 1
+    if recommended_frame_stride <= 0:
+        recommended_frame_stride = 1
+    try:
+        suggested_min_dispatch_ms = int(throttle_hint.get('suggested_min_dispatch_ms', 1000))
+    except (TypeError, ValueError):
+        suggested_min_dispatch_ms = 1000
+    if suggested_min_dispatch_ms <= 0:
+        suggested_min_dispatch_ms = 1000
+    try:
+        concurrency_pressure = float(throttle_hint.get('concurrency_pressure', 1.0))
+    except (TypeError, ValueError):
+        concurrency_pressure = 1.0
+    if concurrency_pressure <= 0:
+        concurrency_pressure = 1.0
+    try:
+        concurrency_level = int(throttle_hint.get('concurrency_level', 0))
+    except (TypeError, ValueError):
+        concurrency_level = 0
+    if concurrency_level < 0:
+        concurrency_level = 0
+    strategy_source = str(throttle_hint.get('strategy_source', 'scheduler_feedback')).strip() or 'scheduler_feedback'
+    return {
+        'telemetry': {
+            'status': telemetry_status,
+            'error': telemetry_error,
+        },
+        'throttle_hint': {
+            'recommended_frame_stride': recommended_frame_stride,
+            'suggested_min_dispatch_ms': suggested_min_dispatch_ms,
+            'concurrency_pressure': round(concurrency_pressure, 4),
+            'concurrency_level': concurrency_level,
+            'strategy_source': strategy_source,
+        },
+    }
+
+
 def run_stack_smoke(
     runtime_api_url: str,
     bridge_url: str,
@@ -138,6 +184,8 @@ def run_stack_smoke(
     snapshot_data = snapshot_payload.get('data') if isinstance(snapshot_payload.get('data'), dict) else {}
     plan_payload = get_inference_plan(runtime_api_url, token, budget=budget, timeout_sec=timeout_sec)
     plan_data = plan_payload.get('data') if isinstance(plan_payload.get('data'), dict) else {}
+    snapshot_telemetry = _normalize_runtime_telemetry(snapshot_data)
+    plan_telemetry = _normalize_runtime_telemetry(plan_data)
     bridge_health = get_bridge_health(bridge_url, timeout_sec=timeout_sec)
 
     infer_request = runtime_bridge_infer_smoke.build_request_payload(
@@ -166,11 +214,15 @@ def run_stack_smoke(
                 'stream_count': int(snapshot_data.get('stream_count', len(streams) or 0)),
                 'ready_stream_count': int(snapshot_data.get('ready_stream_count', 0)),
                 'play_url': play_url,
+                'telemetry': snapshot_telemetry['telemetry'],
+                'throttle_hint': snapshot_telemetry['throttle_hint'],
             },
             'plan': {
                 'budget': plan_data.get('budget'),
                 'ready_stream_count': plan_data.get('ready_stream_count'),
                 'stream_count': plan_data.get('stream_count'),
+                'telemetry': plan_telemetry['telemetry'],
+                'throttle_hint': plan_telemetry['throttle_hint'],
             },
         },
         'bridge': {

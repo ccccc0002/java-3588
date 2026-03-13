@@ -62,8 +62,33 @@ class RuntimeStackSmokeTests(unittest.TestCase):
     def test_run_stack_smoke_combines_runtime_api_bridge_and_zlm_checks(self):
         with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'python_fallback'}}) as runtime_health_mock, \
              mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}) as token_mock, \
-             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}], 'stream_count': 1}}) as snapshot_mock, \
-             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {'ready_stream_count': 1}}) as plan_mock, \
+             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {
+                 'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}],
+                 'stream_count': 1,
+                 'ready_stream_count': 1,
+                 'telemetry_status': 'degraded',
+                 'telemetry_error': 'scheduler_summary_failed',
+                 'throttle_hint': {
+                     'recommended_frame_stride': 2,
+                     'suggested_min_dispatch_ms': 2400,
+                     'concurrency_pressure': 1.6,
+                     'concurrency_level': 3,
+                     'strategy_source': 'scheduler_feedback',
+                 },
+             }}) as snapshot_mock, \
+             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {
+                 'ready_stream_count': 1,
+                 'stream_count': 1,
+                 'telemetry_status': 'ok',
+                 'telemetry_error': '',
+                 'throttle_hint': {
+                     'recommended_frame_stride': 3,
+                     'suggested_min_dispatch_ms': 5200,
+                     'concurrency_pressure': 1.8,
+                     'concurrency_level': 4,
+                     'strategy_source': 'scheduler_feedback',
+                 },
+             }}) as plan_mock, \
              mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}) as bridge_health_mock, \
              mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [{'label': 'person'}], 'alerts': []}) as infer_mock, \
              mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 1, 'alert_count': 0, 'labels': ['person']}) as validate_mock, \
@@ -81,6 +106,18 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertEqual('token-1', result['runtime_api']['token']['token'])
         self.assertEqual(1, result['runtime_api']['snapshot']['stream_count'])
         self.assertEqual(1, result['runtime_api']['plan']['ready_stream_count'])
+        self.assertEqual('degraded', result['runtime_api']['snapshot']['telemetry']['status'])
+        self.assertEqual('scheduler_summary_failed', result['runtime_api']['snapshot']['telemetry']['error'])
+        self.assertEqual(2, result['runtime_api']['snapshot']['throttle_hint']['recommended_frame_stride'])
+        self.assertEqual(2400, result['runtime_api']['snapshot']['throttle_hint']['suggested_min_dispatch_ms'])
+        self.assertEqual(1.6, result['runtime_api']['snapshot']['throttle_hint']['concurrency_pressure'])
+        self.assertEqual(3, result['runtime_api']['snapshot']['throttle_hint']['concurrency_level'])
+        self.assertEqual('ok', result['runtime_api']['plan']['telemetry']['status'])
+        self.assertEqual('', result['runtime_api']['plan']['telemetry']['error'])
+        self.assertEqual(3, result['runtime_api']['plan']['throttle_hint']['recommended_frame_stride'])
+        self.assertEqual(5200, result['runtime_api']['plan']['throttle_hint']['suggested_min_dispatch_ms'])
+        self.assertEqual(1.8, result['runtime_api']['plan']['throttle_hint']['concurrency_pressure'])
+        self.assertEqual(4, result['runtime_api']['plan']['throttle_hint']['concurrency_level'])
         self.assertEqual('ok', result['bridge']['health']['status'])
         self.assertEqual(1, result['bridge']['infer']['detection_count'])
         self.assertTrue(result['zlm']['play_check']['readable'])
@@ -92,6 +129,31 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         infer_mock.assert_called_once()
         validate_mock.assert_called_once()
         play_mock.assert_called_once_with('http://127.0.0.1:1987/live/1.live.flv')
+
+    def test_run_stack_smoke_uses_telemetry_defaults_when_missing(self):
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}), \
+             mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}], 'stream_count': 1}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {'ready_stream_count': 1}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [], 'alerts': []}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 0, 'alert_count': 0, 'labels': []}), \
+             mock.patch.object(runtime_stack_smoke, 'verify_play_url', return_value={'http_status': 200, 'bytes_read': 8, 'readable': True}):
+            result = runtime_stack_smoke.run_stack_smoke(
+                runtime_api_url='http://127.0.0.1:18081',
+                bridge_url='http://127.0.0.1:19080',
+                bootstrap_token='edge-demo-bootstrap',
+                plugin_id='yolov8n',
+                source='test://frame',
+            )
+
+        self.assertEqual('ok', result['runtime_api']['snapshot']['telemetry']['status'])
+        self.assertEqual('', result['runtime_api']['snapshot']['telemetry']['error'])
+        self.assertEqual(1, result['runtime_api']['snapshot']['throttle_hint']['recommended_frame_stride'])
+        self.assertEqual(1000, result['runtime_api']['snapshot']['throttle_hint']['suggested_min_dispatch_ms'])
+        self.assertEqual(1.0, result['runtime_api']['snapshot']['throttle_hint']['concurrency_pressure'])
+        self.assertEqual(0, result['runtime_api']['snapshot']['throttle_hint']['concurrency_level'])
+        self.assertEqual('scheduler_feedback', result['runtime_api']['snapshot']['throttle_hint']['strategy_source'])
 
 
     def test_run_stack_smoke_rejects_unexpected_runtime_backend(self):
