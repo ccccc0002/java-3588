@@ -109,16 +109,16 @@
                               },
                    "Phase10":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-13T22:02:37+08:00",
-                                   "summary":  "Phase10 strict acceptance restored on RK3588: max-plan-suggested-min-dispatch-ms=1500 now passes (actual 1448) with scheduler-feedback throttle tuning and single-stream cap.",
+                                   "updated_at":  "2026-03-13T22:04:32+08:00",
+                                   "summary":  "Phase10 strict acceptance restored on RK3588: max-plan-suggested-min-dispatch-ms=1500 passes (actual 1448); code synced to GitHub.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,ActiveCameraInferenceSchedulerServiceTest test \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-strict-1500-after-cap",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "pending",
-                                                        "github_sync_ref":  "local-uncommitted",
-                                                        "updated_at":  "2026-03-13T22:02:37+08:00"
+                                                        "github_sync_status":  "synced",
+                                                        "github_sync_ref":  "0d4ddb6",
+                                                        "updated_at":  "2026-03-13T22:04:32+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -1234,6 +1234,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,ActiveCameraInferenceSchedulerServiceTest test \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-strict-1500-after-cap",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:04:32+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 strict acceptance restored on RK3588: max-plan-suggested-min-dispatch-ms=1500 passes (actual 1448); code synced to GitHub.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,ActiveCameraInferenceSchedulerServiceTest test \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --output-dir runtime/test-out/phase10-acceptance-strict-1500-after-cap",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "0d4ddb6"
                     }
                 ]
 }
