@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:30:43+08:00",
-                                   "summary":  "Phase10 runtime API resilience completed for snapshot/plan paths: exceptions now return structured 503 (runtime_snapshot_failed/inference_plan_failed) instead of 500; controller tests expanded; RK3588 targeted tests passed; GitHub synced to efdcb8e.",
+                                   "updated_at":  "2026-03-13T11:33:58+08:00",
+                                   "summary":  "Phase10 bridge telemetry convergence: rk3588 runtime bridge plan_summary now carries telemetry_status/error and throttle hints (stride/min-dispatch), offline fallback provides deterministic defaults; RK3588 python tests passed (10/10); GitHub synced to 1ca1b17.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "efdcb8e",
-                                                        "updated_at":  "2026-03-13T11:30:43+08:00"
+                                                        "github_sync_ref":  "1ca1b17",
+                                                        "updated_at":  "2026-03-13T11:33:58+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -649,6 +649,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "efdcb8e"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:33:58+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 bridge telemetry convergence: rk3588 runtime bridge plan_summary now carries telemetry_status/error and throttle hints (stride/min-dispatch), offline fallback provides deterministic defaults; RK3588 python tests passed (10/10); GitHub synced to 1ca1b17.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1ca1b17"
                     }
                 ]
 }
