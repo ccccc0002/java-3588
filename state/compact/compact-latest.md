@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 07:36:57
+- generated_at: 2026-03-14 07:55:12
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T07:55:11+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T07:55:00+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T07:36:56+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-14T07:36:42+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-14T07:34:28+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T07:34:28+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T07:34:17+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T07:30:30+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=session_compacted
-- 2026-03-14T07:30:30+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_checkpoint
-- 2026-03-14T07:30:19+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-065837-PHASE2-EXEC.json |
-| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | resource-gated phase11 handoff pass on RK3588 synced at f0ec100 |
-| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065838-PHASE2-EXEC.json |
-| 2026-03-14 06:58:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: resource-gated phase11 handoff pass on RK3588 synced at f0ec100 |
-| 2026-03-14 07:10:28 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-071028-PHASE2-EXEC.json |
-| 2026-03-14 07:10:28 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 statistics upgrade shipped: added /statistic/alarm/trend combined-filter API and trend chart with quick ranges (today/24h/7d/30d); validated on RK3588 with controller tests and UI smoke. |
-| 2026-03-14 07:10:38 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-071038-PHASE2-EXEC.json |
 | 2026-03-14 07:10:38 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Synced commit 90c5973 for statistics trend API/UI with RK3588 test+smoke pass. |
 | 2026-03-14 07:10:39 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-071038-PHASE2-EXEC.json |
 | 2026-03-14 07:10:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +53,11 @@
 | 2026-03-14 07:36:56 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-073656-PHASE2-EXEC.json |
 | 2026-03-14 07:36:56 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Acceptance-r3 pass: phase10/phase11 lanes both green after latest reliability patches. |
 | 2026-03-14 07:36:57 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-073656-PHASE2-EXEC.json |
+| 2026-03-14 07:36:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:36:57 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Acceptance-r3 pass: phase10/phase11 lanes both green after latest reliability patches. |
+| 2026-03-14 07:55:00 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-075500-PHASE2-EXEC.json |
+| 2026-03-14 07:55:01 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:55:01 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 reliability hardening: lane-file-only parallel sessions and quality/source-policy retry gates converged on RK3588. |
+| 2026-03-14 07:55:11 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-075511-PHASE2-EXEC.json |
+| 2026-03-14 07:55:11 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | RK3588 parallel convergence all-pass after adding retry gates, max-failed-iterations, and deduplicated lane-file-only sessions. |
+| 2026-03-14 07:55:11 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-075511-PHASE2-EXEC.json |

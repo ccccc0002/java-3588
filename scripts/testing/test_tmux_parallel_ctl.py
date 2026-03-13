@@ -47,6 +47,14 @@ class TmuxParallelCtlTests(unittest.TestCase):
             plugin_id='yolov8n',
             quality_iterations=20,
             quality_interval_ms=250,
+            quality_retry_attempts=3,
+            quality_retry_interval_ms=200,
+            quality_max_invalid_bbox_count=0,
+            quality_max_invalid_score_count=-1,
+            quality_max_empty_label_count=-1,
+            quality_max_failed_iterations=1,
+            source_policy_retry_attempts=3,
+            source_policy_retry_interval_ms=300,
             web_username='admin',
             web_password='admin123',
         )
@@ -54,8 +62,14 @@ class TmuxParallelCtlTests(unittest.TestCase):
         self.assertEqual(4, len(lanes))
         self.assertEqual('media', lanes[0][0])
         self.assertIn('--base-url http://127.0.0.1:18082', lanes[0][1])
+        self.assertIn('--retry-attempts 3', lanes[0][1])
+        self.assertIn('--retry-interval-ms 300', lanes[0][1])
         self.assertEqual('ai', lanes[1][0])
         self.assertIn('--plugin-id yolov8n', lanes[1][1])
+        self.assertIn('--retry-attempts 3', lanes[1][1])
+        self.assertIn('--retry-interval-ms 200', lanes[1][1])
+        self.assertIn('--max-invalid-bbox-count 0', lanes[1][1])
+        self.assertIn('--max-failed-iterations 1', lanes[1][1])
 
     def test_start_session_returns_tmux_missing_when_not_installed(self):
         args = tmux_parallel_ctl.parse_args(['start', '--session', 'phase2-parallel'])

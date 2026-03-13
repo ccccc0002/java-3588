@@ -2,7 +2,9 @@ import importlib.util
 import json
 import pathlib
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 
 MODULE_PATH = pathlib.Path(__file__).resolve().parent / "validate_dispatch_source_policy.py"
@@ -120,6 +122,45 @@ class ValidateDispatchSourcePolicyTests(unittest.TestCase):
                 timeout_sec=30,
                 http_open=fake_open,
             )
+
+    def test_main_retries_transient_failure_then_passes(self):
+        summary = {
+            "status": "passed",
+            "timestamp": "2026-03-14T00:00:00+00:00",
+            "dispatch_url": "http://127.0.0.1:18082/api/inference/dispatch",
+            "valid_case": {
+                "camera_id": 1,
+                "http_status": 200,
+                "response_code": 0,
+                "request_frame_source": "rtsp://demo/camera-1",
+            },
+            "invalid_case": {
+                "camera_id": 999999,
+                "http_status": 500,
+                "response_code": 500,
+                "dead_letter_frame_source": "",
+            },
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with mock.patch.object(
+                validate_dispatch_source_policy,
+                "verify_dispatch_source_policy",
+                side_effect=[RuntimeError("timeout"), summary],
+            ) as verify_mock:
+                exit_code = validate_dispatch_source_policy.main(
+                    [
+                        "--base-url",
+                        "http://127.0.0.1:18082",
+                        "--output-dir",
+                        temp_dir,
+                        "--retry-attempts",
+                        "2",
+                        "--retry-interval-ms",
+                        "0",
+                    ]
+                )
+                self.assertEqual(0, exit_code)
+                self.assertEqual(2, verify_mock.call_count)
 
 
 if __name__ == "__main__":

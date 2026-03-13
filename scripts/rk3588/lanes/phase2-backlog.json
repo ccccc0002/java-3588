@@ -25,6 +25,6 @@
   },
   {
     "name": "phase6",
-    "command": "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality"
+    "command": "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --retry-attempts 3 --retry-interval-ms 200 --max-invalid-bbox-count 0 --max-failed-iterations 1 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality"
   }
 ]

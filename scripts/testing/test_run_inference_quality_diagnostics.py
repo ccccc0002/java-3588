@@ -105,6 +105,29 @@ class InferenceQualityDiagnosticsTests(unittest.TestCase):
         )
         self.assertEqual("degraded", summary["status"])
 
+    def test_summarize_results_allows_limited_failed_iterations(self):
+        iteration_results = [
+            {"status": "failed", "error": "timeout"},
+            {
+                "status": "ok",
+                "metrics": {
+                    "latency_ms": 12.0,
+                    "detection_count": 1,
+                    "alert_count": 0,
+                    "invalid_bbox_count": 0,
+                    "invalid_score_count": 0,
+                    "empty_label_count": 0,
+                    "labels": ["person"],
+                },
+            },
+        ]
+        summary = run_inference_quality_diagnostics.summarize_results(
+            iteration_results,
+            expected_iterations=2,
+            max_failed_iterations=1,
+        )
+        self.assertEqual("passed", summary["status"])
+
     def test_normalize_optional_threshold(self):
         self.assertIsNone(run_inference_quality_diagnostics.normalize_optional_threshold(-1))
         self.assertIsNone(run_inference_quality_diagnostics.normalize_optional_threshold("x"))
@@ -176,6 +199,42 @@ class InferenceQualityDiagnosticsTests(unittest.TestCase):
             summary_path = pathlib.Path(temp_dir) / "summary.json"
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             self.assertEqual("degraded", summary["status"])
+
+    def test_main_retries_transient_failure_and_recovers(self):
+        calls = {"count": 0}
+
+        def flaky_post(*args, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise RuntimeError("transient timeout")
+            return {
+                "trace_id": "t1",
+                "latency_ms": 10,
+                "detections": [{"label": "person", "bbox": [1, 1, 3, 3], "score": 0.9}],
+                "alerts": [],
+            }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            exit_code = run_inference_quality_diagnostics.main(
+                [
+                    "--bridge-url",
+                    "http://127.0.0.1:19080",
+                    "--iterations",
+                    "1",
+                    "--retry-attempts",
+                    "2",
+                    "--retry-interval-ms",
+                    "0",
+                    "--output-dir",
+                    temp_dir,
+                ],
+                infer_runner=flaky_post,
+                sleep_fn=lambda *_: None,
+            )
+            self.assertEqual(exit_code, 0)
+            summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
+            self.assertEqual("passed", summary["status"])
+            self.assertEqual(1, summary["successful_iterations"])
 
 
 if __name__ == "__main__":

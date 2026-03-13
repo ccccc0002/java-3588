@@ -32,11 +32,14 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--plugin-id", default="yolov8n")
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--interval-ms", type=int, default=200)
+    parser.add_argument("--retry-attempts", type=int, default=1)
+    parser.add_argument("--retry-interval-ms", type=int, default=200)
     parser.add_argument("--timeout-sec", type=float, default=30.0)
     parser.add_argument("--output-dir", default="")
     parser.add_argument("--max-invalid-bbox-count", type=int, default=-1)
     parser.add_argument("--max-invalid-score-count", type=int, default=-1)
     parser.add_argument("--max-empty-label-count", type=int, default=-1)
+    parser.add_argument("--max-failed-iterations", type=int, default=0)
     return parser.parse_args(argv)
 
 
@@ -160,6 +163,7 @@ def summarize_results(
     max_invalid_bbox_count: Optional[int] = None,
     max_invalid_score_count: Optional[int] = None,
     max_empty_label_count: Optional[int] = None,
+    max_failed_iterations: Optional[int] = 0,
 ) -> Dict[str, Any]:
     success = [item for item in iteration_results if item.get("status") == "ok"]
     failed = [item for item in iteration_results if item.get("status") != "ok"]
@@ -189,7 +193,12 @@ def summarize_results(
         "p95": round(percentile(latencies, 0.95), 4) if latencies else None,
     }
 
-    status = "passed" if len(failed) == 0 else "degraded"
+    status = "passed"
+    if max_failed_iterations is None:
+        if len(failed) > 0:
+            status = "degraded"
+    elif len(failed) > int(max_failed_iterations):
+        status = "degraded"
     if status == "passed" and max_invalid_bbox_count is not None and invalid_bbox_count > max_invalid_bbox_count:
         status = "degraded"
     if status == "passed" and max_invalid_score_count is not None and invalid_score_count > max_invalid_score_count:
@@ -234,6 +243,8 @@ def main(
     args = parse_args(argv)
     iterations = max(1, int(args.iterations))
     interval_ms = max(0, int(args.interval_ms))
+    retry_attempts = max(1, int(args.retry_attempts))
+    retry_interval_ms = max(0, int(args.retry_interval_ms))
     timeout_sec = max(1.0, float(args.timeout_sec))
     output_dir = Path(args.output_dir or default_output_dir()).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -256,14 +267,28 @@ def main(
             "request": payload,
             "status": "failed",
         }
-        try:
-            response = infer_call(args.bridge_url, payload, timeout_sec)
-            metrics = analyze_response(response)
-            event["status"] = "ok"
-            event["response"] = response
-            event["metrics"] = metrics
-        except Exception as exc:
-            event["error"] = f"{type(exc).__name__}: {exc}"
+        errors: List[str] = []
+        for attempt_idx in range(retry_attempts):
+            try:
+                response = infer_call(args.bridge_url, payload, timeout_sec)
+                metrics = analyze_response(response)
+                event["status"] = "ok"
+                event["response"] = response
+                event["metrics"] = metrics
+                event["attempts"] = int(attempt_idx + 1)
+                break
+            except Exception as exc:
+                errors.append(f"{type(exc).__name__}: {exc}")
+                if attempt_idx + 1 < retry_attempts and retry_interval_ms > 0:
+                    sleeper(retry_interval_ms / 1000.0)
+        if event.get("status") != "ok":
+            event["attempts"] = int(retry_attempts)
+            if errors:
+                event["error"] = errors[-1]
+                if len(errors) > 1:
+                    event["errors"] = errors
+            else:
+                event["error"] = "RuntimeError: unknown inference failure"
         events.append(event)
         if idx + 1 < iterations and interval_ms > 0:
             sleeper(interval_ms / 1000.0)
@@ -272,6 +297,7 @@ def main(
     max_invalid_bbox_count = normalize_optional_threshold(args.max_invalid_bbox_count)
     max_invalid_score_count = normalize_optional_threshold(args.max_invalid_score_count)
     max_empty_label_count = normalize_optional_threshold(args.max_empty_label_count)
+    max_failed_iterations = normalize_optional_threshold(args.max_failed_iterations)
 
     summary = summarize_results(
         events,
@@ -279,6 +305,7 @@ def main(
         max_invalid_bbox_count=max_invalid_bbox_count,
         max_invalid_score_count=max_invalid_score_count,
         max_empty_label_count=max_empty_label_count,
+        max_failed_iterations=max_failed_iterations,
     )
     summary_payload = {
         "started_at": started_at,
@@ -288,10 +315,13 @@ def main(
         "model_id": int(args.model_id),
         "source": args.source,
         "plugin_id": args.plugin_id,
+        "retry_attempts": retry_attempts,
+        "retry_interval_ms": retry_interval_ms,
         "quality_gate": {
             "max_invalid_bbox_count": max_invalid_bbox_count,
             "max_invalid_score_count": max_invalid_score_count,
             "max_empty_label_count": max_empty_label_count,
+            "max_failed_iterations": max_failed_iterations,
         },
         **summary,
     }

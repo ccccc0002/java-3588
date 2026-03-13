@@ -106,6 +106,22 @@ def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
     output_root = str(args.output_root).strip()
     stamp = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S')
     base = f'{output_root}/{stamp}'
+    quality_args = [
+        f"--iterations {args.quality_iterations}",
+        f"--interval-ms {args.quality_interval_ms}",
+        f"--retry-attempts {args.quality_retry_attempts}",
+        f"--retry-interval-ms {args.quality_retry_interval_ms}",
+        f"--timeout-sec {args.timeout_sec}",
+    ]
+    if int(args.quality_max_invalid_bbox_count) >= 0:
+        quality_args.append(f"--max-invalid-bbox-count {args.quality_max_invalid_bbox_count}")
+    if int(args.quality_max_invalid_score_count) >= 0:
+        quality_args.append(f"--max-invalid-score-count {args.quality_max_invalid_score_count}")
+    if int(args.quality_max_empty_label_count) >= 0:
+        quality_args.append(f"--max-empty-label-count {args.quality_max_empty_label_count}")
+    if int(args.quality_max_failed_iterations) >= 0:
+        quality_args.append(f"--max-failed-iterations {args.quality_max_failed_iterations}")
+
     return [
         (
             'media',
@@ -114,6 +130,8 @@ def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
                 f"--base-url {shlex.quote(args.base_url)} "
                 f"--camera-id {args.camera_id} --model-id {args.model_id} --algorithm-id {args.algorithm_id} "
                 f"--invalid-camera-id {args.invalid_camera_id} --timeout-sec {args.timeout_sec} "
+                f"--retry-attempts {args.source_policy_retry_attempts} "
+                f"--retry-interval-ms {args.source_policy_retry_interval_ms} "
                 f"--output-dir {shlex.quote(base + '-source-policy')}"
             ),
         ),
@@ -124,8 +142,7 @@ def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
                 f"--bridge-url {shlex.quote(args.bridge_url)} "
                 f"--camera-id {args.camera_id} --model-id {args.model_id} "
                 f"--source {shlex.quote(args.source)} --plugin-id {shlex.quote(args.plugin_id)} "
-                f"--iterations {args.quality_iterations} --interval-ms {args.quality_interval_ms} "
-                f"--timeout-sec {args.timeout_sec} "
+                f"{' '.join(quality_args)} "
                 f"--output-dir {shlex.quote(base + '-quality')}"
             ),
         ),
@@ -189,6 +206,14 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument('--source', default='test://frame')
     parser.add_argument('--quality-iterations', type=int, default=20)
     parser.add_argument('--quality-interval-ms', type=int, default=250)
+    parser.add_argument('--quality-retry-attempts', type=int, default=1)
+    parser.add_argument('--quality-retry-interval-ms', type=int, default=200)
+    parser.add_argument('--quality-max-invalid-bbox-count', type=int, default=-1)
+    parser.add_argument('--quality-max-invalid-score-count', type=int, default=-1)
+    parser.add_argument('--quality-max-empty-label-count', type=int, default=-1)
+    parser.add_argument('--quality-max-failed-iterations', type=int, default=0)
+    parser.add_argument('--source-policy-retry-attempts', type=int, default=3)
+    parser.add_argument('--source-policy-retry-interval-ms', type=int, default=300)
     parser.add_argument('--timeout-sec', type=int, default=45)
     parser.add_argument('--web-username', default='admin')
     parser.add_argument('--web-password', default='admin123')

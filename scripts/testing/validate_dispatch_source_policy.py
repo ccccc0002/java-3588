@@ -155,6 +155,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--algorithm-id", type=int, default=1)
     parser.add_argument("--invalid-camera-id", type=int, default=DEFAULT_INVALID_CAMERA_ID)
     parser.add_argument("--timeout-sec", type=float, default=DEFAULT_TIMEOUT_SEC)
+    parser.add_argument("--retry-attempts", type=int, default=1)
+    parser.add_argument("--retry-interval-ms", type=int, default=300)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     return parser.parse_args(argv)
 
@@ -171,20 +173,41 @@ def write_summary(output_dir: Path, summary: Dict[str, Any]) -> Path:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
+    retry_attempts = max(1, int(args.retry_attempts))
+    retry_interval_ms = max(0, int(args.retry_interval_ms))
+    last_error: Optional[Exception] = None
+    errors = []
     try:
-        summary = verify_dispatch_source_policy(
-            base_url=args.base_url,
-            camera_id=args.camera_id,
-            model_id=args.model_id,
-            algorithm_id=args.algorithm_id,
-            invalid_camera_id=args.invalid_camera_id,
-            timeout_sec=args.timeout_sec,
-        )
+        summary: Optional[Dict[str, Any]] = None
+        for attempt_idx in range(retry_attempts):
+            try:
+                summary = verify_dispatch_source_policy(
+                    base_url=args.base_url,
+                    camera_id=args.camera_id,
+                    model_id=args.model_id,
+                    algorithm_id=args.algorithm_id,
+                    invalid_camera_id=args.invalid_camera_id,
+                    timeout_sec=args.timeout_sec,
+                )
+                summary["attempts"] = int(attempt_idx + 1)
+                break
+            except Exception as exc:  # noqa: PERF203
+                last_error = exc
+                errors.append(str(exc))
+                if attempt_idx + 1 < retry_attempts and retry_interval_ms > 0:
+                    time.sleep(retry_interval_ms / 1000.0)
+
+        if summary is None:
+            raise RuntimeError(str(last_error) if last_error is not None else "unknown dispatch validation failure")
+
         summary_path = write_summary(Path(args.output_dir), summary)
         print(json.dumps({"status": "passed", "summary_path": str(summary_path), "summary": summary}, ensure_ascii=True))
         return 0
     except Exception as exc:
-        print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=True))
+        payload = {"status": "failed", "attempts": retry_attempts, "error": str(exc)}
+        if errors:
+            payload["errors"] = errors
+        print(json.dumps(payload, ensure_ascii=True))
         return 1
 
 
