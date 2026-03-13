@@ -86,6 +86,43 @@ class TmuxParallelCtlTests(unittest.TestCase):
         self.assertEqual(2, len(lanes))
         self.assertEqual(('phase7', 'mvn -Dtest=ConfigControllerTest test'), lanes[0])
 
+    def test_parse_lane_exit_code_uses_latest_marker(self):
+        pane_text = '\n'.join(
+            [
+                '[INFO] lane running',
+                '[lane-exit:1]',
+                '[INFO] retry',
+                '[lane-exit:0]',
+            ]
+        )
+        self.assertEqual(0, tmux_parallel_ctl.parse_lane_exit_code(pane_text))
+        self.assertIsNone(tmux_parallel_ctl.parse_lane_exit_code('no marker'))
+
+    def test_report_session_aggregates_lane_statuses(self):
+        windows = [
+            {'name': 'phase7', 'current_command': 'bash', 'pane_dead': False},
+            {'name': 'phase8', 'current_command': 'bash', 'pane_dead': False},
+            {'name': 'phase9', 'current_command': 'bash', 'pane_dead': False},
+        ]
+        lane_reports = [
+            {'name': 'phase7', 'lane_exit': 0, 'lane_status': 'passed', 'tail': ['[lane-exit:0]']},
+            {'name': 'phase8', 'lane_exit': 1, 'lane_status': 'failed', 'tail': ['[lane-exit:1]']},
+            {'name': 'phase9', 'lane_exit': None, 'lane_status': 'running', 'tail': []},
+        ]
+
+        with mock.patch.object(tmux_parallel_ctl, 'tmux_available', return_value=True), \
+             mock.patch.object(tmux_parallel_ctl, 'session_exists', return_value=True), \
+             mock.patch.object(tmux_parallel_ctl, 'list_windows', return_value=windows), \
+             mock.patch.object(tmux_parallel_ctl, 'capture_window_report', side_effect=lane_reports):
+            report = tmux_parallel_ctl.report_session('phase2-parallel', 10)
+
+        self.assertEqual('running', report['status'])
+        self.assertEqual(3, report['lane_count'])
+        self.assertEqual(1, report['passed_count'])
+        self.assertEqual(1, report['failed_count'])
+        self.assertEqual(1, report['running_count'])
+        self.assertEqual('phase8', report['lanes'][1]['name'])
+
 
 if __name__ == '__main__':
     unittest.main()

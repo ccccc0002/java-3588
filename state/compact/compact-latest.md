@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 22:12:07
+- generated_at: 2026-03-13 22:16:49
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T22:16:49+08:00 | task=PHASE2-EXEC | stage=Phase0 | event=session_compacted
+- 2026-03-13T22:16:38+08:00 | task=PHASE2-EXEC | stage=Phase0 | event=phase_completed
 - 2026-03-13T22:12:06+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T22:11:56+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T22:04:46+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T22:04:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T22:02:47+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T22:02:38+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
-- 2026-03-13T21:45:49+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T21:45:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 21:39:15 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 nextwave ui smoke converged on RK3588: initial lane failed due 18082 app down; after java_app_ctl start, web_ui_live_smoke passed 35/35. |
-| 2026-03-13 21:39:28 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213928-PHASE2-EXEC.json |
-| 2026-03-13 21:39:28 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 nextwave api regression lane passed on RK3588 (RuntimeApiController/Service + InferenceApiController + Scheduler tests). |
-| 2026-03-13 21:39:40 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-213939-PHASE2-EXEC.json |
-| 2026-03-13 21:39:40 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | nextwave parallel session: phase9 api regression pass, phase6 quality/source-policy pass, phase8 ui-smoke pass after java app start; root cause of initial failures is missing 18082 app process. |
-| 2026-03-13 21:39:40 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213940-PHASE2-EXEC.json |
-| 2026-03-13 21:39:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 21:39:40 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: nextwave parallel session: phase9 api regression pass, phase6 quality/source-policy pass, phase8 ui-smoke pass after java app start; root cause of initial failures is missing 18082 app process. |
 | 2026-03-13 21:45:35 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-214534-PHASE2-EXEC.json |
 | 2026-03-13 21:45:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 21:45:35 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | Phase10 acceptance rerun on RK3588 with live RTSP: strict gate max-plan-suggested-min-dispatch-ms=1500 failed (actual 5000); RTSP-calibrated gate 6000 passed end-to-end (4/4). |
@@ -61,3 +53,11 @@
 | 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-221206-PHASE2-EXEC.json |
 | 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Parallel lanes completed; flaky checks stabilized by isolated rerun: Phase8 35/35, Phase10 strict gate pass@1454ms. |
 | 2026-03-13 22:12:06 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-221206-PHASE2-EXEC.json |
+| 2026-03-13 22:12:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:12:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Parallel lanes completed; flaky checks stabilized by isolated rerun: Phase8 35/35, Phase10 strict gate pass@1454ms. |
+| 2026-03-13 22:16:38 | PHASE2-EXEC | Phase0 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-221638-PHASE2-EXEC.json |
+| 2026-03-13 22:16:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:16:38 | PHASE2-EXEC | Phase0 | phase_completed | codex-agent | Parallel orchestration tooling upgraded: tmux_parallel_ctl adds report command for per-lane pass/fail/running aggregation and tail snippets; supports automated convergence after multi-lane runs. |
+| 2026-03-13 22:16:48 | PHASE2-EXEC | Phase0 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-221648-PHASE2-EXEC.json |
+| 2026-03-13 22:16:48 | PHASE2-EXEC | Phase0 | phase_checkpoint | codex-agent | tmux report capability landed; local+RK3588 unittest pass. |
+| 2026-03-13 22:16:49 | PHASE2-EXEC | Phase0 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-221648-PHASE2-EXEC.json |

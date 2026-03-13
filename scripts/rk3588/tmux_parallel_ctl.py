@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import re
 import shlex
 import shutil
 import subprocess
@@ -69,6 +70,36 @@ def list_windows(session: str) -> List[Dict[str, object]]:
             }
         )
     return windows
+
+
+def parse_lane_exit_code(pane_text: str) -> Optional[int]:
+    text = str(pane_text or '')
+    matches = re.findall(r'\[lane-exit:(-?\d+)\]', text)
+    if not matches:
+        return None
+    try:
+        return int(matches[-1])
+    except ValueError:
+        return None
+
+
+def capture_window_report(session: str, window_name: str, tail_lines: int) -> Dict[str, object]:
+    result = run_tmux(['capture-pane', '-pt', f'{session}:{window_name}', '-S', '-400'])
+    pane_text = result.stdout or ''
+    lane_exit = parse_lane_exit_code(pane_text)
+    tail_count = max(int(tail_lines), 0)
+    tail = pane_text.splitlines()[-tail_count:] if tail_count > 0 else []
+
+    lane_status = 'running'
+    if lane_exit is not None:
+        lane_status = 'passed' if lane_exit == 0 else 'failed'
+
+    return {
+        'name': window_name,
+        'lane_exit': lane_exit,
+        'lane_status': lane_status,
+        'tail': tail,
+    }
 
 
 def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
@@ -138,13 +169,14 @@ def load_lanes_from_file(path: Path) -> List[Tuple[str, str]]:
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Control tmux-based parallel lanes')
-    parser.add_argument('command', choices=['start', 'status', 'stop', 'list'])
+    parser.add_argument('command', choices=['start', 'status', 'stop', 'list', 'report'])
     parser.add_argument('--session', default='phase2-parallel')
     parser.add_argument('--workdir', default='.')
     parser.add_argument('--force', action='store_true', default=False)
     parser.add_argument('--lane', action='append', default=[])
     parser.add_argument('--lane-file', default='')
     parser.add_argument('--with-default-lanes', action='store_true', default=False)
+    parser.add_argument('--tail-lines', type=int, default=10)
 
     parser.add_argument('--base-url', default='http://127.0.0.1:18082')
     parser.add_argument('--bridge-url', default='http://127.0.0.1:19080')
@@ -222,6 +254,37 @@ def stop_session(session: str) -> Dict[str, object]:
     return {'status': 'stopped' if result.returncode == 0 else 'stop_failed', 'session': session}
 
 
+def report_session(session: str, tail_lines: int) -> Dict[str, object]:
+    if not tmux_available():
+        return {'status': 'tmux_missing', 'session': session}
+    if not session_exists(session):
+        return {'status': 'not_running', 'session': session, 'lane_count': 0, 'lanes': []}
+
+    windows = list_windows(session)
+    lanes = [capture_window_report(session, str(item.get('name', '')), tail_lines) for item in windows]
+
+    passed_count = sum(1 for lane in lanes if lane.get('lane_status') == 'passed')
+    failed_count = sum(1 for lane in lanes if lane.get('lane_status') == 'failed')
+    running_count = sum(1 for lane in lanes if lane.get('lane_status') == 'running')
+
+    if running_count > 0:
+        status = 'running'
+    elif failed_count > 0:
+        status = 'failed'
+    else:
+        status = 'passed'
+
+    return {
+        'status': status,
+        'session': session,
+        'lane_count': len(lanes),
+        'passed_count': passed_count,
+        'failed_count': failed_count,
+        'running_count': running_count,
+        'lanes': lanes,
+    }
+
+
 def list_sessions() -> Dict[str, object]:
     if not tmux_available():
         return {'status': 'tmux_missing', 'sessions': []}
@@ -238,10 +301,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         result = status_session(args.session)
     elif args.command == 'stop':
         result = stop_session(args.session)
+    elif args.command == 'report':
+        result = report_session(args.session, args.tail_lines)
     else:
         result = list_sessions()
     print(json.dumps(result, ensure_ascii=True))
-    return 0 if result.get('status') in {'started', 'already_running', 'running', 'stopped', 'not_running', 'listed'} else 1
+    return 0 if result.get('status') in {'started', 'already_running', 'running', 'stopped', 'not_running', 'listed', 'passed', 'failed'} else 1
 
 
 if __name__ == '__main__':
