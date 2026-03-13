@@ -71,6 +71,7 @@
 
         .video-list-wrapper { flex: 1; min-height: 300px; padding: 0 12px 10px; }
         #video-list { height: 100%; display: grid; gap: 8px; }
+        #video-list > div { min-width: 0; min-height: 0; }
 
         .rel > a { display: block; width: 100%; height: 100%; text-decoration: none; }
         .stream-panel {
@@ -82,7 +83,10 @@
             align-items: center;
             font-size: 14px;
             color: #7f98bf;
+            position: relative;
+            overflow: hidden;
         }
+        .stream-panel video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
         .rel { position: relative; border: 1px solid rgba(95, 173, 255, .35); border-radius: 10px; overflow: hidden; }
         .cv { position: absolute; top: 0; left: 0; border: 0; }
         .stop-btn { position: absolute; right: 8px; bottom: 8px; color: #ffadb5; z-index: 3; }
@@ -198,7 +202,7 @@
                 </div>
 
                 <div class="video-list-wrapper" id="video-list-wrapper">
-                    <div class="layui-row layui-col-space10" id="video-list"></div>
+                    <div id="video-list"></div>
                 </div>
             </div>
             <div class="alarm-card">
@@ -337,6 +341,36 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     function setGridActive(n) {
         $('#btns .layui-btn').removeClass('active');
         $('#grid_' + n).addClass('active');
+    }
+
+    function getGridContainerIds() {
+        var ids = [];
+        $('#video-list > div').each(function() {
+            var wrapperId = $(this).attr('id') || '';
+            if (wrapperId.indexOf('wrapper_') === 0) {
+                ids.push(wrapperId.replace('wrapper_', ''));
+            }
+        });
+        return ids;
+    }
+
+    function getPlayingCameraIdsByGridOrder() {
+        var cameraIds = [];
+        var containerIds = getGridContainerIds();
+        for (var i = 0; i < containerIds.length; i++) {
+            var cameraId = containerMap.get(containerIds[i]);
+            if (cameraId) cameraIds.push(cameraId);
+        }
+        return cameraIds;
+    }
+
+    function restorePlayingByCameraIds(cameraIds) {
+        if (!Array.isArray(cameraIds) || cameraIds.length === 0) return;
+        var containerIds = getGridContainerIds();
+        var size = Math.min(containerIds.length, cameraIds.length);
+        for (var i = 0; i < size; i++) {
+            window.selectRtsp(containerIds[i], cameraIds[i]);
+        }
     }
 
     function updateGridGeometry() {
@@ -519,6 +553,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     window.show = function(nextCols) {
         if (!validGrid(nextCols)) nextCols = 1;
 
+        var oldPlayingCameraIds = getPlayingCameraIdsByGridOrder();
+
         playerMap.forEach(function(player, containerId) {
             window.closeVideo(containerId);
         });
@@ -542,6 +578,12 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                 '  <div class="stop-btn"><a href="javascript:void(0);" onclick="handleCloseByHand(\'' + id + '\');"><i class="layui-icon layui-icon-close-fill"></i></a></div>' +
                 '</div>';
             $('#video-list').append(html);
+        }
+
+        if (oldPlayingCameraIds.length > 0) {
+            setTimeout(function() {
+                restorePlayingByCameraIds(oldPlayingCameraIds);
+            }, 60);
         }
     };
 
@@ -701,11 +743,42 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     };
 
     window.handleStaticsTpl = function() {
-        $.post('/stream/statics/algorithms', {}, function(res) {
-            if (res.code === 0) {
-                var html = template('statics-item-tpl', { datas: res.data });
-                $('#statics-items').html(html);
+        var renderStats = function(items) {
+            if (!Array.isArray(items) || items.length === 0) {
+                $('#statics-items').html('<div>未配置统计算法，请点击统计配置</div>');
+                return;
             }
+            var html = template('statics-item-tpl', { datas: items });
+            $('#statics-items').html(html);
+        };
+
+        $.post('/stream/statics/algorithms', {}, function(res) {
+            var items = [];
+            if (res && res.code === 0 && Array.isArray(res.data)) items = res.data;
+            if (items.length > 0) {
+                renderStats(items);
+                return;
+            }
+
+            $.post('/stream/dashboard/summary', {}, function(summaryRes) {
+                var pie = [];
+                if (summaryRes && summaryRes.code === 0 && summaryRes.data && Array.isArray(summaryRes.data.pie)) {
+                    pie = summaryRes.data.pie;
+                }
+                var fallback = [];
+                for (var i = 0; i < pie.length; i++) {
+                    fallback.push({
+                        id: 'summary_' + i,
+                        name: pie[i].name || ('类别' + (i + 1)),
+                        staticsFlagVal: pie[i].value || 0
+                    });
+                }
+                renderStats(fallback);
+            }).fail(function() {
+                renderStats([]);
+            });
+        }).fail(function() {
+            renderStats([]);
         });
     };
 
