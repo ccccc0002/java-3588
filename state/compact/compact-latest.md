@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 13:35:35
+- generated_at: 2026-03-13 13:36:17
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,6 +10,7 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T13:36:17+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-13T13:35:35+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T13:35:35+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-13T13:35:33+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
@@ -17,13 +18,9 @@
 - 2026-03-13T13:32:57+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-13T13:31:44+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-13T13:31:27+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-13T13:27:29+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 13:20:13 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 gate traceability hardened: run_linux_gates now parses runtime_stack_smoke stdout JSON when stage summary file is absent, preserving structured acceptance payload in stage summary; tests expanded and RK3588 regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 10/10); GitHub synced to 12d95e4. |
-| 2026-03-13 13:20:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 13:20:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-132028-PHASE2-EXEC.json |
 | 2026-03-13 13:20:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 12d95e4: linux gate runner now captures runtime_stack_smoke stdout JSON as structured stage summary fallback, improving acceptance evidence traceability; RK3588 regressions passed (10/10). |
 | 2026-03-13 13:20:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-132028-PHASE2-EXEC.json |
 | 2026-03-13 13:20:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +58,6 @@
 | 2026-03-13 13:35:35 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-133534-PHASE2-EXEC.json |
 | 2026-03-13 13:35:35 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 completion checkpoint: long-run RK3588 handoff evidence saved to state/local/phase11-handoff-20260313-133407-long-*.json. |
 | 2026-03-13 13:35:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-133535-PHASE2-EXEC.json |
+| 2026-03-13 13:35:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:35:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 completion checkpoint: long-run RK3588 handoff evidence saved to state/local/phase11-handoff-20260313-133407-long-*.json. |
+| 2026-03-13 13:36:17 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-133617-PHASE2-EXEC.json |
