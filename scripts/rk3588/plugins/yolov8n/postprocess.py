@@ -25,6 +25,7 @@ def postprocess(raw_outputs, request_payload, runtime_plan, package_context, run
     prep_meta = raw_outputs.get('prep_meta') or {}
     source_meta = raw_outputs.get('source_meta') or {}
     restored = restore_boxes(boxes, prep_meta)
+    restored, classes, scores = normalize_and_filter_boxes(restored, classes, scores)
     detections = []
     labels = runtime_state.get('labels') or raw_outputs.get('labels') or []
     for index in range(len(restored)):
@@ -77,6 +78,8 @@ def build_annotated_frame_payload(image_bgr, detections):
         y1 = max(0, min(y1, annotated.shape[0] - 1))
         x2 = max(0, min(x2, annotated.shape[1] - 1))
         y2 = max(0, min(y2, annotated.shape[0] - 1))
+        if x2 <= x1 or y2 <= y1:
+            continue
         cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 0, 255), line_width)
         label = build_label_text(detection)
         if label:
@@ -249,6 +252,41 @@ def restore_boxes(boxes_xyxy, prep_meta):
     restored[:, [0, 2]] = np.clip(restored[:, [0, 2]], 0.0, max(original_width - 1.0, 0.0))
     restored[:, [1, 3]] = np.clip(restored[:, [1, 3]], 0.0, max(original_height - 1.0, 0.0))
     return restored
+
+
+def normalize_and_filter_boxes(boxes_xyxy, classes, scores):
+    boxes_xyxy = np.asarray(boxes_xyxy, dtype=np.float32).reshape((-1, 4))
+    classes = np.asarray(classes, dtype=np.int32).reshape((-1,))
+    scores = np.asarray(scores, dtype=np.float32).reshape((-1,))
+    if boxes_xyxy.size == 0:
+        return (
+            np.empty((0, 4), dtype=np.float32),
+            np.empty((0,), dtype=np.int32),
+            np.empty((0,), dtype=np.float32),
+        )
+    if len(boxes_xyxy) != len(classes) or len(boxes_xyxy) != len(scores):
+        count = min(len(boxes_xyxy), len(classes), len(scores))
+        boxes_xyxy = boxes_xyxy[:count]
+        classes = classes[:count]
+        scores = scores[:count]
+    x1 = np.minimum(boxes_xyxy[:, 0], boxes_xyxy[:, 2])
+    y1 = np.minimum(boxes_xyxy[:, 1], boxes_xyxy[:, 3])
+    x2 = np.maximum(boxes_xyxy[:, 0], boxes_xyxy[:, 2])
+    y2 = np.maximum(boxes_xyxy[:, 1], boxes_xyxy[:, 3])
+    normalized = np.stack((x1, y1, x2, y2), axis=1).astype(np.float32)
+    keep = (
+        np.isfinite(normalized).all(axis=1)
+        & np.isfinite(scores)
+        & ((normalized[:, 2] - normalized[:, 0]) > 0.0)
+        & ((normalized[:, 3] - normalized[:, 1]) > 0.0)
+    )
+    if not np.any(keep):
+        return (
+            np.empty((0, 4), dtype=np.float32),
+            np.empty((0,), dtype=np.int32),
+            np.empty((0,), dtype=np.float32),
+        )
+    return normalized[keep], classes[keep], scores[keep]
 
 
 def nms(boxes, scores, class_ids, threshold):

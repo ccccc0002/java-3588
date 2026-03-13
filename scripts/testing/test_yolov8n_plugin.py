@@ -707,6 +707,51 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertTrue(result['detections'][0]['alert'])
         self.assertEqual(len(result['alerts']), 1)
 
+    def test_postprocess_filters_invalid_boxes_after_restore(self):
+        original_decode_outputs = yolov8n_postprocess.decode_outputs
+        original_restore_boxes = yolov8n_postprocess.restore_boxes
+        try:
+            yolov8n_postprocess.decode_outputs = lambda outputs, obj_threshold, nms_threshold, input_size: (
+                yolov8n_postprocess.np.array([
+                    [0.0, 0.0, 10.0, 10.0],
+                    [12.0, 5.0, 5.0, 15.0],
+                    [3.0, 3.0, 3.0, 8.0],
+                ], dtype=yolov8n_postprocess.np.float32),
+                yolov8n_postprocess.np.array([0, 0, 0], dtype=yolov8n_postprocess.np.int32),
+                yolov8n_postprocess.np.array([0.9, 0.8, 0.7], dtype=yolov8n_postprocess.np.float32),
+            )
+            yolov8n_postprocess.restore_boxes = lambda boxes, prep_meta: boxes
+            runtime_state = {
+                'input_size': (640, 640),
+                'labels': ['person'],
+                'label_aliases_zh': {'person': '\u4eba\u5458'},
+                'enabled_class_ids': set(),
+                'enabled_labels': set(),
+                'alert_labels': set(),
+            }
+            raw_outputs = {
+                'outputs': [object()],
+                'obj_threshold': 0.25,
+                'nms_threshold': 0.45,
+                'prep_meta': {},
+                'source_meta': {'source_kind': 'image', 'resolved_source': 'test://frame'},
+                'model_path': '/tmp/demo.rknn',
+                'plan_ready_stream_count': 0,
+            }
+
+            result = yolov8n_postprocess.postprocess(raw_outputs, {}, {}, None, runtime_state)
+        finally:
+            yolov8n_postprocess.decode_outputs = original_decode_outputs
+            yolov8n_postprocess.restore_boxes = original_restore_boxes
+
+        self.assertEqual(2, len(result['detections']))
+        first_box = result['detections'][0]['bbox']
+        second_box = result['detections'][1]['bbox']
+        self.assertLess(first_box[0], first_box[2])
+        self.assertLess(first_box[1], first_box[3])
+        self.assertLess(second_box[0], second_box[2])
+        self.assertLess(second_box[1], second_box[3])
+
     def test_decode_outputs_supports_rknn_branch_layout(self):
         np = yolov8n_postprocess.np
 
