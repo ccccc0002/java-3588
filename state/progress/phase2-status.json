@@ -45,16 +45,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T08:47:04+08:00",
-                                  "summary":  "Phase8 algorithm controller audit hardening: save/delete permission-denied branches now log operation events; deny-path tests updated; RK3588 targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-13T08:49:45+08:00",
+                                  "summary":  "Phase8 model controller audit hardening: save/start/delete/merge/rename permission-denied branches now emit operation logs; deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "f065822",
-                                                       "updated_at":  "2026-03-13T08:47:04+08:00"
+                                                       "github_sync_ref":  "9fa8ef6",
+                                                       "updated_at":  "2026-03-13T08:49:45+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -381,6 +381,16 @@
                         "edge_test_command":  "mvn -Dtest=AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "f065822"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T08:49:45+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 model controller audit hardening: save/start/delete/merge/rename permission-denied branches now emit operation logs; deny-path tests expanded; RK3588 targeted regression passed; milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "9fa8ef6"
                     }
                 ]
 }
