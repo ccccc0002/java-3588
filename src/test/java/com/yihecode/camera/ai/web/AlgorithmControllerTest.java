@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -53,6 +54,7 @@ class AlgorithmControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(algorithmService, never()).saveOrUpdate(any());
+        verify(operationLogService).record(eq("algorithm:save"), eq("algorithmId=null"), eq(false), eq("permission denied"), eq(""));
     }
 
     @Test
@@ -64,5 +66,6 @@ class AlgorithmControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(algorithmService, never()).removeById(anyLong());
+        verify(operationLogService).record(eq("algorithm:delete"), eq("algorithmId=1"), eq(false), eq("permission denied"), eq(""));
     }
 }

@@ -470,6 +470,7 @@ public class AlgorithmController {
     @ResponseBody
     public JsonResult save(Algorithm algorithm) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("algorithm:save", "algorithmId=" + (algorithm == null ? null : algorithm.getId()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (StrUtil.isBlank(algorithm.getName())) {
@@ -522,6 +523,7 @@ public class AlgorithmController {
     @ResponseBody
     public JsonResult delete(Long id) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("algorithm:delete", "algorithmId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (!this.cameraAlgorithmService.listByAlgorithm(id).isEmpty()) {
