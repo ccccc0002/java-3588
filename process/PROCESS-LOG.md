@@ -837,3 +837,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:55:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-115539-PHASE2-EXEC.json |
 | 2026-03-13 11:55:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:55:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at db6c94b: runtime_stack_smoke now supports plan pressure/min-dispatch threshold gates for hard acceptance criteria; RK3588 python regression passed (9/9). |
+| 2026-03-13 11:58:14 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-115814-PHASE2-EXEC.json |
+| 2026-03-13 11:58:14 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 acceptance gates further tightened: runtime_stack_smoke now supports minimum ready_stream_count checks for snapshot and plan, allowing direct edge capacity pass/fail criteria; tests expanded and RK3588 python test passed (11/11); GitHub synced to 452eaa1. |
+| 2026-03-13 11:58:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:58:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-115828-PHASE2-EXEC.json |
+| 2026-03-13 11:58:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 452eaa1: runtime_stack_smoke now enforces min ready_stream_count gates for snapshot/plan, enabling stricter capacity acceptance on RK3588; python regression passed (11/11). |
+| 2026-03-13 11:58:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-115828-PHASE2-EXEC.json |
+| 2026-03-13 11:58:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:58:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 452eaa1: runtime_stack_smoke now enforces min ready_stream_count gates for snapshot/plan, enabling stricter capacity acceptance on RK3588; python regression passed (11/11). |
