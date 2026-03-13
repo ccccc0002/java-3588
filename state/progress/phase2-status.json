@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:41:14+08:00",
-                                   "summary":  "Phase10 capacity observability enhancement: rk3588 runtime bridge plan_summary now includes strategy_source, concurrency_pressure and concurrency_level with deterministic offline defaults; RK3588 python tests passed (10/10); GitHub synced to 32fc0c3.",
+                                   "updated_at":  "2026-03-13T11:43:55+08:00",
+                                   "summary":  "Phase10 smoke validation uplift: runtime_bridge_infer_smoke now summarizes telemetry status/error + strategy_source + concurrency pressure/level and dispatch hints from plan_summary; added dedicated unit tests; RK3588 python regressions passed (13/13); GitHub synced to 057666b.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_bridge_infer_smoke.py scripts/testing/test_rk3588_runtime_bridge.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "32fc0c3",
-                                                        "updated_at":  "2026-03-13T11:41:14+08:00"
+                                                        "github_sync_ref":  "057666b",
+                                                        "updated_at":  "2026-03-13T11:43:55+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -669,6 +669,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "32fc0c3"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:43:55+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 smoke validation uplift: runtime_bridge_infer_smoke now summarizes telemetry status/error + strategy_source + concurrency pressure/level and dispatch hints from plan_summary; added dedicated unit tests; RK3588 python regressions passed (13/13); GitHub synced to 057666b.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_bridge_infer_smoke.py scripts/testing/test_rk3588_runtime_bridge.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "057666b"
                     }
                 ]
 }
