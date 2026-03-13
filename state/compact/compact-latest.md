@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 11:25:14
+- generated_at: 2026-03-13 11:28:05
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T11:28:05+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T11:27:51+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T11:25:14+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T11:25:01+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T11:21:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T11:21:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T11:21:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T11:19:24+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T11:19:10+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T10:23:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 10:17:18 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 10:17:18 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: telemetry_status/telemetry_error contract landed in dashboard summary; cockpit now displays telemetry health badge; RK3588 targeted tests green. |
-| 2026-03-13 10:18:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101829-PHASE2-EXEC.json |
-| 2026-03-13 10:18:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 telemetry health status synced: dashboard summary now emits telemetry_status/telemetry_error and cockpit renders ok/degraded badge; RK3588 targeted tests passed (23/23); GitHub synced to b60af1b. |
-| 2026-03-13 10:18:45 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101845-PHASE2-EXEC.json |
-| 2026-03-13 10:18:45 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at b60af1b: cockpit telemetry health badge + backend telemetry status contract landed and validated on RK3588. |
-| 2026-03-13 10:18:45 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101845-PHASE2-EXEC.json |
-| 2026-03-13 10:18:46 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:18:46 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at b60af1b: cockpit telemetry health badge + backend telemetry status contract landed and validated on RK3588. |
 | 2026-03-13 10:22:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-102219-PHASE2-EXEC.json |
 | 2026-03-13 10:22:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 API contract guard strengthened: RuntimeApiControllerTest now asserts throttle_hint.suggested_min_dispatch_ms in runtime snapshot and inference plan authorized flows; RK3588 targeted tests passed (24/24). |
@@ -61,3 +53,11 @@
 | 2026-03-13 11:25:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112513-PHASE2-EXEC.json |
 | 2026-03-13 11:25:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green. |
 | 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112513-PHASE2-EXEC.json |
+| 2026-03-13 11:25:14 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green. |
+| 2026-03-13 11:27:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-112750-PHASE2-EXEC.json |
+| 2026-03-13 11:27:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 cockpit observability refinement: dashboard scheduler card now displays telemetry_error details with i18n and keeps status badge, improving degraded-state diagnosability; RK3588 targeted tests passed; GitHub synced to c2e356e. |
+| 2026-03-13 11:28:04 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112805-PHASE2-EXEC.json |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at c2e356e: cockpit scheduler card now exposes telemetry_error text and preserves status badge semantics; RK3588 targeted regression green. |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112805-PHASE2-EXEC.json |

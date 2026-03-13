@@ -773,3 +773,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112513-PHASE2-EXEC.json |
 | 2026-03-13 11:25:14 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:25:14 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at df47eb7: runtime scheduler summary/dispatch endpoints now degrade gracefully with 503 structured error codes; RK3588 targeted regression green. |
+| 2026-03-13 11:27:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-112750-PHASE2-EXEC.json |
+| 2026-03-13 11:27:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 cockpit observability refinement: dashboard scheduler card now displays telemetry_error details with i18n and keeps status badge, improving degraded-state diagnosability; RK3588 targeted tests passed; GitHub synced to c2e356e. |
+| 2026-03-13 11:28:04 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112805-PHASE2-EXEC.json |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at c2e356e: cockpit scheduler card now exposes telemetry_error text and preserves status badge semantics; RK3588 targeted regression green. |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112805-PHASE2-EXEC.json |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:28:05 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at c2e356e: cockpit scheduler card now exposes telemetry_error text and preserves status badge semantics; RK3588 targeted regression green. |
