@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 09:35:11
+- generated_at: 2026-03-13 09:38:01
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T09:38:01+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T09:37:47+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:35:11+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:34:57+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T09:31:25+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:22:05+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T09:22:04+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
-- 2026-03-13T09:21:53+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-090531-PHASE2-EXEC.json |
-| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced. |
-| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
-| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731. |
-| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
-| 2026-03-13 09:05:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 09:05:44 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731. |
 | 2026-03-13 09:10:53 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-091053-PHASE2-EXEC.json |
 | 2026-03-13 09:10:53 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 scheduler diagnostics expanded: summary now exposes latency factor/update counts/max declared+observed+effective cooldown; cooldown skips carry source/base/latency/effective metadata; RK3588 edge test passed and synced to GitHub. |
 | 2026-03-13 09:11:03 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-091103-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-093511-PHASE2-EXEC.json |
 | 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Inference plan now carries scheduler feedback for capacity tuning: added scheduler + throttle_hint payload (recommended_frame_stride, concurrency_pressure, estimated_budget_per_stream). RuntimeApiService tests updated and RK3588 targeted suite passed (17/17). Commit e7abaa7 pushed. |
 | 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-093511-PHASE2-EXEC.json |
+| 2026-03-13 09:35:11 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:35:11 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Inference plan now carries scheduler feedback for capacity tuning: added scheduler + throttle_hint payload (recommended_frame_stride, concurrency_pressure, estimated_budget_per_stream). RuntimeApiService tests updated and RK3588 targeted suite passed (17/17). Commit e7abaa7 pushed. |
+| 2026-03-13 09:37:47 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-093746-PHASE2-EXEC.json |
+| 2026-03-13 09:37:47 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 plan refinement: inference plan items now include per-stream throttle suggestions (suggested_frame_stride/suggested_min_dispatch_ms/suggestion_source) derived from scheduler feedback, enabling direct camera-level adaptation hints; RK3588 targeted tests passed and synced. |
+| 2026-03-13 09:38:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-093801-PHASE2-EXEC.json |
+| 2026-03-13 09:38:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Per-camera adaptive guidance added to inference plan: each item now returns suggested_frame_stride and suggested_min_dispatch_ms from scheduler feedback. RuntimeApiServiceTest assertions expanded; RK3588 targeted tests passed (9/9); commit dc8a763 pushed. |
+| 2026-03-13 09:38:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-093801-PHASE2-EXEC.json |
