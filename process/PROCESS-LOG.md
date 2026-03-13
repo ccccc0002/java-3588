@@ -621,3 +621,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 08:49:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-084955-PHASE2-EXEC.json |
 | 2026-03-13 08:49:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 08:49:55 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: model controller deny audit completed; edge regression 69/69 passed; synced commit 9fa8ef6 |
+| 2026-03-13 08:53:47 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-085347-PHASE2-EXEC.json |
+| 2026-03-13 08:53:47 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 account audit hardening: account save/delete permission-denied branches now log operation events; currentAccountId fallback unified; new AccountController deny-path tests added; RK3588 targeted regression passed; milestone synced. |
+| 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
+| 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
+| 2026-03-13 08:53:58 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
+| 2026-03-13 08:53:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 08:53:59 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
