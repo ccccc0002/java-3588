@@ -1335,3 +1335,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 06:55:29 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065529-PHASE2-EXEC.json |
 | 2026-03-14 06:55:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 06:55:29 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: strict decode gate handoff pass on RK3588 synced at 80caff3 |
+| 2026-03-14 06:58:37 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-065837-PHASE2-EXEC.json |
+| 2026-03-14 06:58:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 06:58:37 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 now supports optional CPU/memory health gates (max_memory_used_delta_mb/max_loadavg_1m) and was validated on RK3588 with strict decode gates + resource-gated handoff pass. |
+| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-065837-PHASE2-EXEC.json |
+| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | resource-gated phase11 handoff pass on RK3588 synced at f0ec100 |
+| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065838-PHASE2-EXEC.json |
+| 2026-03-14 06:58:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: resource-gated phase11 handoff pass on RK3588 synced at f0ec100 |
