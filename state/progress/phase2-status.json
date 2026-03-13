@@ -80,16 +80,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:52:39+08:00",
-                                  "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept only for compatibility), with RK3588 bridge/python suites passing.",
+                                  "updated_at":  "2026-03-13T22:54:13+08:00",
+                                  "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept for compatibility), RK3588 bridge/python suites passed.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "local-uncommitted",
-                                                       "updated_at":  "2026-03-13T22:52:39+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "3753054",
+                                                       "updated_at":  "2026-03-13T22:54:13+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -1501,6 +1501,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:54:13+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept for compatibility), RK3588 bridge/python suites passed.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "3753054"
                     }
                 ]
 }
