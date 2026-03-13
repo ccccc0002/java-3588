@@ -307,8 +307,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     var staticsStore = new Map();
     var gridRestoreTimer = null;
     var gridRenderSeq = 0;
-    var alarmToastLayerIndex = null;
-    var lastAutoAlertTs = 0;
+    var currentGridSeq = 0;
 
     var trendChart = null;
     var pieChart = null;
@@ -496,12 +495,12 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         return cameraIds;
     }
 
-    function restorePlayingByCameraIds(cameraIds) {
+    function restorePlayingByCameraIds(cameraIds, expectedGridSeq) {
         if (!Array.isArray(cameraIds) || cameraIds.length === 0) return;
         var containerIds = getGridContainerIds();
         var size = Math.min(containerIds.length, cameraIds.length);
         for (var i = 0; i < size; i++) {
-            window.selectRtsp(containerIds[i], cameraIds[i], { silent: true });
+            window.selectRtsp(containerIds[i], cameraIds[i], { silent: true, expectedGridSeq: expectedGridSeq });
         }
     }
 
@@ -538,26 +537,6 @@ layui.use(['jquery', 'loading', 'popup'], function() {
             '  </div>' +
             '  <div class="detail-detections">' + formatAlarmDetections(data.params) + '</div>' +
             '</div>';
-        if (autoClose) {
-            if (alarmToastLayerIndex !== null) {
-                try { layer.close(alarmToastLayerIndex); } catch (e) {}
-                alarmToastLayerIndex = null;
-            }
-            alarmToastLayerIndex = layer.open({
-                type: 1,
-                title: '实时告警',
-                shade: false,
-                closeBtn: 0,
-                resize: false,
-                maxmin: false,
-                offset: 'rb',
-                area: ['460px', '360px'],
-                time: 3000,
-                content: html,
-                end: function() { alarmToastLayerIndex = null; }
-            });
-            return;
-        }
 
         layer.open({
             type: 1,
@@ -628,12 +607,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         }
     };
 
-    window.addAlarmAlert = function(json) {
-        var now = Date.now();
-        if (now - lastAutoAlertTs < 1200) return;
-        lastAutoAlertTs = now;
-        renderAlarmDetail(window.buildAlarmTemplateData(json), true);
-    };
+    window.addAlarmAlert = function(json) {};
 
     window.initSocket = function() {
         ws = new WebSocket('${wsUrl!''}/report/${uid!''}');
@@ -711,6 +685,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         if (!validGrid(nextCols)) nextCols = 1;
         gridRenderSeq += 1;
         var seq = gridRenderSeq;
+        currentGridSeq = seq;
 
         var oldPlayingCameraIds = getPlayingCameraIdsByGridOrder();
         if (gridRestoreTimer) {
@@ -729,7 +704,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         updateGridGeometry();
 
         for (var i = 0; i < cols; i++) {
-            var id = randomStr(10);
+            var id = 'g' + seq + '_' + i;
             var html = '' +
                 '<div id="wrapper_' + id + '" class="rel">' +
                 '  <a href="javascript:void(0);" onclick="openForm(\'' + id + '\');">' +
@@ -746,7 +721,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         if (oldPlayingCameraIds.length > 0) {
             gridRestoreTimer = setTimeout(function() {
                 if (seq !== gridRenderSeq) return;
-                restorePlayingByCameraIds(oldPlayingCameraIds);
+                restorePlayingByCameraIds(oldPlayingCameraIds, seq);
                 window.refreshDashboard();
                 renderStaticsStore();
             }, 60);
@@ -792,6 +767,9 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     window.selectRtsp = function(containerId, cameraId, opts) {
         var options = opts || {};
         var withLoading = !options.silent;
+        var expectedGridSeq = options.expectedGridSeq;
+        if (expectedGridSeq !== undefined && expectedGridSeq !== currentGridSeq) return;
+        if (!document.getElementById(containerId)) return;
         if (withLoading) {
             loading.block({ type: 2, elem: '.lo' + containerId, msg: '' });
         }
@@ -803,6 +781,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         }
 
         $.post('/camera/selectPlay', { cameraId: cameraId }, function(res) {
+            if (expectedGridSeq !== undefined && expectedGridSeq !== currentGridSeq) return;
+            if (!document.getElementById(containerId)) return;
             if (res.code !== 0) {
                 if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                 popup.failure(res.msg);
@@ -819,6 +799,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
             try {
                 window.handleClose(containerId);
                 var videoElement = document.getElementById(containerId);
+                if (!videoElement) return;
                 var flvPlayer = flvjs.createPlayer({
                     url: playUrl,
                     type: 'flv',
@@ -838,6 +819,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                 containerMap.set(containerId, cameraId);
 
                 flvPlayer.on(flvjs.Events.ERROR, function(err) {
+                    if (expectedGridSeq !== undefined && expectedGridSeq !== currentGridSeq) return;
                     if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                     if (err === flvjs.ErrorTypes.MEDIA_ERROR) popup.failure('不支持的视频流格式');
                     if (err === flvjs.ErrorTypes.NETWORK_ERROR) popup.failure('网络异常，请稍后重试');
@@ -846,6 +828,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                 });
 
                 flvPlayer.on(flvjs.Events.METADATA_ARRIVED, function() {
+                    if (expectedGridSeq !== undefined && expectedGridSeq !== currentGridSeq) return;
+                    if (!document.getElementById(containerId)) return;
                     $('#' + containerId).show();
                     if (withLoading) loading.blockRemove('.lo' + containerId, 1000);
                     $('#cl_' + containerId).hide();
@@ -864,7 +848,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                     if (old === curr) {
                         if (n >= 20) {
                             window.handleClose(containerId);
-                            window.selectRtsp(containerId, cameraId);
+                            window.selectRtsp(containerId, cameraId, { expectedGridSeq: currentGridSeq });
                         } else {
                             frameMap.set(containerId, curr + '_' + (n + 1));
                         }
@@ -1022,7 +1006,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                     wrappers.push($(this).attr('id').replace('wrapper_', ''));
                 });
                 for (var i = 0; i < size; i++) {
-                    window.selectRtsp(wrappers[i], actives[i].id, { silent: true });
+                    window.selectRtsp(wrappers[i], actives[i].id, { silent: true, expectedGridSeq: currentGridSeq });
                 }
             }
         });
@@ -1126,6 +1110,12 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         setInterval(function() { window.refreshDashboard(); }, 30000);
         setInterval(function() { window.frameDelta(); }, 2000);
         setInterval(function() { window.handleVideoPlay(); }, 10000);
+        setInterval(function() {
+            if ($('#statics-items').children().length === 0) {
+                if (staticsStore.size > 0) renderStaticsStore();
+                else window.handleStaticsTpl();
+            }
+        }, 5000);
     });
 });
 </script>
