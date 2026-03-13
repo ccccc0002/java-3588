@@ -167,6 +167,8 @@ def run_stack_smoke(
     budget: float = 10.0,
     timeout_sec: float = 30.0,
     expected_runtime_api_backend: str = '',
+    expected_snapshot_telemetry_status: str = 'any',
+    expected_plan_telemetry_status: str = 'any',
 ) -> Dict[str, Any]:
     runtime_health = get_runtime_health(runtime_api_url, timeout_sec=timeout_sec)
     runtime_backend = extract_runtime_api_backend(runtime_health)
@@ -186,6 +188,16 @@ def run_stack_smoke(
     plan_data = plan_payload.get('data') if isinstance(plan_payload.get('data'), dict) else {}
     snapshot_telemetry = _normalize_runtime_telemetry(snapshot_data)
     plan_telemetry = _normalize_runtime_telemetry(plan_data)
+    expected_snapshot_status = str(expected_snapshot_telemetry_status or 'any').strip().lower()
+    expected_plan_status = str(expected_plan_telemetry_status or 'any').strip().lower()
+    if expected_snapshot_status in {'ok', 'degraded'} and snapshot_telemetry['telemetry']['status'] != expected_snapshot_status:
+        raise RuntimeError(
+            f"snapshot telemetry status mismatch: expected={expected_snapshot_status} actual={snapshot_telemetry['telemetry']['status']}"
+        )
+    if expected_plan_status in {'ok', 'degraded'} and plan_telemetry['telemetry']['status'] != expected_plan_status:
+        raise RuntimeError(
+            f"plan telemetry status mismatch: expected={expected_plan_status} actual={plan_telemetry['telemetry']['status']}"
+        )
     bridge_health = get_bridge_health(bridge_url, timeout_sec=timeout_sec)
 
     infer_request = runtime_bridge_infer_smoke.build_request_payload(
@@ -251,6 +263,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument('--budget', type=float, default=10.0)
     parser.add_argument('--timeout-sec', type=float, default=30.0)
     parser.add_argument('--expect-runtime-api-backend', default='')
+    parser.add_argument('--expect-snapshot-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
+    parser.add_argument('--expect-plan-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
     return parser.parse_args(argv)
 
 
@@ -267,6 +281,8 @@ def main(argv=None) -> int:
         budget=args.budget,
         timeout_sec=args.timeout_sec,
         expected_runtime_api_backend=args.expect_runtime_api_backend.strip(),
+        expected_snapshot_telemetry_status=args.expect_snapshot_telemetry_status.strip().lower(),
+        expected_plan_telemetry_status=args.expect_plan_telemetry_status.strip().lower(),
     )
     print(json.dumps(result, ensure_ascii=True))
     return 0
