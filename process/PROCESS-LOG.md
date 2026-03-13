@@ -677,3 +677,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 09:38:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-093801-PHASE2-EXEC.json |
 | 2026-03-13 09:38:01 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 09:38:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Per-camera adaptive guidance added to inference plan: each item now returns suggested_frame_stride and suggested_min_dispatch_ms from scheduler feedback. RuntimeApiServiceTest assertions expanded; RK3588 targeted tests passed (9/9); commit dc8a763 pushed. |
+| 2026-03-13 09:40:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-094050-PHASE2-EXEC.json |
+| 2026-03-13 09:40:51 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 snapshot alignment: runtime snapshot now also returns scheduler + throttle_hint (same semantics as inference plan), enabling a single telemetry source for dashboard and capacity diagnostics; RK3588 targeted tests passed and synced. |
+| 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-094101-PHASE2-EXEC.json |
+| 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed. |
+| 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-094101-PHASE2-EXEC.json |
+| 2026-03-13 09:41:02 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:41:02 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed. |

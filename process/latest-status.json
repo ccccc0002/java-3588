@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:38:01",
+    "time":  "2026-03-13 09:41:02",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Per-camera adaptive guidance added to inference plan: each item now returns suggested_frame_stride and suggested_min_dispatch_ms from scheduler feedback. RuntimeApiServiceTest assertions expanded; RK3588 targeted tests passed (9/9); commit dc8a763 pushed."
+    "summary":  "compact after checkpoint: Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed."
 }
