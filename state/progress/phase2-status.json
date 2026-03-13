@@ -136,16 +136,16 @@
                               },
                    "Phase10":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T06:48:27+08:00",
-                                   "summary":  "Phase10 acceptance stable with runtime stack bootstrap + strict decode gates (status=ok/mode=mpp-rga), validated on RK3588 and synced.",
+                                   "updated_at":  "2026-03-14T07:36:42+08:00",
+                                   "summary":  "Phase10 acceptance rerun (phase2-acceptance-r3) passed 2/2 after decode retry + bbox sanitize + quality gate updates.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "",
+                                                        "edge_test_command":  "tmux_parallel_ctl report --session phase2-acceptance-r3",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "27b2a26",
-                                                        "updated_at":  "2026-03-14T06:48:27+08:00"
+                                                        "github_sync_ref":  "dda7b81",
+                                                        "updated_at":  "2026-03-14T07:36:42+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -1661,6 +1661,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --max-invalid-bbox-count 0",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "f7a7794"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T07:36:42+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 acceptance rerun (phase2-acceptance-r3) passed 2/2 after decode retry + bbox sanitize + quality gate updates.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "tmux_parallel_ctl report --session phase2-acceptance-r3",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "dda7b81"
                     }
                 ]
 }
