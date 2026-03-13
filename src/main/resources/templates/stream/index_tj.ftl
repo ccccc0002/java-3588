@@ -91,6 +91,11 @@
         .overview-value { color: var(--text-main); font-size: 28px; font-weight: 700; line-height: 1; }
         .overview-extra { margin-top: 8px; color: var(--text-sub); font-size: 12px; }
         .scheduler-hint-card { padding: 10px 14px; }
+        .scheduler-status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .scheduler-status-label { color: var(--text-sub); font-size: 12px; }
+        .scheduler-status-badge { font-size: 12px; line-height: 1; padding: 4px 8px; border-radius: 999px; border: 1px solid transparent; }
+        .scheduler-status-ok { color: var(--success); border-color: rgba(22,163,74,0.35); background: rgba(22,163,74,0.08); }
+        .scheduler-status-degraded { color: var(--warn); border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); }
         .scheduler-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
         .scheduler-metric { border: 1px dashed var(--card-border); border-radius: 8px; padding: 10px; }
         .scheduler-metric-label { color: var(--text-sub); font-size: 12px; margin-bottom: 8px; }
@@ -209,6 +214,10 @@
 
     <div class="card-box scheduler-hint-card">
         <div class="chart-title" id="scheduler-title">Scheduler Feedback</div>
+        <div class="scheduler-status-row">
+            <span class="scheduler-status-label" id="scheduler-status-label">Telemetry</span>
+            <span class="scheduler-status-badge scheduler-status-ok" id="scheduler-status-badge" data-status="ok">OK</span>
+        </div>
         <div class="scheduler-metrics">
             <div class="scheduler-metric">
                 <div class="scheduler-metric-label" id="scheduler-pressure-label">Concurrency Pressure</div>
@@ -368,6 +377,9 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.source': '[CN] Source',
             'scheduler.dispatch': '[CN] Suggested Min Dispatch (ms)',
             'scheduler.cooldown': '[CN] Max Effective Cooldown',
+            'scheduler.telemetry': '[CN] Telemetry',
+            'scheduler.statusOk': '[CN] OK',
+            'scheduler.statusDegraded': '[CN] Degraded',
             'alarm.latest': '[CN] Latest Alerts',
             'alarm.todayCount': '[CN] Today Alert Count',
             'alarm.type': '[CN] Alert Type',
@@ -418,6 +430,9 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.source': '[TW] Source',
             'scheduler.dispatch': '[TW] Suggested Min Dispatch (ms)',
             'scheduler.cooldown': '[TW] Max Effective Cooldown',
+            'scheduler.telemetry': '[TW] Telemetry',
+            'scheduler.statusOk': '[TW] OK',
+            'scheduler.statusDegraded': '[TW] Degraded',
             'alarm.latest': '[TW] Latest Alerts',
             'alarm.todayCount': '[TW] Today Alert Count',
             'alarm.type': '[TW] Alert Type',
@@ -468,6 +483,9 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.source': 'Source',
             'scheduler.dispatch': 'Suggested Min Dispatch (ms)',
             'scheduler.cooldown': 'Max Effective Cooldown',
+            'scheduler.telemetry': 'Telemetry',
+            'scheduler.statusOk': 'OK',
+            'scheduler.statusDegraded': 'Degraded',
             'alarm.latest': 'Latest Alerts',
             'alarm.todayCount': 'Today Alert Count',
             'alarm.type': 'Alert Type',
@@ -496,6 +514,10 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
     window.t = function(key) {
         var langData = window.i18nMessages[activeLang] || window.i18nMessages['zh-CN'];
         return langData[key] || key;
+    };
+
+    window.resolveTelemetryStatusText = function(status) {
+        return status === 'degraded' ? window.t('scheduler.statusDegraded') : window.t('scheduler.statusOk');
     };
 
     window.applyTheme = function(theme) {
@@ -548,6 +570,7 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             ['.overview-grid .overview-extra:eq(2)', window.t('overview.algorithmHint')],
             ['.overview-grid .overview-extra:eq(3)', window.t('overview.modelHint')],
             ['#scheduler-title', window.t('scheduler.title')],
+            ['#scheduler-status-label', window.t('scheduler.telemetry')],
             ['#scheduler-pressure-label', window.t('scheduler.pressure')],
             ['#scheduler-stride-label', window.t('scheduler.stride')],
             ['#scheduler-dispatch-label', window.t('scheduler.dispatch')],
@@ -582,11 +605,16 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         var currentLevel = $('#scheduler-level-extra').attr('data-value') || '0';
         var currentSource = $('#scheduler-source-extra').attr('data-value') || 'scheduler_feedback';
         var currentCooldown = $('#scheduler-cooldown-extra').attr('data-value') || '0';
+        var currentTelemetryStatus = $('#scheduler-status-badge').attr('data-status') || 'ok';
         $('.overview-grid .overview-extra:eq(0)').html(window.t('overview.currentDate') + ' <span id=\"overview-date\">' + window.escapeHtml(currentDate) + '</span>');
         $('.overview-grid .overview-extra:eq(1)').html(window.t('overview.totalChannels') + '<span id=\"overview-total-camera\">' + window.escapeHtml(currentTotal) + '</span>');
         $('#scheduler-level-extra').text(window.t('scheduler.level') + ': ' + currentLevel);
         $('#scheduler-source-extra').text(window.t('scheduler.source') + ': ' + currentSource);
         $('#scheduler-cooldown-extra').text(window.t('scheduler.cooldown') + ': ' + currentCooldown + ' ms');
+        $('#scheduler-status-badge')
+            .removeClass('scheduler-status-ok scheduler-status-degraded')
+            .addClass(currentTelemetryStatus === 'degraded' ? 'scheduler-status-degraded' : 'scheduler-status-ok')
+            .text(window.resolveTelemetryStatusText(currentTelemetryStatus));
 
         window.relabelAlarmItems();
         if (trendChart && pieChart && rankingChart) {
@@ -1147,12 +1175,18 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             hintMinDispatch = maxCooldown > 0 ? maxCooldown : (stride * 1000);
         }
         var source = String(throttleHint.strategy_source || 'scheduler_feedback');
+        var telemetryStatus = String(payload.telemetry_status || 'ok').toLowerCase() === 'degraded' ? 'degraded' : 'ok';
         $('#scheduler-pressure').text(pressure.toFixed(2));
         $('#scheduler-stride').text(stride);
         $('#scheduler-dispatch').text(hintMinDispatch);
         $('#scheduler-level-extra').attr('data-value', String(level)).text(window.t('scheduler.level') + ': ' + level);
         $('#scheduler-source-extra').attr('data-value', source).text(window.t('scheduler.source') + ': ' + source);
         $('#scheduler-cooldown-extra').attr('data-value', String(maxCooldown)).text(window.t('scheduler.cooldown') + ': ' + maxCooldown + ' ms');
+        $('#scheduler-status-badge')
+            .attr('data-status', telemetryStatus)
+            .removeClass('scheduler-status-ok scheduler-status-degraded')
+            .addClass(telemetryStatus === 'degraded' ? 'scheduler-status-degraded' : 'scheduler-status-ok')
+            .text(window.resolveTelemetryStatusText(telemetryStatus));
 
         var trend = payload.trend || {};
         trendChart.setOption({

@@ -328,15 +328,24 @@ public class StreamController {
         payload.put("pie", pie);
         payload.put("ranking", ranking);
         Map<String, Object> snapshot = Collections.emptyMap();
+        String telemetryStatus = "ok";
+        String telemetryError = "";
         if (runtimeApiService != null) {
             try {
                 snapshot = runtimeApiService.buildRuntimeSnapshot();
             } catch (Exception ignored) {
                 snapshot = Collections.emptyMap();
+                telemetryStatus = "degraded";
+                telemetryError = "runtime_snapshot_failed";
             }
+        } else {
+            telemetryStatus = "degraded";
+            telemetryError = "runtime_service_unavailable";
         }
         payload.put("scheduler", resolveMap(snapshot.get("scheduler")));
         payload.put("throttle_hint", resolveMap(snapshot.get("throttle_hint")));
+        payload.put("telemetry_status", telemetryStatus);
+        payload.put("telemetry_error", telemetryError);
         payload.put("today", DateUtil.today());
         return JsonResultUtils.success(payload);
     }

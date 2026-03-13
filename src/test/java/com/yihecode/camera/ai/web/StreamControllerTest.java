@@ -157,6 +157,8 @@ class StreamControllerTest {
         assertEquals(2, ((Number) throttlePayload.get("recommended_frame_stride")).intValue());
         assertEquals(2400, ((Number) throttlePayload.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttlePayload.get("strategy_source"));
+        assertEquals("ok", data.get("telemetry_status"));
+        assertEquals("", data.get("telemetry_error"));
     }
 
     @Test
@@ -181,6 +183,8 @@ class StreamControllerTest {
         assertTrue(data.get("throttle_hint") instanceof Map);
         assertTrue(((Map<String, Object>) data.get("scheduler")).isEmpty());
         assertTrue(((Map<String, Object>) data.get("throttle_hint")).isEmpty());
+        assertEquals("degraded", data.get("telemetry_status"));
+        assertEquals("runtime_snapshot_failed", data.get("telemetry_error"));
     }
 
     @Test
