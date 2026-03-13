@@ -90,6 +90,12 @@
         .overview-label { color: var(--text-sub); font-size: 13px; margin-bottom: 8px; }
         .overview-value { color: var(--text-main); font-size: 28px; font-weight: 700; line-height: 1; }
         .overview-extra { margin-top: 8px; color: var(--text-sub); font-size: 12px; }
+        .scheduler-hint-card { padding: 10px 14px; }
+        .scheduler-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .scheduler-metric { border: 1px dashed var(--card-border); border-radius: 8px; padding: 10px; }
+        .scheduler-metric-label { color: var(--text-sub); font-size: 12px; margin-bottom: 8px; }
+        .scheduler-metric-value { color: var(--text-main); font-size: 22px; font-weight: 700; line-height: 1; }
+        .scheduler-metric-extra { color: var(--text-sub); font-size: 12px; margin-top: 8px; }
 
         .main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 10px; flex: 1; min-height: 0; }
         .card-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; }
@@ -151,6 +157,7 @@
         }
         @media (max-width: 1024px) {
             .main-grid { grid-template-columns: minmax(0, 1fr); }
+            .scheduler-metrics { grid-template-columns: minmax(0, 1fr); }
             .charts-grid { grid-template-columns: minmax(0, 1fr); }
             .video-list-wrapper { min-height: 420px; }
         }
@@ -197,6 +204,27 @@
             <div class="overview-label">濠电姷鏁告慨鐑姐€傞挊澹╋綁宕ㄩ弶鎴濈€銈呯箰閻楀棝鎮為崹顐犱簻闁瑰搫妫楁禍鍓х磼閸撗嗘闁告瑥鍟村畷娲焵椤掍降浜滈柟鐑樺灥閳ь剚鎮傚畷銏⑩偓鐢电《閸嬫挸鈻撻崹顔界彯闂佺顑呴幊鎰板焵椤掑嫭娑ч柕鍫㈩焾椤曪綁宕奸弴鐐殿吅闂佺粯鍨靛Λ鏃堟偨?/div>
             <div class="overview-value" id="overview-model">0</div>
             <div class="overview-extra">闂傚倷娴囬褍霉閻戣棄绠犻柟鎹愵嚙缁犵喖姊介崶顒€桅闁圭増婢樼粈鍐┿亜閺囩偞鍣洪柡鍜佷邯濮婄粯绗熼崶褍顫╃紓浣割槸椤曨厾鍒掗崼銉ョ＜闁绘劕顕崢顏呯節閵忕姴甯ㄩ柡鍛箘閹广垹鈹戦崼鐕佸仺濠殿喗锕╅崜娑㈠汲?/div>
+        </div>
+    </div>
+
+    <div class="card-box scheduler-hint-card">
+        <div class="chart-title" id="scheduler-title">Scheduler Feedback</div>
+        <div class="scheduler-metrics">
+            <div class="scheduler-metric">
+                <div class="scheduler-metric-label" id="scheduler-pressure-label">Concurrency Pressure</div>
+                <div class="scheduler-metric-value" id="scheduler-pressure">1.00</div>
+                <div class="scheduler-metric-extra" id="scheduler-level-extra">Concurrency Level: 0</div>
+            </div>
+            <div class="scheduler-metric">
+                <div class="scheduler-metric-label" id="scheduler-stride-label">Recommended Frame Stride</div>
+                <div class="scheduler-metric-value" id="scheduler-stride">1</div>
+                <div class="scheduler-metric-extra" id="scheduler-source-extra">Source: scheduler_feedback</div>
+            </div>
+            <div class="scheduler-metric">
+                <div class="scheduler-metric-label" id="scheduler-dispatch-label">Suggested Min Dispatch (ms)</div>
+                <div class="scheduler-metric-value" id="scheduler-dispatch">1000</div>
+                <div class="scheduler-metric-extra" id="scheduler-cooldown-extra">Max Effective Cooldown: 0 ms</div>
+            </div>
         </div>
     </div>
 
@@ -333,6 +361,13 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'overview.algorithmHint': '[CN] Available algorithm packages',
             'overview.models': '[CN] Models',
             'overview.modelHint': '[CN] Imported models',
+            'scheduler.title': '[CN] Scheduler Feedback',
+            'scheduler.pressure': '[CN] Concurrency Pressure',
+            'scheduler.level': '[CN] Concurrency Level',
+            'scheduler.stride': '[CN] Recommended Frame Stride',
+            'scheduler.source': '[CN] Source',
+            'scheduler.dispatch': '[CN] Suggested Min Dispatch (ms)',
+            'scheduler.cooldown': '[CN] Max Effective Cooldown',
             'alarm.latest': '[CN] Latest Alerts',
             'alarm.todayCount': '[CN] Today Alert Count',
             'alarm.type': '[CN] Alert Type',
@@ -376,6 +411,13 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'overview.algorithmHint': '[TW] Available algorithm packages',
             'overview.models': '[TW] Models',
             'overview.modelHint': '[TW] Imported models',
+            'scheduler.title': '[TW] Scheduler Feedback',
+            'scheduler.pressure': '[TW] Concurrency Pressure',
+            'scheduler.level': '[TW] Concurrency Level',
+            'scheduler.stride': '[TW] Recommended Frame Stride',
+            'scheduler.source': '[TW] Source',
+            'scheduler.dispatch': '[TW] Suggested Min Dispatch (ms)',
+            'scheduler.cooldown': '[TW] Max Effective Cooldown',
             'alarm.latest': '[TW] Latest Alerts',
             'alarm.todayCount': '[TW] Today Alert Count',
             'alarm.type': '[TW] Alert Type',
@@ -419,6 +461,13 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'overview.algorithmHint': 'Available algorithm packages',
             'overview.models': 'Models',
             'overview.modelHint': 'Imported models',
+            'scheduler.title': 'Scheduler Feedback',
+            'scheduler.pressure': 'Concurrency Pressure',
+            'scheduler.level': 'Concurrency Level',
+            'scheduler.stride': 'Recommended Frame Stride',
+            'scheduler.source': 'Source',
+            'scheduler.dispatch': 'Suggested Min Dispatch (ms)',
+            'scheduler.cooldown': 'Max Effective Cooldown',
             'alarm.latest': 'Latest Alerts',
             'alarm.todayCount': 'Today Alert Count',
             'alarm.type': 'Alert Type',
@@ -498,6 +547,10 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             ['.overview-grid .overview-label:eq(3)', window.t('overview.models')],
             ['.overview-grid .overview-extra:eq(2)', window.t('overview.algorithmHint')],
             ['.overview-grid .overview-extra:eq(3)', window.t('overview.modelHint')],
+            ['#scheduler-title', window.t('scheduler.title')],
+            ['#scheduler-pressure-label', window.t('scheduler.pressure')],
+            ['#scheduler-stride-label', window.t('scheduler.stride')],
+            ['#scheduler-dispatch-label', window.t('scheduler.dispatch')],
             ['.stream-nav-title', window.t('stream.preview')],
             ['.stream-btn-group [data-grid=\"1\"]', '1 ' + window.t('stream.grid')],
             ['.stream-btn-group [data-grid=\"4\"]', '4 ' + window.t('stream.grid')],
@@ -526,8 +579,14 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         }
         var currentDate = $('#overview-date').text() || '-';
         var currentTotal = $('#overview-total-camera').text() || '0';
+        var currentLevel = $('#scheduler-level-extra').attr('data-value') || '0';
+        var currentSource = $('#scheduler-source-extra').attr('data-value') || 'scheduler_feedback';
+        var currentCooldown = $('#scheduler-cooldown-extra').attr('data-value') || '0';
         $('.overview-grid .overview-extra:eq(0)').html(window.t('overview.currentDate') + ' <span id=\"overview-date\">' + window.escapeHtml(currentDate) + '</span>');
         $('.overview-grid .overview-extra:eq(1)').html(window.t('overview.totalChannels') + '<span id=\"overview-total-camera\">' + window.escapeHtml(currentTotal) + '</span>');
+        $('#scheduler-level-extra').text(window.t('scheduler.level') + ': ' + currentLevel);
+        $('#scheduler-source-extra').text(window.t('scheduler.source') + ': ' + currentSource);
+        $('#scheduler-cooldown-extra').text(window.t('scheduler.cooldown') + ': ' + currentCooldown + ' ms');
 
         window.relabelAlarmItems();
         if (trendChart && pieChart && rankingChart) {
@@ -1064,6 +1123,33 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         $('#overview-algorithm').text(overview.algorithmCount || 0);
         $('#overview-model').text(overview.modelCount || 0);
         $('#overview-date').text(payload.today || '-');
+        var scheduler = payload.scheduler || {};
+        var throttleHint = payload.throttle_hint || {};
+        var pressureRaw = throttleHint.concurrency_pressure || scheduler.concurrency_pressure || 1;
+        var pressure = Number(pressureRaw);
+        if (!isFinite(pressure) || pressure <= 0) {
+            pressure = 1;
+        }
+        var stride = parseInt(throttleHint.recommended_frame_stride || 1, 10);
+        if (isNaN(stride) || stride <= 0) {
+            stride = 1;
+        }
+        var level = parseInt(throttleHint.concurrency_level || scheduler.concurrency_level || 0, 10);
+        if (isNaN(level) || level < 0) {
+            level = 0;
+        }
+        var maxCooldown = parseInt(scheduler.max_effective_cooldown_ms || 0, 10);
+        if (isNaN(maxCooldown) || maxCooldown < 0) {
+            maxCooldown = 0;
+        }
+        var minDispatch = maxCooldown > 0 ? maxCooldown : (stride * 1000);
+        var source = String(throttleHint.strategy_source || 'scheduler_feedback');
+        $('#scheduler-pressure').text(pressure.toFixed(2));
+        $('#scheduler-stride').text(stride);
+        $('#scheduler-dispatch').text(minDispatch);
+        $('#scheduler-level-extra').attr('data-value', String(level)).text(window.t('scheduler.level') + ': ' + level);
+        $('#scheduler-source-extra').attr('data-value', source).text(window.t('scheduler.source') + ': ' + source);
+        $('#scheduler-cooldown-extra').attr('data-value', String(maxCooldown)).text(window.t('scheduler.cooldown') + ': ' + maxCooldown + ' ms');
 
         var trend = payload.trend || {};
         trendChart.setOption({

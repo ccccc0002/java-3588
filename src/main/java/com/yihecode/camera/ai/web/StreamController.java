@@ -23,6 +23,7 @@ import com.yihecode.camera.ai.service.ModelService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
 import com.yihecode.camera.ai.service.RoleAccessService;
+import com.yihecode.camera.ai.service.RuntimeApiService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
@@ -44,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Comparator;
+import java.util.Collections;
 
 @SaCheckLogin
 @Controller
@@ -76,6 +78,9 @@ public class StreamController {
 
     @Autowired
     private OperationLogService operationLogService;
+
+    @Autowired
+    private RuntimeApiService runtimeApiService;
 
     @GetMapping({"", "/"})
     public String index(ModelMap modelMap) {
@@ -322,6 +327,11 @@ public class StreamController {
         payload.put("trend", trend);
         payload.put("pie", pie);
         payload.put("ranking", ranking);
+        Map<String, Object> snapshot = runtimeApiService == null
+                ? Collections.emptyMap()
+                : runtimeApiService.buildRuntimeSnapshot();
+        payload.put("scheduler", resolveMap(snapshot.get("scheduler")));
+        payload.put("throttle_hint", resolveMap(snapshot.get("throttle_hint")));
         payload.put("today", DateUtil.today());
         return JsonResultUtils.success(payload);
     }
@@ -471,5 +481,13 @@ public class StreamController {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> resolveMap(Object value) {
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return Collections.emptyMap();
     }
 }

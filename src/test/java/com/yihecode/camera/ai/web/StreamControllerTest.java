@@ -8,6 +8,7 @@ import com.yihecode.camera.ai.service.ModelService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.ReportService;
 import com.yihecode.camera.ai.service.RoleAccessService;
+import com.yihecode.camera.ai.service.RuntimeApiService;
 import com.yihecode.camera.ai.service.VideoPlayService;
 import com.yihecode.camera.ai.entity.Model;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,7 @@ class StreamControllerTest {
     @Mock private ModelService modelService;
     @Mock private RoleAccessService roleAccessService;
     @Mock private OperationLogService operationLogService;
+    @Mock private RuntimeApiService runtimeApiService;
 
     @InjectMocks
     private StreamController streamController;
@@ -102,6 +104,18 @@ class StreamControllerTest {
         camera.put("cnt", 6);
         cameraRows.add(camera);
         when(reportService.findCamera(any(), any())).thenReturn(cameraRows);
+        Map<String, Object> scheduler = new HashMap<>();
+        scheduler.put("concurrency_level", 4);
+        scheduler.put("concurrency_pressure", 1.6D);
+        scheduler.put("max_effective_cooldown_ms", 2400);
+        Map<String, Object> throttleHint = new HashMap<>();
+        throttleHint.put("recommended_frame_stride", 2);
+        throttleHint.put("concurrency_pressure", 1.6D);
+        throttleHint.put("strategy_source", "scheduler_feedback");
+        Map<String, Object> runtimeSnapshot = new HashMap<>();
+        runtimeSnapshot.put("scheduler", scheduler);
+        runtimeSnapshot.put("throttle_hint", throttleHint);
+        when(runtimeApiService.buildRuntimeSnapshot()).thenReturn(runtimeSnapshot);
 
         JsonResult result = streamController.dashboardSummary();
 
@@ -132,6 +146,14 @@ class StreamControllerTest {
         List<Object> rankingValues = (List<Object>) ranking.get("values");
         assertTrue(rankingLabels.contains("cam-a"));
         assertTrue(rankingValues.contains(6));
+
+        Map<String, Object> schedulerPayload = (Map<String, Object>) data.get("scheduler");
+        assertEquals(4, ((Number) schedulerPayload.get("concurrency_level")).intValue());
+        assertEquals(2400, ((Number) schedulerPayload.get("max_effective_cooldown_ms")).intValue());
+
+        Map<String, Object> throttlePayload = (Map<String, Object>) data.get("throttle_hint");
+        assertEquals(2, ((Number) throttlePayload.get("recommended_frame_stride")).intValue());
+        assertEquals("scheduler_feedback", throttlePayload.get("strategy_source"));
     }
 
     @Test
