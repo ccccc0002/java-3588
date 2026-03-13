@@ -63,16 +63,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T20:33:04+08:00",
-                                  "summary":  "Phase8 branding milestone delivered: configurable title/logo/login background with backend APIs, RBAC+audit, config UI, and RK3588 targeted tests passed; synced to GitHub 74a96e6.",
+                                  "updated_at":  "2026-03-13T20:34:39+08:00",
+                                  "summary":  "Phase8 branding milestone verified: title/logo/login-background configurable with RBAC+audit; RK3588 tests passed and GitHub synced.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
-                                                       "edge_test_status":  "pending",
-                                                       "edge_test_command":  "",
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "",
-                                                       "updated_at":  "2026-03-13T20:33:04+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "c0e523f",
+                                                       "updated_at":  "2026-03-13T20:34:39+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1086,6 +1086,16 @@
                         "edge_test_command":  "",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  ""
+                    },
+                    {
+                        "timestamp":  "2026-03-13T20:34:39+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 branding milestone verified: title/logo/login-background configurable with RBAC+audit; RK3588 tests passed and GitHub synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "c0e523f"
                     }
                 ]
 }
