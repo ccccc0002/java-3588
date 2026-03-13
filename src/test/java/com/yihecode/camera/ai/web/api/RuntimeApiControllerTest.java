@@ -60,6 +60,8 @@ class RuntimeApiControllerTest {
         when(runtimeAccessTokenService.isAuthorized("Bearer token-1")).thenReturn(true);
         when(runtimeApiService.buildRuntimeSnapshot()).thenReturn(Map.of(
                 "device_count", 2,
+                "telemetry_status", "degraded",
+                "telemetry_error", "scheduler_summary_failed",
                 "throttle_hint", Map.of(
                         "recommended_frame_stride", 2,
                         "suggested_min_dispatch_ms", 2400
@@ -72,6 +74,8 @@ class RuntimeApiControllerTest {
         assertTrue((Boolean) response.getBody().get("success"));
         Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
         assertEquals(2, data.get("device_count"));
+        assertEquals("degraded", data.get("telemetry_status"));
+        assertEquals("scheduler_summary_failed", data.get("telemetry_error"));
         Map<String, Object> throttleHint = (Map<String, Object>) data.get("throttle_hint");
         assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
         assertEquals(2400, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
@@ -83,6 +87,8 @@ class RuntimeApiControllerTest {
         when(runtimeAccessTokenService.isAuthorized("Bearer token-plan")).thenReturn(true);
         when(runtimeApiService.buildInferencePlan(12.0D)).thenReturn(Map.of(
                 "budget", 12.0D,
+                "telemetry_status", "ok",
+                "telemetry_error", "",
                 "throttle_hint", Map.of(
                         "recommended_frame_stride", 3,
                         "suggested_min_dispatch_ms", 5200,
@@ -99,6 +105,8 @@ class RuntimeApiControllerTest {
         assertTrue((Boolean) response.getBody().get("success"));
         Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
         assertEquals(12.0D, ((Number) data.get("budget")).doubleValue());
+        assertEquals("ok", data.get("telemetry_status"));
+        assertEquals("", data.get("telemetry_error"));
         Map<String, Object> throttleHint = (Map<String, Object>) data.get("throttle_hint");
         assertEquals(3, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
         assertEquals(5200, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
