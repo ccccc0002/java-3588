@@ -170,7 +170,7 @@ public class InferenceApiController {
         String pluginDispatchError = null;
         try {
             Map<String, Object> payload = body == null ? new HashMap<>() : body;
-            InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            InferenceRequest request = buildDispatchRequest(requestTraceId, payload, cameraId, modelId, source);
             Map<String, Object> pluginRoute = resolvePluginRoute(payload);
             resolvedPluginRoute = pluginRoute;
             applyPluginRoute(request, pluginRoute);
@@ -565,7 +565,7 @@ public class InferenceApiController {
             frame.put("replay_dead_letter_id", deadLetterId);
             frame.put("replay_count", replayCount + 1);
             payload.put("frame", frame);
-            InferenceRequest request = buildTestRequest(traceId, payload, null, null, null);
+            InferenceRequest request = buildDispatchRequest(traceId, payload, null, null, null);
             replayRequest = request;
             replayPluginRoute = firstPluginRoute(payload, entry);
             applyPluginRoute(request, replayPluginRoute);
@@ -1161,12 +1161,25 @@ public class InferenceApiController {
     }
 
     private InferenceRequest buildTestRequest(String traceId, Map<String, Object> body, Long cameraId, Long modelId, String source) {
+        return buildInferenceRequest(traceId, body, cameraId, modelId, source, "test://frame");
+    }
+
+    private InferenceRequest buildDispatchRequest(String traceId, Map<String, Object> body, Long cameraId, Long modelId, String source) {
+        return buildInferenceRequest(traceId, body, cameraId, modelId, source, null);
+    }
+
+    private InferenceRequest buildInferenceRequest(String traceId,
+                                                   Map<String, Object> body,
+                                                   Long cameraId,
+                                                   Long modelId,
+                                                   String source,
+                                                   String defaultSource) {
         Map<String, Object> payload = body == null ? new HashMap<>() : body;
 
         String finalTraceId = firstString(payload.get("trace_id"), traceId, traceId);
         Long finalCameraId = firstLong(toLong(payload.get("camera_id")), cameraId, 1L);
         Long finalModelId = firstLong(toLong(payload.get("model_id")), modelId, 1L);
-        String finalSource = firstString(payload.get("source"), source, "test://frame");
+        String finalSource = firstString(payload.get("source"), source, defaultSource);
         List<Map<String, Object>> finalRoi = toMapList(payload.get("roi"));
 
         Map<String, Object> frame = new HashMap<>();
@@ -1178,8 +1191,14 @@ public class InferenceApiController {
         if (frameMetaObj instanceof Map) {
             frame.putAll((Map<? extends String, ?>) frameMetaObj);
         }
-        if (!frame.containsKey("source")) {
-            frame.put("source", resolveFrameSource(finalCameraId, finalSource));
+        Object frameSource = frame.get("source");
+        if (!frame.containsKey("source") || StrUtil.isBlank(frameSource == null ? null : String.valueOf(frameSource))) {
+            String resolvedSource = resolveFrameSource(finalCameraId, finalSource);
+            if (StrUtil.isNotBlank(resolvedSource)) {
+                frame.put("source", resolvedSource);
+            } else {
+                frame.remove("source");
+            }
         }
         if (!frame.containsKey("timestamp_ms")) {
             frame.put("timestamp_ms", System.currentTimeMillis());
@@ -1206,7 +1225,7 @@ public class InferenceApiController {
                 log.warn("resolve frame source failed, camera_id={}, ex={}", cameraId, ex.getMessage());
             }
         }
-        return fallbackSource;
+        return StrUtil.isBlank(fallbackSource) ? null : fallbackSource.trim();
     }
 
     private Map<String, Object> resolvePluginRoute(Map<String, Object> payload) {
@@ -1322,7 +1341,7 @@ public class InferenceApiController {
                                                               String source,
                                                               Map<String, Object> pluginRoute) {
         try {
-            InferenceRequest request = buildTestRequest(requestTraceId, payload, cameraId, modelId, source);
+            InferenceRequest request = buildDispatchRequest(requestTraceId, payload, cameraId, modelId, source);
             applyPluginRoute(request, pluginRoute);
             return new HashMap<>(request.toPayload());
         } catch (Exception ignored) {

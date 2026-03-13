@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,5 +79,59 @@ class InferenceApiControllerSourceResolutionTest {
         Map<String, Object> payload = request.toPayload();
         Map<String, Object> frame = (Map<String, Object>) payload.get("frame");
         assertEquals("rtsp://camera-501/main", frame.get("source"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildDispatchRequest_shouldNotFallbackToSyntheticTestSourceWhenCameraRtspMissing() {
+        Camera camera = new Camera();
+        camera.setId(502L);
+        camera.setRtspUrl("");
+        when(cameraService.getById(502L)).thenReturn(camera);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_id", 502L);
+        body.put("frame", new HashMap<>());
+
+        InferenceRequest request = ReflectionTestUtils.invokeMethod(
+                inferenceApiController,
+                "buildDispatchRequest",
+                "trace-dispatch-source",
+                body,
+                null,
+                null,
+                null
+        );
+
+        Map<String, Object> payload = request.toPayload();
+        Map<String, Object> frame = (Map<String, Object>) payload.get("frame");
+        assertFalse(frame.containsKey("source"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildTestRequest_shouldFallbackToSyntheticTestSourceWhenCameraRtspMissing() {
+        Camera camera = new Camera();
+        camera.setId(503L);
+        camera.setRtspUrl("");
+        when(cameraService.getById(503L)).thenReturn(camera);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("camera_id", 503L);
+        body.put("frame", new HashMap<>());
+
+        InferenceRequest request = ReflectionTestUtils.invokeMethod(
+                inferenceApiController,
+                "buildTestRequest",
+                "trace-test-source",
+                body,
+                null,
+                null,
+                null
+        );
+
+        Map<String, Object> payload = request.toPayload();
+        Map<String, Object> frame = (Map<String, Object>) payload.get("frame");
+        assertEquals("test://frame", frame.get("source"));
     }
 }
