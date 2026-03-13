@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 06:43:02
+- generated_at: 2026-03-14 06:52:18
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,38 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T06:52:18+08:00 | task=PHASE2-EXEC | stage=phase2-nextwave | event=session_compacted
+- 2026-03-14T06:52:17+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
+- 2026-03-14T06:48:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-14T06:48:28+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-14T06:43:02+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-14T06:42:50+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-14T06:29:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-14T06:29:38+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
-- 2026-03-14T06:25:35+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
-- 2026-03-14T06:25:35+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
-- 2026-03-14T06:25:25+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T22:57:12+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225250-PHASE2-EXEC.json |
-| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Bridge decode default switched to mpp-rga with compatibility preserved and tests green. |
-| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225251-PHASE2-EXEC.json |
-| 2026-03-13 22:52:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 22:52:51 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Bridge decode default switched to mpp-rga with compatibility preserved and tests green. |
-| 2026-03-13 22:54:14 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-225414-PHASE2-EXEC.json |
-| 2026-03-13 22:54:14 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept for compatibility), RK3588 bridge/python suites passed. |
-| 2026-03-13 22:54:30 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225429-PHASE2-EXEC.json |
-| 2026-03-13 22:54:30 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Decode baseline patch synced to GitHub: 3753054 |
-| 2026-03-13 22:54:30 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225430-PHASE2-EXEC.json |
-| 2026-03-13 22:54:30 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 22:54:30 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Decode baseline patch synced to GitHub: 3753054 |
-| 2026-03-13 22:56:59 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-225659-PHASE2-EXEC.json |
-| 2026-03-13 22:56:59 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Autowave regression after decode baseline patch passed 8/8 on RK3588 (media/ai/qa/integration + nextwave lanes all green). |
-| 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225711-PHASE2-EXEC.json |
-| 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Post-decode-patch autowave 8/8 pass. |
-| 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225712-PHASE2-EXEC.json |
-| 2026-03-13 22:57:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Post-decode-patch autowave 8/8 pass. |
-| 2026-03-14 06:25:25 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-062525-PHASE2-EXEC.json |
-| 2026-03-14 06:25:25 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 decode observability hardened: bridge /health now reports mpp-rga capability diagnostics (h264_rkmpp/hevc_rkmpp/scale_rkrga, missing requirements, ffmpeg path), and runtime stack smoke/gates now support decode runtime status+mode assertions. |
 | 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-062534-PHASE2-EXEC.json |
 | 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Decode capability diagnostics + runtime stack decode assertions delivered and validated local/RK3588. |
 | 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-062535-PHASE2-EXEC.json |
@@ -61,3 +40,24 @@
 | 2026-03-14 06:43:02 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-064302-PHASE2-EXEC.json |
 | 2026-03-14 06:43:02 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Runtime stack --with-java-app + decode-runtime strict acceptance verified PASS on RK3588. |
 | 2026-03-14 06:43:02 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-064302-PHASE2-EXEC.json |
+| 2026-03-14 06:43:02 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 06:43:02 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Runtime stack --with-java-app + decode-runtime strict acceptance verified PASS on RK3588. |
+| 2026-03-14 06:48:27 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-064827-PHASE2-EXEC.json |
+| 2026-03-14 06:48:27 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 decode observability + strict gate checks validated locally and on RK3588; GitHub sync updated to 27b2a26. |
+| 2026-03-14 06:48:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-064827-PHASE2-EXEC.json |
+| 2026-03-14 06:48:27 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 autowave/nextwave regression baseline remains green; synced milestone baseline to 27b2a26. |
+| 2026-03-14 06:48:28 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-064827-PHASE2-EXEC.json |
+| 2026-03-14 06:48:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 06:48:28 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | Phase10 acceptance stable with runtime stack bootstrap + strict decode gates (status=ok/mode=mpp-rga), validated on RK3588 and synced. |
+| 2026-03-14 06:48:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-064828-PHASE2-EXEC.json |
+| 2026-03-14 06:48:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | post-sync checkpoint after RK3588 strict acceptance pass on commit 27b2a26 |
+| 2026-03-14 06:48:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-064828-PHASE2-EXEC.json |
+| 2026-03-14 06:48:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 06:48:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: post-sync checkpoint after RK3588 strict acceptance pass on commit 27b2a26 |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-065216-PHASE2-EXEC.json |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8/9 nextwave regression lanes converged on RK3588: UI smoke + source policy + RTSP quality + API regression all passed in tmux parallel run. |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 API regression reconfirmed on RK3588 in parallel nextwave lane (108 tests, 0 failures). |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | phase2-nextwave | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |
+| 2026-03-14 06:52:17 | PHASE2-EXEC | phase2-nextwave | phase_checkpoint | codex-agent | tmux parallel nextwave + acceptance lanes passed (4/4 + 2/2) on RK3588 |
+| 2026-03-14 06:52:18 | PHASE2-EXEC | phase2-nextwave | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |

@@ -80,16 +80,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T06:25:25+08:00",
-                                  "summary":  "Phase6 decode observability hardened: bridge /health now reports mpp-rga capability diagnostics (h264_rkmpp/hevc_rkmpp/scale_rkrga, missing requirements, ffmpeg path), and runtime stack smoke/gates now support decode runtime status+mode assertions.",
+                                  "updated_at":  "2026-03-14T06:48:26+08:00",
+                                  "summary":  "Phase6 decode observability + strict gate checks validated locally and on RK3588; GitHub sync updated to 27b2a26.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py \u0026\u0026 python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py (RK3588)",
+                                                       "edge_test_command":  "",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "local-uncommitted",
-                                                       "updated_at":  "2026-03-14T06:25:25+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "27b2a26",
+                                                       "updated_at":  "2026-03-14T06:48:26+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -108,44 +108,44 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:56:59+08:00",
-                                  "summary":  "Autowave regression after decode baseline patch passed 8/8 on RK3588 (media/ai/qa/integration + nextwave lanes all green).",
+                                  "updated_at":  "2026-03-14T06:52:16+08:00",
+                                  "summary":  "Phase8/9 nextwave regression lanes converged on RK3588: UI smoke + source policy + RTSP quality + API regression all passed in tmux parallel run.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
+                                                       "edge_test_command":  "",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "local-uncommitted",
-                                                       "updated_at":  "2026-03-13T22:56:59+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "27b2a26",
+                                                       "updated_at":  "2026-03-14T06:52:16+08:00"
                                                    }
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:47:21+08:00",
-                                  "summary":  "Phase9 closeout/nextwave lanes passed on RK3588: runtime-api + scheduler regression suites green.",
+                                  "updated_at":  "2026-03-14T06:52:17+08:00",
+                                  "summary":  "Phase9 API regression reconfirmed on RK3588 in parallel nextwave lane (108 tests, 0 failures).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,InferenceApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                                                       "edge_test_command":  "",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "aa60e57",
-                                                       "updated_at":  "2026-03-13T22:47:21+08:00"
+                                                       "github_sync_ref":  "27b2a26",
+                                                       "updated_at":  "2026-03-14T06:52:17+08:00"
                                                    }
                               },
                    "Phase10":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T06:42:49+08:00",
-                                   "summary":  "Phase10 acceptance stabilized on RK3588: acceptance lane now bootstraps runtime stack with Java app and passes with decode-runtime strict gates (status=ok, mode=mpp-rga).",
+                                   "updated_at":  "2026-03-14T06:48:27+08:00",
+                                   "summary":  "Phase10 acceptance stable with runtime stack bootstrap + strict decode gates (status=ok/mode=mpp-rga), validated on RK3588 and synced.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 scripts/rk3588/runtime_stack_ctl.py start --with-java-app ... \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga",
+                                                        "edge_test_command":  "",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "pending",
-                                                        "github_sync_ref":  "local-uncommitted",
-                                                        "updated_at":  "2026-03-14T06:42:49+08:00"
+                                                        "github_sync_status":  "synced",
+                                                        "github_sync_ref":  "27b2a26",
+                                                        "updated_at":  "2026-03-14T06:48:27+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -1551,6 +1551,56 @@
                         "edge_test_command":  "python3 scripts/rk3588/runtime_stack_ctl.py start --with-java-app ... \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:48:26+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 decode observability + strict gate checks validated locally and on RK3588; GitHub sync updated to 27b2a26.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "27b2a26"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:48:27+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 autowave/nextwave regression baseline remains green; synced milestone baseline to 27b2a26.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "27b2a26"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:48:27+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 acceptance stable with runtime stack bootstrap + strict decode gates (status=ok/mode=mpp-rga), validated on RK3588 and synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "27b2a26"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:52:16+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8/9 nextwave regression lanes converged on RK3588: UI smoke + source policy + RTSP quality + API regression all passed in tmux parallel run.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "27b2a26"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:52:17+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 API regression reconfirmed on RK3588 in parallel nextwave lane (108 tests, 0 failures).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "27b2a26"
                     }
                 ]
 }
