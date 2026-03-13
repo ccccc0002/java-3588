@@ -17,6 +17,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,5 +146,35 @@ class RuntimeApiControllerTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertFalse((Boolean) response.getBody().get("success"));
+    }
+
+    @Test
+    void schedulerSummary_shouldReturnServiceUnavailableWhenSchedulerFails() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-5")).thenReturn(true);
+        doThrow(new RuntimeException("scheduler boom"))
+                .when(activeCameraInferenceSchedulerService)
+                .getLastSummary();
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.schedulerSummary("Bearer token-5");
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        Map<String, Object> error = (Map<String, Object>) response.getBody().get("error");
+        assertEquals("scheduler_summary_failed", error.get("code"));
+    }
+
+    @Test
+    void schedulerDispatch_shouldReturnServiceUnavailableWhenSchedulerFails() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-6")).thenReturn(true);
+        doThrow(new RuntimeException("dispatch boom"))
+                .when(activeCameraInferenceSchedulerService)
+                .dispatchActiveCameras();
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.schedulerDispatch("Bearer token-6");
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        Map<String, Object> error = (Map<String, Object>) response.getBody().get("error");
+        assertEquals("scheduler_dispatch_failed", error.get("code"));
     }
 }

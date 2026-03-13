@@ -86,7 +86,11 @@ public class RuntimeApiController {
         if (activeCameraInferenceSchedulerService == null) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_unavailable", "scheduler service unavailable");
         }
-        return success(activeCameraInferenceSchedulerService.getLastSummary());
+        try {
+            return success(activeCameraInferenceSchedulerService.getLastSummary());
+        } catch (Exception ignored) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_summary_failed", "scheduler summary unavailable");
+        }
     }
 
     @PostMapping("/runtime/scheduler/dispatch")
@@ -98,7 +102,11 @@ public class RuntimeApiController {
         if (activeCameraInferenceSchedulerService == null) {
             return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_unavailable", "scheduler service unavailable");
         }
-        return success(activeCameraInferenceSchedulerService.dispatchActiveCameras());
+        try {
+            return success(activeCameraInferenceSchedulerService.dispatchActiveCameras());
+        } catch (Exception ignored) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "scheduler_dispatch_failed", "scheduler dispatch unavailable");
+        }
     }
 
     private ResponseEntity<Map<String, Object>> success(Map<String, Object> data) {
