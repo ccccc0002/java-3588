@@ -90,16 +90,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:27:47+08:00",
-                                  "summary":  "Autowave stabilized on RK3588: after skip-capture parallel policy and tmux report aggregation, 8-lane run passed 8/8 (integration + phase8-ui-smoke no longer flaky under concurrent load).",
+                                  "updated_at":  "2026-03-13T22:29:05+08:00",
+                                  "summary":  "Autowave stabilized and synced: 8-lane parallel run passed 8/8 on RK3588 with tmux report + skip-capture smoke strategy.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "local-uncommitted",
-                                                       "updated_at":  "2026-03-13T22:27:47+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "38d6051",
+                                                       "updated_at":  "2026-03-13T22:29:05+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1303,6 +1303,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T22:29:05+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Autowave stabilized and synced: 8-lane parallel run passed 8/8 on RK3588 with tmux report + skip-capture smoke strategy.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py scripts/testing/test_tmux_parallel_ctl.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "38d6051"
                     }
                 ]
 }
