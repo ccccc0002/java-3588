@@ -52,6 +52,7 @@ public class ConfigController {
     private static final String TAG_INFER_SCHEDULER_COOLDOWN_MS = "infer_scheduler_cooldown_ms";
     private static final String TAG_INFER_SCHEDULER_LATENCY_FACTOR = "infer_scheduler_latency_factor";
     private static final String TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE = "infer_scheduler_concurrency_baseline";
+    private static final String TAG_INFER_SCHEDULER_MAX_WORKERS = "infer_scheduler_max_workers";
     private static final String TAG_BRAND_TITLE = "brand_title";
     private static final String TAG_BRAND_LOGO_URL = "brand_logo_url";
     private static final String TAG_LOGIN_BACKGROUND_URL = "login_background_url";
@@ -338,6 +339,7 @@ public class ConfigController {
         data.put("cooldown_ms", parseLong(configService.getByValTag(TAG_INFER_SCHEDULER_COOLDOWN_MS), 5000L));
         data.put("latency_factor", parseDouble(configService.getByValTag(TAG_INFER_SCHEDULER_LATENCY_FACTOR), 1.0D));
         data.put("concurrency_baseline", parseInt(configService.getByValTag(TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE), 4));
+        data.put("max_workers", parseInt(configService.getByValTag(TAG_INFER_SCHEDULER_MAX_WORKERS), 3));
         return JsonResultUtils.success(data);
     }
 
@@ -352,7 +354,9 @@ public class ConfigController {
             Double latencyFactor,
             Double latency_factor,
             Integer concurrencyBaseline,
-            Integer concurrency_baseline
+            Integer concurrency_baseline,
+            Integer maxWorkers,
+            Integer max_workers
     ) {
         if (!roleAccessService.canWriteSystem(currentAccountId())) {
             operationLogService.record("scheduler:save", "scheduler", false, "permission denied", "");
@@ -363,6 +367,7 @@ public class ConfigController {
         long finalCooldownMs = cooldownMs != null ? cooldownMs : (cooldown_ms == null ? 5000L : cooldown_ms);
         double finalLatencyFactor = latencyFactor != null ? latencyFactor : (latency_factor == null ? 1.0D : latency_factor);
         int finalConcurrencyBaseline = concurrencyBaseline != null ? concurrencyBaseline : (concurrency_baseline == null ? 4 : concurrency_baseline);
+        int finalMaxWorkers = maxWorkers != null ? maxWorkers : (max_workers == null ? 3 : max_workers);
         boolean finalEnabled = parseEnabled(enabled, true);
 
         if (finalMaxCameras <= 0) {
@@ -377,19 +382,24 @@ public class ConfigController {
         if (finalConcurrencyBaseline <= 0) {
             return JsonResultUtils.fail("concurrency_baseline must be greater than 0");
         }
+        if (finalMaxWorkers <= 0) {
+            return JsonResultUtils.fail("max_workers must be greater than 0");
+        }
 
         upsertConfig(TAG_INFER_SCHEDULER_ENABLED, "Infer Scheduler Enabled", finalEnabled ? "1" : "0");
         upsertConfig(TAG_INFER_SCHEDULER_MAX_CAMERAS, "Infer Scheduler Max Cameras", String.valueOf(finalMaxCameras));
         upsertConfig(TAG_INFER_SCHEDULER_COOLDOWN_MS, "Infer Scheduler Cooldown Ms", String.valueOf(finalCooldownMs));
         upsertConfig(TAG_INFER_SCHEDULER_LATENCY_FACTOR, "Infer Scheduler Latency Factor", String.valueOf(finalLatencyFactor));
         upsertConfig(TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE, "Infer Scheduler Concurrency Baseline", String.valueOf(finalConcurrencyBaseline));
+        upsertConfig(TAG_INFER_SCHEDULER_MAX_WORKERS, "Infer Scheduler Max Workers", String.valueOf(finalMaxWorkers));
 
         operationLogService.record("scheduler:save", "scheduler", true, "scheduler config saved",
                 "enabled=" + (finalEnabled ? 1 : 0)
                         + ",max_cameras=" + finalMaxCameras
                         + ",cooldown_ms=" + finalCooldownMs
                         + ",latency_factor=" + finalLatencyFactor
-                        + ",concurrency_baseline=" + finalConcurrencyBaseline);
+                        + ",concurrency_baseline=" + finalConcurrencyBaseline
+                        + ",max_workers=" + finalMaxWorkers);
 
         Map<String, Object> data = new HashMap<>();
         data.put("enabled", finalEnabled);
@@ -397,6 +407,7 @@ public class ConfigController {
         data.put("cooldown_ms", finalCooldownMs);
         data.put("latency_factor", finalLatencyFactor);
         data.put("concurrency_baseline", finalConcurrencyBaseline);
+        data.put("max_workers", finalMaxWorkers);
         return JsonResultUtils.success(data);
     }
 

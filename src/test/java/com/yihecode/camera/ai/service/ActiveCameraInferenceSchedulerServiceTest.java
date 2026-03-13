@@ -260,6 +260,7 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(2, ((Number) second.get("skip_count")).intValue());
         assertEquals(2, ((Number) second.get("concurrency_level")).intValue());
         assertEquals(2.0D, ((Number) second.get("concurrency_pressure")).doubleValue(), 0.0001D);
+        assertEquals(2, ((Number) second.get("worker_count")).intValue());
 
         List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
         assertEquals("cooldown", skipped.get(0).get("reason"));
@@ -267,6 +268,34 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(2000L, ((Number) skipped.get(0).get("effective_cooldown_ms")).longValue());
         assertEquals(2, ((Number) skipped.get(0).get("concurrency_level")).intValue());
         assertEquals(2.0D, ((Number) skipped.get(0).get("concurrency_pressure")).doubleValue(), 0.0001D);
+        verify(inferenceApiController, times(2)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
+    }
+
+    @Test
+    void dispatchActiveCameras_shouldRespectConfiguredMaxWorkers() {
+        Camera camera1 = camera(41L, "rtsp://demo/stream41", 0F);
+        Camera camera2 = camera(42L, "rtsp://demo/stream42", 0F);
+        CameraAlgorithm binding1 = binding(41L, 51L);
+        CameraAlgorithm binding2 = binding(42L, 52L);
+        Algorithm algorithm1 = algorithm(51L, "{\"plugin_id\":\"yolov8n\"}", 0);
+        Algorithm algorithm2 = algorithm(52L, "{\"plugin_id\":\"yolov8n\"}", 0);
+
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("1");
+        when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn("0");
+        when(configService.getByValTag("infer_scheduler_max_workers")).thenReturn("1");
+        when(cameraService.listActives()).thenReturn(List.of(camera1, camera2));
+        when(cameraAlgorithmService.listByCamera(41L)).thenReturn(List.of(binding1));
+        when(cameraAlgorithmService.listByCamera(42L)).thenReturn(List.of(binding2));
+        when(algorithmService.getById(51L)).thenReturn(algorithm1);
+        when(algorithmService.getById(52L)).thenReturn(algorithm2);
+        when(inferenceApiController.dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt()))
+                .thenReturn(JsonResultUtils.success(Map.of("trace_id", "trace-worker")));
+
+        Map<String, Object> summary = schedulerService.dispatchActiveCameras();
+
+        assertEquals(2, ((Number) summary.get("dispatch_count")).intValue());
+        assertEquals(2, ((Number) summary.get("concurrency_level")).intValue());
+        assertEquals(1, ((Number) summary.get("worker_count")).intValue());
         verify(inferenceApiController, times(2)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 

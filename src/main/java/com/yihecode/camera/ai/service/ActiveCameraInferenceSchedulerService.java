@@ -21,6 +21,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Service
@@ -32,10 +36,12 @@ public class ActiveCameraInferenceSchedulerService {
     private static final String CONFIG_COOLDOWN_MS = "infer_scheduler_cooldown_ms";
     private static final String CONFIG_LATENCY_FACTOR = "infer_scheduler_latency_factor";
     private static final String CONFIG_CONCURRENCY_BASELINE = "infer_scheduler_concurrency_baseline";
+    private static final String CONFIG_MAX_WORKERS = "infer_scheduler_max_workers";
     private static final int DEFAULT_MAX_CAMERAS = 10;
     private static final long DEFAULT_COOLDOWN_MS = 5000L;
     private static final double DEFAULT_LATENCY_FACTOR = 1.0D;
     private static final int DEFAULT_CONCURRENCY_BASELINE = 4;
+    private static final int DEFAULT_MAX_WORKERS = 3;
     private static final String FALLBACK_PLUGIN_ID = "yolov8n";
 
     private final ConcurrentMap<String, Long> lastDispatchAtMs = new ConcurrentHashMap<>();
@@ -76,6 +82,7 @@ public class ActiveCameraInferenceSchedulerService {
         summary.put("max_effective_cooldown_ms", 0L);
         summary.put("concurrency_level", 0);
         summary.put("concurrency_pressure", 1.0D);
+        summary.put("worker_count", 1);
         summary.put("skipped", skipped);
         summary.put("errors", errors);
         summary.put("executed_at_ms", nowMs);
@@ -126,9 +133,12 @@ public class ActiveCameraInferenceSchedulerService {
 
         int concurrencyLevel = dispatchContexts.size();
         double concurrencyPressure = resolveConcurrencyPressure(concurrencyLevel);
+        int workerCount = resolveWorkerCount(concurrencyLevel);
         summary.put("concurrency_level", concurrencyLevel);
         summary.put("concurrency_pressure", concurrencyPressure);
+        summary.put("worker_count", workerCount);
 
+        List<DispatchContext> readyContexts = new ArrayList<>();
         for (DispatchContext context : dispatchContexts) {
             Camera camera = context.getCamera();
             Algorithm algorithm = context.getAlgorithm();
@@ -153,24 +163,30 @@ public class ActiveCameraInferenceSchedulerService {
                 addSkipped(summary, skipped, camera.getId(), algorithm.getId(), "cooldown", cooldownMeta);
                 continue;
             }
+            readyContexts.add(context);
+        }
 
-            Map<String, Object> body = buildDispatchBody(camera, algorithm, nowMs);
-            try {
-                JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
-                if (result != null && Integer.valueOf(0).equals(result.getCode())) {
+        List<DispatchOutcome> outcomes = dispatchReadyContexts(readyContexts, nowMs, workerCount);
+        for (DispatchOutcome outcome : outcomes) {
+            DispatchContext context = outcome.getContext();
+            Camera camera = context == null ? null : context.getCamera();
+            Algorithm algorithm = context == null ? null : context.getAlgorithm();
+            String dispatchKey = context == null ? null : context.getDispatchKey();
+
+            if (outcome.isSuccess()) {
+                if (StrUtil.isNotBlank(dispatchKey)) {
                     lastDispatchAtMs.put(dispatchKey, nowMs);
-                    long latestLatency = extractLatencyMs(result.getData());
-                    if (updateObservedLatency(dispatchKey, latestLatency)) {
-                        increment(summary, "latency_update_count");
-                        updateMax(summary, "max_observed_latency_ms", observedLatencyMs.get(dispatchKey));
-                    }
-                    increment(summary, "dispatch_count");
-                } else {
-                    addError(summary, errors, camera.getId(), algorithm.getId(), result == null ? "dispatch_result_null" : String.valueOf(result.getMsg()));
                 }
-            } catch (Exception ex) {
-                log.warn("scheduled inference dispatch failed, camera_id={}, algorithm_id={}", camera.getId(), algorithm.getId(), ex);
-                addError(summary, errors, camera.getId(), algorithm.getId(), ex.getMessage());
+                if (updateObservedLatency(dispatchKey, outcome.getLatestLatencyMs())) {
+                    increment(summary, "latency_update_count");
+                    updateMax(summary, "max_observed_latency_ms", observedLatencyMs.get(dispatchKey));
+                }
+                increment(summary, "dispatch_count");
+            } else {
+                addError(summary, errors,
+                        camera == null ? null : camera.getId(),
+                        algorithm == null ? null : algorithm.getId(),
+                        outcome.getErrorMessage());
             }
         }
 
@@ -302,6 +318,21 @@ public class ActiveCameraInferenceSchedulerService {
         int normalizedLevel = Math.max(concurrencyLevel, 1);
         int baseline = resolveConcurrencyBaseline();
         return Math.max((double) normalizedLevel / (double) baseline, 1.0D);
+    }
+
+    private int resolveWorkerCount(int concurrencyLevel) {
+        int level = Math.max(concurrencyLevel, 1);
+        String raw = getConfig(CONFIG_MAX_WORKERS);
+        int configured = DEFAULT_MAX_WORKERS;
+        if (StrUtil.isNotBlank(raw)) {
+            try {
+                int parsed = Integer.parseInt(raw.trim());
+                configured = parsed > 0 ? parsed : DEFAULT_MAX_WORKERS;
+            } catch (Exception ex) {
+                configured = DEFAULT_MAX_WORKERS;
+            }
+        }
+        return Math.max(Math.min(configured, level), 1);
     }
 
     private String resolvePluginId(Algorithm algorithm) {
@@ -537,6 +568,70 @@ public class ActiveCameraInferenceSchedulerService {
         return StrUtil.isNotBlank(second) ? second : null;
     }
 
+    private List<DispatchOutcome> dispatchReadyContexts(List<DispatchContext> readyContexts, long nowMs, int workerCount) {
+        if (readyContexts == null || readyContexts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        int normalizedWorker = Math.max(workerCount, 1);
+        if (normalizedWorker <= 1 || readyContexts.size() <= 1) {
+            List<DispatchOutcome> outcomes = new ArrayList<>(readyContexts.size());
+            for (DispatchContext context : readyContexts) {
+                outcomes.add(dispatchSingle(context, nowMs));
+            }
+            return outcomes;
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(normalizedWorker);
+        try {
+            List<Future<DispatchOutcome>> futures = new ArrayList<>(readyContexts.size());
+            for (DispatchContext context : readyContexts) {
+                futures.add(executor.submit(() -> dispatchSingle(context, nowMs)));
+            }
+
+            List<DispatchOutcome> outcomes = new ArrayList<>(readyContexts.size());
+            for (int i = 0; i < futures.size(); i++) {
+                DispatchContext context = readyContexts.get(i);
+                Future<DispatchOutcome> future = futures.get(i);
+                try {
+                    outcomes.add(future.get());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    outcomes.add(DispatchOutcome.failed(context, "dispatch_interrupted"));
+                } catch (ExecutionException ex) {
+                    Throwable cause = ex.getCause();
+                    String message = cause == null ? ex.getMessage() : cause.getMessage();
+                    outcomes.add(DispatchOutcome.failed(context, StrUtil.blankToDefault(message, "dispatch_failed")));
+                }
+            }
+            return outcomes;
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private DispatchOutcome dispatchSingle(DispatchContext context, long nowMs) {
+        if (context == null) {
+            return DispatchOutcome.failed(null, "dispatch_context_null");
+        }
+        Camera camera = context.getCamera();
+        Algorithm algorithm = context.getAlgorithm();
+        try {
+            Map<String, Object> body = buildDispatchBody(camera, algorithm, nowMs);
+            JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
+            if (result != null && Integer.valueOf(0).equals(result.getCode())) {
+                return DispatchOutcome.success(context, extractLatencyMs(result.getData()));
+            }
+            String msg = result == null ? "dispatch_result_null" : String.valueOf(result.getMsg());
+            return DispatchOutcome.failed(context, msg);
+        } catch (Exception ex) {
+            log.warn("scheduled inference dispatch failed, camera_id={}, algorithm_id={}",
+                    camera == null ? null : camera.getId(),
+                    algorithm == null ? null : algorithm.getId(),
+                    ex);
+            return DispatchOutcome.failed(context, ex.getMessage());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> snapshotSummary(Map<String, Object> source) {
         if (source == null || source.isEmpty()) {
@@ -586,6 +681,44 @@ public class ActiveCameraInferenceSchedulerService {
 
         private String getDispatchKey() {
             return dispatchKey;
+        }
+    }
+
+    private static final class DispatchOutcome {
+        private final DispatchContext context;
+        private final boolean success;
+        private final long latestLatencyMs;
+        private final String errorMessage;
+
+        private DispatchOutcome(DispatchContext context, boolean success, long latestLatencyMs, String errorMessage) {
+            this.context = context;
+            this.success = success;
+            this.latestLatencyMs = Math.max(latestLatencyMs, 0L);
+            this.errorMessage = errorMessage;
+        }
+
+        private static DispatchOutcome success(DispatchContext context, long latestLatencyMs) {
+            return new DispatchOutcome(context, true, latestLatencyMs, null);
+        }
+
+        private static DispatchOutcome failed(DispatchContext context, String errorMessage) {
+            return new DispatchOutcome(context, false, 0L, StrUtil.blankToDefault(errorMessage, "dispatch_failed"));
+        }
+
+        private DispatchContext getContext() {
+            return context;
+        }
+
+        private boolean isSuccess() {
+            return success;
+        }
+
+        private long getLatestLatencyMs() {
+            return latestLatencyMs;
+        }
+
+        private String getErrorMessage() {
+            return errorMessage;
         }
     }
 

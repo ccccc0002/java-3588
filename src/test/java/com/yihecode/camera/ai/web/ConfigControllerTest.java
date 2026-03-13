@@ -223,6 +223,7 @@ class ConfigControllerTest {
         when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn(null);
         when(configService.getByValTag("infer_scheduler_latency_factor")).thenReturn(null);
         when(configService.getByValTag("infer_scheduler_concurrency_baseline")).thenReturn(null);
+        when(configService.getByValTag("infer_scheduler_max_workers")).thenReturn(null);
 
         JsonResult result = configController.schedulerInfo();
 
@@ -233,6 +234,7 @@ class ConfigControllerTest {
         assertEquals(5000L, data.get("cooldown_ms"));
         assertEquals(1.0D, (Double) data.get("latency_factor"), 0.0001D);
         assertEquals(4, data.get("concurrency_baseline"));
+        assertEquals(3, data.get("max_workers"));
     }
 
     @Test
@@ -247,6 +249,8 @@ class ConfigControllerTest {
                 1.5D,
                 null,
                 6,
+                null,
+                3,
                 null
         );
 
@@ -257,22 +261,24 @@ class ConfigControllerTest {
         assertEquals(2500L, data.get("cooldown_ms"));
         assertEquals(1.5D, (Double) data.get("latency_factor"), 0.0001D);
         assertEquals(6, data.get("concurrency_baseline"));
+        assertEquals(3, data.get("max_workers"));
 
         ArgumentCaptor<Config> captor = ArgumentCaptor.forClass(Config.class);
-        verify(configService, atLeast(5)).saveOrUpdate(captor.capture(), any());
+        verify(configService, atLeast(6)).saveOrUpdate(captor.capture(), any());
         List<Config> saved = captor.getAllValues();
         assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_enabled".equals(c.getTag()) && "0".equals(c.getVal())));
         assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_max_cameras".equals(c.getTag()) && "12".equals(c.getVal())));
         assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_cooldown_ms".equals(c.getTag()) && "2500".equals(c.getVal())));
         assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_latency_factor".equals(c.getTag()) && "1.5".equals(c.getVal())));
         assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_concurrency_baseline".equals(c.getTag()) && "6".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_max_workers".equals(c.getTag()) && "3".equals(c.getVal())));
     }
 
     @Test
     void saveSchedulerConfigShouldDenyWhenNoPermission() {
         when(roleAccessService.canWriteSystem(any())).thenReturn(false);
 
-        JsonResult result = configController.saveSchedulerConfig("1", 10, null, 5000L, null, 1.0D, null, 4, null);
+        JsonResult result = configController.saveSchedulerConfig("1", 10, null, 5000L, null, 1.0D, null, 4, null, 3, null);
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());

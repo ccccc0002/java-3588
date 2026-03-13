@@ -1101,3 +1101,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Phase8 deploy verification done on RK3588: packaged latest jar, restarted 18082 app, web_ui_live_smoke passed 35/35 with updated login title; branding APIs/UI and controller tests already green. |
 | 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-204227-PHASE2-EXEC.json |
 | 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 branding milestone deployed and verified on RK3588 (mvn tests + app restart + web_ui_live_smoke 35/35). |
+| 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-205231-PHASE2-EXEC.json |
+| 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Phase9 worker-pool scheduler landed: configurable infer_scheduler_max_workers(default=3) + RK3588 targeted tests green |
+| 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-205231-PHASE2-EXEC.json |
+| 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 advanced: scheduler dispatch now supports configurable worker pool for RK3588 multi-core utilization; config UI/API wired; targeted tests passed on edge. |
+| 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-205300-PHASE2-EXEC.json |
+| 2026-03-13 20:53:01 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | phase9 worker-pool scheduler checkpoint compact |

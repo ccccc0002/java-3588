@@ -77,16 +77,16 @@
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T19:26:33+08:00",
-                                  "summary":  "tmux backlog lane validated Phase9 scheduler scope on RK3588: ActiveCameraInferenceSchedulerServiceTest passed",
+                                  "updated_at":  "2026-03-13T20:52:31+08:00",
+                                  "summary":  "Phase9 advanced: scheduler dispatch now supports configurable worker pool for RK3588 multi-core utilization; config UI/API wired; targeted tests passed on edge.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "08d014f",
-                                                       "updated_at":  "2026-03-13T19:26:33+08:00"
+                                                       "github_sync_ref":  "09e2032",
+                                                       "updated_at":  "2026-03-13T20:52:31+08:00"
                                                    }
                               },
                    "Phase10":  {
@@ -1106,6 +1106,16 @@
                         "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python scripts/testing/web_ui_live_smoke.py --base-url http://192.168.1.104:18082 --username admin --password admin123 --timeout-sec 30",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "52a87ff"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T20:52:31+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 advanced: scheduler dispatch now supports configurable worker pool for RK3588 multi-core utilization; config UI/API wired; targeted tests passed on edge.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "09e2032"
                     }
                 ]
 }

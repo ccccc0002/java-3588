@@ -46,6 +46,13 @@
                 </div>
             </div>
             <div class="layui-form-item">
+                <label class="layui-form-label">Max Workers</label>
+                <div class="layui-input-block">
+                    <input type="number" min="1" step="1" name="max_workers" required lay-verify="required|number"
+                           placeholder="e.g. 3" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
                 <div class="layui-input-block">
                     <button class="pear-btn pear-btn-primary" lay-submit lay-filter="saveScheduler">Save</button>
                 </div>
@@ -84,7 +91,8 @@
                     max_cameras: data.max_cameras,
                     cooldown_ms: data.cooldown_ms,
                     latency_factor: data.latency_factor,
-                    concurrency_baseline: data.concurrency_baseline
+                    concurrency_baseline: data.concurrency_baseline,
+                    max_workers: data.max_workers
                 });
                 form.render();
             });
