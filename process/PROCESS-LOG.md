@@ -757,3 +757,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 11:19:24 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-111923-PHASE2-EXEC.json |
 | 2026-03-13 11:19:24 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:19:24 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at e41a749: runtime telemetry degrade contract (telemetry_status/telemetry_error) unified across RuntimeApiService and dashboard summary, validated on RK3588. |
+| 2026-03-13 11:21:48 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-112148-PHASE2-EXEC.json |
+| 2026-03-13 11:21:48 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 api-contract hardening: RuntimeApiController tests now assert telemetry_status/telemetry_error passthrough for snapshot/plan, aligned with degrade contract; RK3588 targeted tests passed; GitHub synced to a985e3c. |
+| 2026-03-13 11:21:58 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112158-PHASE2-EXEC.json |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at a985e3c: RuntimeApiController now locks telemetry_status/telemetry_error passthrough contract for runtime snapshot and inference plan; RK3588 regression green. |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112159-PHASE2-EXEC.json |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at a985e3c: RuntimeApiController now locks telemetry_status/telemetry_error passthrough contract for runtime snapshot and inference plan; RK3588 regression green. |

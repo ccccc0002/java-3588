@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 11:19:24
+- generated_at: 2026-03-13 11:21:59
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T11:21:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T11:21:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
+- 2026-03-13T11:21:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T11:19:24+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T11:19:10+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T10:23:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T10:22:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T10:22:32+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
-- 2026-03-13T10:22:20+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T10:18:45+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T10:18:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |
-| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
-| 2026-03-13 10:11:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 10:11:39 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |
-| 2026-03-13 10:12:39 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101239-PHASE2-EXEC.json |
-| 2026-03-13 10:12:39 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 resilience checkpoint synced: dashboardSummary now tolerates runtime snapshot errors, returns stable payload for cockpit rendering; RK3588 targeted tests passed (23/23); GitHub synced to a915597. |
-| 2026-03-13 10:12:49 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101249-PHASE2-EXEC.json |
-| 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at a915597: dashboard summary fallback path prevents runtime telemetry failures from breaking cockpit overview. |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101250-PHASE2-EXEC.json |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:12:50 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at a915597: dashboard summary fallback path prevents runtime telemetry failures from breaking cockpit overview. |
@@ -61,3 +53,11 @@
 | 2026-03-13 11:19:23 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-111923-PHASE2-EXEC.json |
 | 2026-03-13 11:19:23 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at e41a749: runtime telemetry degrade contract (telemetry_status/telemetry_error) unified across RuntimeApiService and dashboard summary, validated on RK3588. |
 | 2026-03-13 11:19:24 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-111923-PHASE2-EXEC.json |
+| 2026-03-13 11:19:24 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:19:24 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at e41a749: runtime telemetry degrade contract (telemetry_status/telemetry_error) unified across RuntimeApiService and dashboard summary, validated on RK3588. |
+| 2026-03-13 11:21:48 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-112148-PHASE2-EXEC.json |
+| 2026-03-13 11:21:48 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 api-contract hardening: RuntimeApiController tests now assert telemetry_status/telemetry_error passthrough for snapshot/plan, aligned with degrade contract; RK3588 targeted tests passed; GitHub synced to a985e3c. |
+| 2026-03-13 11:21:58 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-112158-PHASE2-EXEC.json |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at a985e3c: RuntimeApiController now locks telemetry_status/telemetry_error passthrough contract for runtime snapshot and inference plan; RK3588 regression green. |
+| 2026-03-13 11:21:59 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-112159-PHASE2-EXEC.json |
