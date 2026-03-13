@@ -214,4 +214,68 @@ class ConfigControllerTest {
         assertEquals("permission denied", result.getMsg());
         verify(operationLogService).record(eq("network:delete"), eq("interface=eth1"), eq(false), eq("permission denied"), eq(""));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void schedulerInfoShouldReturnDefaultsWhenConfigsMissing() {
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn(null);
+        when(configService.getByValTag("infer_scheduler_max_cameras")).thenReturn(null);
+        when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn(null);
+        when(configService.getByValTag("infer_scheduler_latency_factor")).thenReturn(null);
+        when(configService.getByValTag("infer_scheduler_concurrency_baseline")).thenReturn(null);
+
+        JsonResult result = configController.schedulerInfo();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(true, data.get("enabled"));
+        assertEquals(10, data.get("max_cameras"));
+        assertEquals(5000L, data.get("cooldown_ms"));
+        assertEquals(1.0D, (Double) data.get("latency_factor"), 0.0001D);
+        assertEquals(4, data.get("concurrency_baseline"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveSchedulerConfigShouldPersistSchedulerTags() {
+        JsonResult result = configController.saveSchedulerConfig(
+                "0",
+                12,
+                null,
+                2500L,
+                null,
+                1.5D,
+                null,
+                6,
+                null
+        );
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals(false, data.get("enabled"));
+        assertEquals(12, data.get("max_cameras"));
+        assertEquals(2500L, data.get("cooldown_ms"));
+        assertEquals(1.5D, (Double) data.get("latency_factor"), 0.0001D);
+        assertEquals(6, data.get("concurrency_baseline"));
+
+        ArgumentCaptor<Config> captor = ArgumentCaptor.forClass(Config.class);
+        verify(configService, atLeast(5)).saveOrUpdate(captor.capture(), any());
+        List<Config> saved = captor.getAllValues();
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_enabled".equals(c.getTag()) && "0".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_max_cameras".equals(c.getTag()) && "12".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_cooldown_ms".equals(c.getTag()) && "2500".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_latency_factor".equals(c.getTag()) && "1.5".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "infer_scheduler_concurrency_baseline".equals(c.getTag()) && "6".equals(c.getVal())));
+    }
+
+    @Test
+    void saveSchedulerConfigShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = configController.saveSchedulerConfig("1", 10, null, 5000L, null, 1.0D, null, 4, null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("scheduler:save"), eq("scheduler"), eq(false), eq("permission denied"), eq(""));
+    }
 }

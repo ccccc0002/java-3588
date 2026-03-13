@@ -47,6 +47,11 @@ public class ConfigController {
     private static final String TAG_LICENSE_EXPIRE_AT = "license_expire_at";
     private static final String TAG_LICENSE_TENANT = "license_tenant";
     private static final String TAG_NETWORK_CONFIGS = "network_configurations";
+    private static final String TAG_INFER_SCHEDULER_ENABLED = "infer_scheduler_enabled";
+    private static final String TAG_INFER_SCHEDULER_MAX_CAMERAS = "infer_scheduler_max_cameras";
+    private static final String TAG_INFER_SCHEDULER_COOLDOWN_MS = "infer_scheduler_cooldown_ms";
+    private static final String TAG_INFER_SCHEDULER_LATENCY_FACTOR = "infer_scheduler_latency_factor";
+    private static final String TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE = "infer_scheduler_concurrency_baseline";
 
     @Autowired
     private ConfigService configService;
@@ -88,6 +93,11 @@ public class ConfigController {
     @GetMapping({"/network"})
     public String networkPage() {
         return "config/network";
+    }
+
+    @GetMapping({"/scheduler"})
+    public String schedulerPage() {
+        return "config/scheduler";
     }
 
     @PostMapping({"/detail"})
@@ -311,6 +321,77 @@ public class ConfigController {
         return JsonResultUtils.success(updated);
     }
 
+    @RequestMapping(value = "/scheduler/info", method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult schedulerInfo() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("enabled", parseEnabled(configService.getByValTag(TAG_INFER_SCHEDULER_ENABLED), true));
+        data.put("max_cameras", parseInt(configService.getByValTag(TAG_INFER_SCHEDULER_MAX_CAMERAS), 10));
+        data.put("cooldown_ms", parseLong(configService.getByValTag(TAG_INFER_SCHEDULER_COOLDOWN_MS), 5000L));
+        data.put("latency_factor", parseDouble(configService.getByValTag(TAG_INFER_SCHEDULER_LATENCY_FACTOR), 1.0D));
+        data.put("concurrency_baseline", parseInt(configService.getByValTag(TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE), 4));
+        return JsonResultUtils.success(data);
+    }
+
+    @PostMapping("/scheduler/save")
+    @ResponseBody
+    public JsonResult saveSchedulerConfig(
+            String enabled,
+            Integer maxCameras,
+            Integer max_cameras,
+            Long cooldownMs,
+            Long cooldown_ms,
+            Double latencyFactor,
+            Double latency_factor,
+            Integer concurrencyBaseline,
+            Integer concurrency_baseline
+    ) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("scheduler:save", "scheduler", false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+
+        int finalMaxCameras = maxCameras != null ? maxCameras : (max_cameras == null ? 10 : max_cameras);
+        long finalCooldownMs = cooldownMs != null ? cooldownMs : (cooldown_ms == null ? 5000L : cooldown_ms);
+        double finalLatencyFactor = latencyFactor != null ? latencyFactor : (latency_factor == null ? 1.0D : latency_factor);
+        int finalConcurrencyBaseline = concurrencyBaseline != null ? concurrencyBaseline : (concurrency_baseline == null ? 4 : concurrency_baseline);
+        boolean finalEnabled = parseEnabled(enabled, true);
+
+        if (finalMaxCameras <= 0) {
+            return JsonResultUtils.fail("max_cameras must be greater than 0");
+        }
+        if (finalCooldownMs < 0L) {
+            return JsonResultUtils.fail("cooldown_ms must be greater than or equal to 0");
+        }
+        if (finalLatencyFactor <= 0D) {
+            return JsonResultUtils.fail("latency_factor must be greater than 0");
+        }
+        if (finalConcurrencyBaseline <= 0) {
+            return JsonResultUtils.fail("concurrency_baseline must be greater than 0");
+        }
+
+        upsertConfig(TAG_INFER_SCHEDULER_ENABLED, "Infer Scheduler Enabled", finalEnabled ? "1" : "0");
+        upsertConfig(TAG_INFER_SCHEDULER_MAX_CAMERAS, "Infer Scheduler Max Cameras", String.valueOf(finalMaxCameras));
+        upsertConfig(TAG_INFER_SCHEDULER_COOLDOWN_MS, "Infer Scheduler Cooldown Ms", String.valueOf(finalCooldownMs));
+        upsertConfig(TAG_INFER_SCHEDULER_LATENCY_FACTOR, "Infer Scheduler Latency Factor", String.valueOf(finalLatencyFactor));
+        upsertConfig(TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE, "Infer Scheduler Concurrency Baseline", String.valueOf(finalConcurrencyBaseline));
+
+        operationLogService.record("scheduler:save", "scheduler", true, "scheduler config saved",
+                "enabled=" + (finalEnabled ? 1 : 0)
+                        + ",max_cameras=" + finalMaxCameras
+                        + ",cooldown_ms=" + finalCooldownMs
+                        + ",latency_factor=" + finalLatencyFactor
+                        + ",concurrency_baseline=" + finalConcurrencyBaseline);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("enabled", finalEnabled);
+        data.put("max_cameras", finalMaxCameras);
+        data.put("cooldown_ms", finalCooldownMs);
+        data.put("latency_factor", finalLatencyFactor);
+        data.put("concurrency_baseline", finalConcurrencyBaseline);
+        return JsonResultUtils.success(data);
+    }
+
     private Long currentAccountId() {
         try {
             return StpUtil.getLoginIdAsLong();
@@ -362,6 +443,36 @@ public class ConfigController {
         } catch (Exception e) {
             return defaultVal;
         }
+    }
+
+    private long parseLong(String val, long defaultVal) {
+        if (StrUtil.isBlank(val)) {
+            return defaultVal;
+        }
+        try {
+            return Long.parseLong(val.trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
+    }
+
+    private double parseDouble(String val, double defaultVal) {
+        if (StrUtil.isBlank(val)) {
+            return defaultVal;
+        }
+        try {
+            return Double.parseDouble(val.trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
+    }
+
+    private boolean parseEnabled(String value, boolean defaultVal) {
+        if (StrUtil.isBlank(value)) {
+            return defaultVal;
+        }
+        String normalized = value.trim().toLowerCase();
+        return "1".equals(normalized) || "true".equals(normalized) || "yes".equals(normalized) || "on".equals(normalized);
     }
 
     private String defaultString(String value) {
