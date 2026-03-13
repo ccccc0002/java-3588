@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 09:41:01
+- generated_at: 2026-03-13 09:53:40
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T09:53:40+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T09:53:40+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
+- 2026-03-13T09:53:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:41:01+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:40:51+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:38:01+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T09:37:47+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T09:35:11+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T09:34:57+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T09:31:36+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 09:17:12 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-091712-PHASE2-EXEC.json |
-| 2026-03-13 09:17:12 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 bootstrap delivered: scheduler now scales latency-based cooldown by concurrency pressure (active binding count / configurable baseline), exposing concurrency_level and concurrency_pressure in summary and skip diagnostics; RK3588 edge tests passed and code synced. |
-| 2026-03-13 09:17:24 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-091724-PHASE2-EXEC.json |
-| 2026-03-13 09:17:25 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Auto frame-throttle v1 landed: ActiveCameraInferenceSchedulerService computes concurrency pressure from active dispatch contexts and applies it to latency-based cooldown; diagnostics now include concurrency metadata; added scheduler concurrency-pressure test and RK3588 edge test passed (7/7). |
-| 2026-03-13 09:17:25 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-091725-PHASE2-EXEC.json |
-| 2026-03-13 09:17:25 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 09:17:25 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Auto frame-throttle v1 landed: ActiveCameraInferenceSchedulerService computes concurrency pressure from active dispatch contexts and applies it to latency-based cooldown; diagnostics now include concurrency metadata; added scheduler concurrency-pressure test and RK3588 edge test passed (7/7). |
 | 2026-03-13 09:21:54 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-092153-PHASE2-EXEC.json |
 | 2026-03-13 09:21:54 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 observability wiring completed: added runtime scheduler summary/dispatch APIs and scheduler last-summary snapshot, so concurrency-pressure and cooldown diagnostics are externally queryable; RK3588 targeted tests passed and synced. |
 | 2026-03-13 09:22:04 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-092204-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-094101-PHASE2-EXEC.json |
 | 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed. |
 | 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-094101-PHASE2-EXEC.json |
+| 2026-03-13 09:41:02 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:41:02 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed. |
+| 2026-03-13 09:53:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-095329-PHASE2-EXEC.json |
+| 2026-03-13 09:53:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 dashboard telemetry wiring: stream dashboard summary now includes scheduler/throttle hints and frontend shows pressure/stride/min-dispatch metrics; RK3588 tests passed (22/22). |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-095339-PHASE2-EXEC.json |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | dashboardSummary now outputs scheduler/throttle telemetry; index_tj dashboard renders scheduler pressure/stride/dispatch cards; RK3588 targeted regression passed. |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-095340-PHASE2-EXEC.json |

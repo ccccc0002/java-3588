@@ -1,0 +1,23 @@
+{
+    "timestamp":  "2026-03-13T09:53:40+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase10",
+    "event":  "session_compacted",
+    "summary":  "compact after checkpoint: dashboardSummary now outputs scheduler/throttle telemetry; index_tj dashboard renders scheduler pressure/stride/dispatch cards; RK3588 targeted regression passed.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M process/PROCESS-LOG.md",
+                       " M process/latest-status.json",
+                       " M src/main/java/com/yihecode/camera/ai/web/StreamController.java",
+                       " M src/main/resources/templates/stream/index_tj.ftl",
+                       " M src/test/java/com/yihecode/camera/ai/web/StreamControllerTest.java",
+                       " M state/progress/phase2-status.json",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-095329-PHASE2-EXEC.json",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-095339-PHASE2-EXEC.json"
+                   ]
+}

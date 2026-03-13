@@ -684,3 +684,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 09:41:01 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-094101-PHASE2-EXEC.json |
 | 2026-03-13 09:41:02 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 09:41:02 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: Runtime snapshot now includes scheduler feedback and throttle_hint for unified telemetry consumption; RuntimeApiService tests updated, RK3588 targeted tests passed (9/9), and commit 84b9db3 pushed. |
+| 2026-03-13 09:53:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-095329-PHASE2-EXEC.json |
+| 2026-03-13 09:53:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 dashboard telemetry wiring: stream dashboard summary now includes scheduler/throttle hints and frontend shows pressure/stride/min-dispatch metrics; RK3588 tests passed (22/22). |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-095339-PHASE2-EXEC.json |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | dashboardSummary now outputs scheduler/throttle telemetry; index_tj dashboard renders scheduler pressure/stride/dispatch cards; RK3588 targeted regression passed. |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-095340-PHASE2-EXEC.json |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: dashboardSummary now outputs scheduler/throttle telemetry; index_tj dashboard renders scheduler pressure/stride/dispatch cards; RK3588 targeted regression passed. |
