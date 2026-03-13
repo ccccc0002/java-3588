@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:33:58+08:00",
-                                   "summary":  "Phase10 bridge telemetry convergence: rk3588 runtime bridge plan_summary now carries telemetry_status/error and throttle hints (stride/min-dispatch), offline fallback provides deterministic defaults; RK3588 python tests passed (10/10); GitHub synced to 1ca1b17.",
+                                   "updated_at":  "2026-03-13T11:41:14+08:00",
+                                   "summary":  "Phase10 capacity observability enhancement: rk3588 runtime bridge plan_summary now includes strategy_source, concurrency_pressure and concurrency_level with deterministic offline defaults; RK3588 python tests passed (10/10); GitHub synced to 32fc0c3.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "1ca1b17",
-                                                        "updated_at":  "2026-03-13T11:33:58+08:00"
+                                                        "github_sync_ref":  "32fc0c3",
+                                                        "updated_at":  "2026-03-13T11:41:14+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -659,6 +659,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "1ca1b17"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:41:14+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 capacity observability enhancement: rk3588 runtime bridge plan_summary now includes strategy_source, concurrency_pressure and concurrency_level with deterministic offline defaults; RK3588 python tests passed (10/10); GitHub synced to 32fc0c3.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "32fc0c3"
                     }
                 ]
 }

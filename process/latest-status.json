@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 11:34:14",
+    "time":  "2026-03-13 11:41:27",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at 1ca1b17: rk3588 runtime bridge now forwards telemetry_status/error + throttle hints in plan_summary and offline defaults; RK3588 python regression passed."
+    "summary":  "compact after checkpoint: GitHub sync complete at 32fc0c3: rk3588 bridge plan_summary now exports strategy_source/concurrency_pressure/concurrency_level for capacity diagnostics; RK3588 python regression passed."
 }
