@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 21:45:49
+- generated_at: 2026-03-13 22:02:47
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T22:02:47+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T22:02:38+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T21:45:49+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T21:45:48+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
 - 2026-03-13T21:45:34+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_completed
 - 2026-03-13T21:39:40+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-13T21:39:40+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-13T21:39:28+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
-- 2026-03-13T21:39:14+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-13T21:39:02+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 20:53:58 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588). |
-| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-210403-PHASE2-EXEC.json |
-| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | Phase4 advanced: manual ONVIF scan backend(api) + camera page scan entry + RTSP copy workflow landed with tests |
-| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210403-PHASE2-EXEC.json |
-| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy. |
-| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210856-PHASE2-EXEC.json |
-| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: manual ONVIF scan flow (API + camera UI dialog + result RTSP copy) synced to GitHub. |
-| 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213142-PHASE2-EXEC.json |
 | 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 validated in tmux backlog on RK3588: Index/Login/Stream targeted tests passed; camera area tree one-click expand/collapse UI delivered. |
 | 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213159-PHASE2-EXEC.json |
 | 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5 validated in tmux backlog on RK3588: model testing suite passed after headless stabilization (ModelTestResultServiceTest + package/model capture tests). |
@@ -61,3 +53,11 @@
 | 2026-03-13 21:45:48 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-214548-PHASE2-EXEC.json |
 | 2026-03-13 21:45:49 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | phase2-acceptance wave: phase11 handoff dry-run pass; phase10 strict 1500 gate failed due plan suggested_min_dispatch_ms=5000 on live RTSP, relaxed 6000 gate passes 4/4. Runtime stack now tokenized and healthy. |
 | 2026-03-13 21:45:49 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-214549-PHASE2-EXEC.json |
+| 2026-03-13 21:45:49 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 21:45:49 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: phase2-acceptance wave: phase11 handoff dry-run pass; phase10 strict 1500 gate failed due plan suggested_min_dispatch_ms=5000 on live RTSP, relaxed 6000 gate passes 4/4. Runtime stack now tokenized and healthy. |
+| 2026-03-13 22:02:38 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-220237-PHASE2-EXEC.json |
+| 2026-03-13 22:02:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:02:38 | PHASE2-EXEC | Phase10 | phase_completed | codex-agent | Phase10 strict acceptance restored on RK3588: max-plan-suggested-min-dispatch-ms=1500 now passes (actual 1448) with scheduler-feedback throttle tuning and single-stream cap. |
+| 2026-03-13 22:02:47 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-220247-PHASE2-EXEC.json |
+| 2026-03-13 22:02:47 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | Strict Phase10 gate(1500ms) passed on RK3588; preparing commit+sync. |
+| 2026-03-13 22:02:47 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-220247-PHASE2-EXEC.json |

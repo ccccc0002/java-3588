@@ -79,6 +79,8 @@ public class ActiveCameraInferenceSchedulerService {
         summary.put("latency_update_count", 0);
         summary.put("max_declared_inference_ms", 0L);
         summary.put("max_observed_latency_ms", 0L);
+        summary.put("max_base_cooldown_ms", 0L);
+        summary.put("max_latency_cooldown_ms", 0L);
         summary.put("max_effective_cooldown_ms", 0L);
         summary.put("concurrency_level", 0);
         summary.put("concurrency_pressure", 1.0D);
@@ -146,6 +148,8 @@ public class ActiveCameraInferenceSchedulerService {
             CooldownDecision cooldown = resolveCooldownMs(dispatchKey, camera, algorithm, latencyFactor, concurrencyLevel, concurrencyPressure);
             updateMax(summary, "max_declared_inference_ms", cooldown.getDeclaredLatencyMs());
             updateMax(summary, "max_observed_latency_ms", cooldown.getObservedLatencyMs());
+            updateMax(summary, "max_base_cooldown_ms", cooldown.getBaseCooldownMs());
+            updateMax(summary, "max_latency_cooldown_ms", cooldown.getLatencyCooldownMs());
             updateMax(summary, "max_effective_cooldown_ms", cooldown.getEffectiveCooldownMs());
             Long lastDispatchMs = lastDispatchAtMs.get(dispatchKey);
             if (cooldown.getEffectiveCooldownMs() > 0 && lastDispatchMs != null && (nowMs - lastDispatchMs) < cooldown.getEffectiveCooldownMs()) {

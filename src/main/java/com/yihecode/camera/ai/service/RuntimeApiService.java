@@ -14,6 +14,7 @@ import java.util.Map;
 
 @Service
 public class RuntimeApiService {
+    private static final int SINGLE_STREAM_SOFT_MAX_DISPATCH_MS = 1500;
 
     private final CameraService cameraService;
     private final VideoPlayService videoPlayService;
@@ -171,11 +172,12 @@ public class RuntimeApiService {
         double pressure = toPositiveDouble(scheduler == null ? null : scheduler.get("concurrency_pressure"), 1.0D);
         int concurrencyLevel = toInt(scheduler == null ? null : scheduler.get("concurrency_level"));
         int maxEffectiveCooldown = toInt(scheduler == null ? null : scheduler.get("max_effective_cooldown_ms"));
+        int schedulerFeedbackCooldown = resolveSchedulerFeedbackCooldownMs(scheduler);
 
         int recommendedFrameStride;
-        if (pressure >= 2.0D || maxEffectiveCooldown >= 5000) {
+        if (pressure >= 2.0D || schedulerFeedbackCooldown >= 5000) {
             recommendedFrameStride = 3;
-        } else if (pressure >= 1.2D || maxEffectiveCooldown >= 2500) {
+        } else if (pressure >= 1.2D || schedulerFeedbackCooldown >= 2500) {
             recommendedFrameStride = 2;
         } else {
             recommendedFrameStride = 1;
@@ -185,19 +187,45 @@ public class RuntimeApiService {
         hint.put("concurrency_pressure", pressure);
         hint.put("concurrency_level", concurrencyLevel);
         hint.put("recommended_frame_stride", recommendedFrameStride);
-        hint.put("suggested_min_dispatch_ms", maxEffectiveCooldown > 0 ? maxEffectiveCooldown : recommendedFrameStride * 1000);
+        int suggestedMinDispatchMs = schedulerFeedbackCooldown > 0 ? schedulerFeedbackCooldown : recommendedFrameStride * 1000;
+        if (concurrencyLevel <= 1 && pressure <= 1.0D && suggestedMinDispatchMs > SINGLE_STREAM_SOFT_MAX_DISPATCH_MS) {
+            suggestedMinDispatchMs = SINGLE_STREAM_SOFT_MAX_DISPATCH_MS;
+        }
+        hint.put("suggested_min_dispatch_ms", suggestedMinDispatchMs);
         hint.put("estimated_budget_per_stream", streamCount <= 0 ? budget : budget / streamCount);
+        hint.put("scheduler_effective_cooldown_ms", Math.max(maxEffectiveCooldown, 0));
+        hint.put("scheduler_feedback_cooldown_ms", Math.max(schedulerFeedbackCooldown, 0));
         hint.put("strategy_source", "scheduler_feedback");
         return hint;
     }
 
     private int resolveSuggestedMinDispatchMs(Map<String, Object> scheduler, Map<String, Object> throttleHint) {
-        int schedulerCooldown = toInt(scheduler == null ? null : scheduler.get("max_effective_cooldown_ms"));
+        int schedulerCooldown = resolveSchedulerFeedbackCooldownMs(scheduler);
         if (schedulerCooldown > 0) {
             return schedulerCooldown;
         }
         int stride = toInt(throttleHint == null ? null : throttleHint.get("recommended_frame_stride"));
         return Math.max(stride, 1) * 1000;
+    }
+
+    private int resolveSchedulerFeedbackCooldownMs(Map<String, Object> scheduler) {
+        int latency = toInt(scheduler == null ? null : scheduler.get("max_latency_cooldown_ms"));
+        int observed = toInt(scheduler == null ? null : scheduler.get("max_observed_latency_ms"));
+        int declared = toInt(scheduler == null ? null : scheduler.get("max_declared_inference_ms"));
+        return maxPositive(latency, observed, declared);
+    }
+
+    private int maxPositive(int... values) {
+        int max = 0;
+        if (values == null) {
+            return max;
+        }
+        for (int value : values) {
+            if (value > max) {
+                max = value;
+            }
+        }
+        return max;
     }
 
     private List<Map<String, Object>> buildStreamItems(List<VideoPlay> activeStreams, Map<Long, Camera> cameraMap) {

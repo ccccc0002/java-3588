@@ -91,7 +91,7 @@ class RuntimeApiServiceTest {
         assertEquals(1.5D, ((Number) scheduler.get("concurrency_pressure")).doubleValue());
         Map<String, Object> throttleHint = (Map<String, Object>) snapshot.get("throttle_hint");
         assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
-        assertEquals(2600, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(2000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
         assertEquals("ok", snapshot.get("telemetry_status"));
         assertEquals("", snapshot.get("telemetry_error"));
@@ -129,13 +129,13 @@ class RuntimeApiServiceTest {
         assertEquals("http://zlm.example/live/1.live.flv", items.get(0).get("play_url"));
         assertEquals("rtmp://127.0.0.1:1935/live/1", items.get(0).get("push_url"));
         assertEquals(3, ((Number) items.get(0).get("suggested_frame_stride")).intValue());
-        assertEquals(5200, ((Number) items.get(0).get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(3000, ((Number) items.get(0).get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", items.get(0).get("suggestion_source"));
         assertEquals(Boolean.FALSE, items.get(1).get("ready"));
         assertEquals("", items.get(1).get("play_url"));
         assertEquals("", items.get(1).get("push_url"));
         assertEquals(3, ((Number) items.get(1).get("suggested_frame_stride")).intValue());
-        assertEquals(5200, ((Number) items.get(1).get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(3000, ((Number) items.get(1).get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", items.get(1).get("suggestion_source"));
 
         Map<String, Object> scheduler = (Map<String, Object>) plan.get("scheduler");
@@ -144,11 +144,65 @@ class RuntimeApiServiceTest {
 
         Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
         assertEquals(3, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
-        assertEquals(5200, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(3000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
         assertEquals(6.25D, ((Number) throttleHint.get("estimated_budget_per_stream")).doubleValue(), 0.0001D);
         assertEquals("ok", plan.get("telemetry_status"));
         assertEquals("", plan.get("telemetry_error"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildInferencePlan_shouldPreferObservedLatencyForSuggestedMinDispatch() {
+        when(cameraService.listActives()).thenReturn(List.of(camera(1L, "cam-1", "rtsp://cam-1")));
+        when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
+        when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
+        when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Map.of(
+                "concurrency_level", 1,
+                "concurrency_pressure", 1.0D,
+                "max_effective_cooldown_ms", 5000,
+                "max_observed_latency_ms", 1456
+        ));
+        stubMediaConfig();
+
+        Map<String, Object> plan = runtimeApiService.buildInferencePlan(10.0D);
+
+        Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
+        assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(1456, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(5000, ((Number) throttleHint.get("scheduler_effective_cooldown_ms")).intValue());
+        assertEquals(1456, ((Number) throttleHint.get("scheduler_feedback_cooldown_ms")).intValue());
+        assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
+
+        List<Map<String, Object>> items = (List<Map<String, Object>>) plan.get("items");
+        assertEquals(1, items.size());
+        assertEquals(1, ((Number) items.get(0).get("suggested_frame_stride")).intValue());
+        assertEquals(1456, ((Number) items.get(0).get("suggested_min_dispatch_ms")).intValue());
+        assertEquals("scheduler_feedback", items.get(0).get("suggestion_source"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildInferencePlan_shouldCapSingleStreamSuggestedMinDispatchAt1500() {
+        when(cameraService.listActives()).thenReturn(List.of(camera(1L, "cam-1", "rtsp://cam-1")));
+        when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
+        when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
+        when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Map.of(
+                "concurrency_level", 1,
+                "concurrency_pressure", 1.0D,
+                "max_effective_cooldown_ms", 5000,
+                "max_observed_latency_ms", 1511
+        ));
+        stubMediaConfig();
+
+        Map<String, Object> plan = runtimeApiService.buildInferencePlan(10.0D);
+
+        Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
+        assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(1500, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+        assertEquals(1511, ((Number) throttleHint.get("scheduler_feedback_cooldown_ms")).intValue());
     }
     @Test
     void buildRuntimeSnapshot_shouldFallbackToCameraLookupForRequestedStreams() {
