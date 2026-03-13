@@ -35,16 +35,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T13:55:01+08:00",
-                                  "summary":  "Phase6 alert-image fix synced: InferenceReportBridgeService now parses data-uri base64 and annotates raw image_base64 using alert bbox/label before persistence; prevents raw alarm images and improves preview reliability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). GitHub synced to c9b75af.",
+                                  "updated_at":  "2026-03-13T14:03:56+08:00",
+                                  "summary":  "Phase6 e2e evidence updated: RK3588 dispatch-\u003ereport/stream verification passed with red-overlay hit for persisted alarm image (report_id=2032336649347715074), plus python unittest coverage for verify_alarm_stream_annotation.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
+                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py \u0026\u0026 python3 scripts/testing/verify_alarm_stream_annotation.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --plugin-id yolov8n --timeout-sec 45 --output-dir runtime/test-out/alarm-stream-annotation-20260313-140255",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
+                                                       "github_sync_status":  "pending",
                                                        "github_sync_ref":  "c9b75af",
-                                                       "updated_at":  "2026-03-13T13:55:01+08:00"
+                                                       "updated_at":  "2026-03-13T14:03:56+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -876,6 +876,16 @@
                         "edge_test_status":  "passed",
                         "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
                         "github_sync_status":  "synced",
+                        "github_sync_ref":  "c9b75af"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T14:03:56+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 e2e evidence updated: RK3588 dispatch-\u003ereport/stream verification passed with red-overlay hit for persisted alarm image (report_id=2032336649347715074), plus python unittest coverage for verify_alarm_stream_annotation.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py \u0026\u0026 python3 scripts/testing/verify_alarm_stream_annotation.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --plugin-id yolov8n --timeout-sec 45 --output-dir runtime/test-out/alarm-stream-annotation-20260313-140255",
+                        "github_sync_status":  "pending",
                         "github_sync_ref":  "c9b75af"
                     }
                 ]

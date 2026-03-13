@@ -945,3 +945,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 13:55:03 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135502-PHASE2-EXEC.json |
 | 2026-03-13 13:55:03 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:55:03 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Phase6 sync checkpoint: alarm annotated-image persistence fix pushed (c9b75af). |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-140356-PHASE2-EXEC.json |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Phase6 checkpoint: alarm preview annotation e2e evidence captured at state/local/alarm-stream-annotation-20260313-140255-summary.json |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-140356-PHASE2-EXEC.json |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 e2e evidence updated: RK3588 dispatch->report/stream verification passed with red-overlay hit for persisted alarm image (report_id=2032336649347715074), plus python unittest coverage for verify_alarm_stream_annotation. |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-140357-PHASE2-EXEC.json |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 14:03:57 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Phase6 checkpoint: alarm preview annotation e2e evidence captured at state/local/alarm-stream-annotation-20260313-140255-summary.json |
