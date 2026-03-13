@@ -853,3 +853,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 12:02:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-120243-PHASE2-EXEC.json |
 | 2026-03-13 12:02:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 12:02:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 049dca6: runtime_stack_smoke stream counters now use safe numeric parsing; invalid upstream values no longer crash gating and still enforce thresholds; RK3588 python regression passed (12/12). |
+| 2026-03-13 12:05:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-120520-PHASE2-EXEC.json |
+| 2026-03-13 12:05:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 gate observability improved: runtime_stack_smoke now returns acceptance_gates (configured thresholds + actual telemetry/ready-stream/pressure/dispatch values), making edge gate outcomes auditable; RK3588 python test passed (12/12); GitHub synced to c87c2a7. |
+| 2026-03-13 12:05:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 12:05:35 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-120535-PHASE2-EXEC.json |
+| 2026-03-13 12:05:35 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at c87c2a7: runtime_stack_smoke output now includes acceptance_gates with thresholds and actual telemetry/capacity metrics for auditable edge gating; RK3588 python regression passed (12/12). |
+| 2026-03-13 12:05:35 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-120535-PHASE2-EXEC.json |
+| 2026-03-13 12:05:36 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 12:05:36 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at c87c2a7: runtime_stack_smoke output now includes acceptance_gates with thresholds and actual telemetry/capacity metrics for auditable edge gating; RK3588 python regression passed (12/12). |
