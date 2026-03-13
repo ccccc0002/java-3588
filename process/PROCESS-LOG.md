@@ -740,3 +740,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 10:18:45 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101845-PHASE2-EXEC.json |
 | 2026-03-13 10:18:46 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:18:46 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at b60af1b: cockpit telemetry health badge + backend telemetry status contract landed and validated on RK3588. |
+| 2026-03-13 10:22:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-102219-PHASE2-EXEC.json |
+| 2026-03-13 10:22:20 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 API contract guard strengthened: RuntimeApiControllerTest now asserts throttle_hint.suggested_min_dispatch_ms in runtime snapshot and inference plan authorized flows; RK3588 targeted tests passed (24/24). |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-102231-PHASE2-EXEC.json |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | runtime api controller contract tests now lock suggested_min_dispatch_ms for snapshot/plan authorized responses; RK3588 targeted tests all green. |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-102232-PHASE2-EXEC.json |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:22:32 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: runtime api controller contract tests now lock suggested_min_dispatch_ms for snapshot/plan authorized responses; RK3588 targeted tests all green. |

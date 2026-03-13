@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T10:18:29+08:00",
-                                   "summary":  "Phase10 telemetry health status synced: dashboard summary now emits telemetry_status/telemetry_error and cockpit renders ok/degraded badge; RK3588 targeted tests passed (23/23); GitHub synced to b60af1b.",
+                                   "updated_at":  "2026-03-13T10:22:19+08:00",
+                                   "summary":  "Phase10 API contract guard strengthened: RuntimeApiControllerTest now asserts throttle_hint.suggested_min_dispatch_ms in runtime snapshot and inference plan authorized flows; RK3588 targeted tests passed (24/24).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,StreamControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "b60af1b",
-                                                        "updated_at":  "2026-03-13T10:18:29+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "",
+                                                        "updated_at":  "2026-03-13T10:22:19+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -579,6 +579,16 @@
                         "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "b60af1b"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T10:22:19+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 API contract guard strengthened: RuntimeApiControllerTest now asserts throttle_hint.suggested_min_dispatch_ms in runtime snapshot and inference plan authorized flows; RK3588 targeted tests passed (24/24).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiControllerTest,RuntimeApiServiceTest,StreamControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }
