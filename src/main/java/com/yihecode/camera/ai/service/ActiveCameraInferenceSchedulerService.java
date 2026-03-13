@@ -29,11 +29,14 @@ public class ActiveCameraInferenceSchedulerService {
     private static final String CONFIG_DEFAULT_PLUGIN_ID = "infer_default_plugin_id";
     private static final String CONFIG_MAX_CAMERAS = "infer_scheduler_max_cameras";
     private static final String CONFIG_COOLDOWN_MS = "infer_scheduler_cooldown_ms";
+    private static final String CONFIG_LATENCY_FACTOR = "infer_scheduler_latency_factor";
     private static final int DEFAULT_MAX_CAMERAS = 10;
     private static final long DEFAULT_COOLDOWN_MS = 5000L;
+    private static final double DEFAULT_LATENCY_FACTOR = 1.0D;
     private static final String FALLBACK_PLUGIN_ID = "yolov8n";
 
     private final ConcurrentMap<String, Long> lastDispatchAtMs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Long> observedLatencyMs = new ConcurrentHashMap<>();
 
     @Autowired
     private CameraService cameraService;
@@ -105,7 +108,7 @@ public class ActiveCameraInferenceSchedulerService {
                 }
 
                 String dispatchKey = buildDispatchKey(camera.getId(), algorithm.getId());
-                long cooldownMs = resolveCooldownMs(camera, algorithm);
+                long cooldownMs = resolveCooldownMs(dispatchKey, camera, algorithm);
                 Long lastDispatchMs = lastDispatchAtMs.get(dispatchKey);
                 if (cooldownMs > 0 && lastDispatchMs != null && (nowMs - lastDispatchMs) < cooldownMs) {
                     addSkipped(summary, skipped, camera.getId(), algorithm.getId(), "cooldown");
@@ -117,6 +120,7 @@ public class ActiveCameraInferenceSchedulerService {
                     JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
                     if (result != null && Integer.valueOf(0).equals(result.getCode())) {
                         lastDispatchAtMs.put(dispatchKey, nowMs);
+                        updateObservedLatency(dispatchKey, extractLatencyMs(result.getData()));
                         increment(summary, "dispatch_count");
                     } else {
                         addError(summary, errors, camera.getId(), algorithm.getId(), result == null ? "dispatch_result_null" : String.valueOf(result.getMsg()));
@@ -169,21 +173,47 @@ public class ActiveCameraInferenceSchedulerService {
         }
     }
 
-    private long resolveCooldownMs(Camera camera, Algorithm algorithm) {
+    private long resolveCooldownMs(String dispatchKey, Camera camera, Algorithm algorithm) {
         long algorithmCooldown = secondsToMillis(algorithm == null ? null : algorithm.getIntervalTime());
         if (algorithmCooldown > 0) {
-            return algorithmCooldown;
+            return Math.max(algorithmCooldown, resolveLatencyCooldownMs(dispatchKey, algorithm));
         }
         long cameraCooldown = secondsToMillis(camera == null ? null : camera.getIntervalTime());
         if (cameraCooldown > 0) {
-            return cameraCooldown;
+            return Math.max(cameraCooldown, resolveLatencyCooldownMs(dispatchKey, algorithm));
         }
         String value = getConfig(CONFIG_COOLDOWN_MS);
+        long fallback;
         try {
             long parsed = Long.parseLong(StrUtil.blankToDefault(value, String.valueOf(DEFAULT_COOLDOWN_MS)).trim());
-            return Math.max(parsed, 0L);
+            fallback = Math.max(parsed, 0L);
         } catch (Exception ex) {
-            return DEFAULT_COOLDOWN_MS;
+            fallback = DEFAULT_COOLDOWN_MS;
+        }
+        return Math.max(fallback, resolveLatencyCooldownMs(dispatchKey, algorithm));
+    }
+
+    private long resolveLatencyCooldownMs(String dispatchKey, Algorithm algorithm) {
+        Long observed = observedLatencyMs.get(dispatchKey);
+        Long declared = extractDeclaredInferenceMs(algorithm == null ? null : algorithm.getParams());
+        long baseline = Math.max(observed == null ? 0L : observed, declared == null ? 0L : declared);
+        if (baseline <= 0L) {
+            return 0L;
+        }
+        double factor = resolveLatencyFactor();
+        return Math.max(Math.round(baseline * factor), 0L);
+    }
+
+    private double resolveLatencyFactor() {
+        String raw = getConfig(CONFIG_LATENCY_FACTOR);
+        if (StrUtil.isBlank(raw)) {
+            return DEFAULT_LATENCY_FACTOR;
+        }
+        try {
+            double parsed = Double.parseDouble(raw.trim());
+            return parsed > 0D ? parsed : DEFAULT_LATENCY_FACTOR;
+        } catch (Exception ex) {
+            return DEFAULT_LATENCY_FACTOR;
         }
     }
 
@@ -213,6 +243,82 @@ public class ActiveCameraInferenceSchedulerService {
         } catch (Exception ex) {
             log.debug("ignore invalid algorithm params while resolving plugin_id, params={}", params, ex);
             return null;
+        }
+    }
+
+    private Long extractDeclaredInferenceMs(String params) {
+        if (StrUtil.isBlank(params)) {
+            return null;
+        }
+        try {
+            JSONObject obj = JSON.parseObject(params);
+            if (obj == null) {
+                return null;
+            }
+            Long fromMs = firstPositiveLong(obj.getLong("inference_time_ms"), obj.getLong("infer_time_ms"), obj.getLong("latency_ms"));
+            if (fromMs != null) {
+                return fromMs;
+            }
+            Long fromSec = firstPositiveLong(obj.getLong("inference_time_s"), obj.getLong("infer_time_s"));
+            return fromSec == null ? null : Math.max(fromSec, 0L) * 1000L;
+        } catch (Exception ex) {
+            log.debug("ignore invalid algorithm params while resolving inference time, params={}", params, ex);
+            return null;
+        }
+    }
+
+    private long extractLatencyMs(Object data) {
+        if (!(data instanceof Map)) {
+            return 0L;
+        }
+        Map<?, ?> map = (Map<?, ?>) data;
+        Object direct = map.get("latency_ms");
+        long directLatency = toLong(direct);
+        if (directLatency > 0L) {
+            return directLatency;
+        }
+        Object result = map.get("result");
+        if (result instanceof Map) {
+            return Math.max(toLong(((Map<?, ?>) result).get("latency_ms")), 0L);
+        }
+        return 0L;
+    }
+
+    private void updateObservedLatency(String dispatchKey, long latestLatencyMs) {
+        if (latestLatencyMs <= 0L || StrUtil.isBlank(dispatchKey)) {
+            return;
+        }
+        observedLatencyMs.compute(dispatchKey, (k, prev) -> {
+            if (prev == null || prev <= 0L) {
+                return latestLatencyMs;
+            }
+            return Math.round(prev * 0.7D + latestLatencyMs * 0.3D);
+        });
+    }
+
+    private Long firstPositiveLong(Long... values) {
+        if (values == null) {
+            return null;
+        }
+        for (Long value : values) {
+            if (value != null && value > 0L) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private long toLong(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value == null) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value).trim());
+        } catch (Exception ex) {
+            return 0L;
         }
     }
 

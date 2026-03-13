@@ -6,6 +6,7 @@ import com.yihecode.camera.ai.entity.CameraAlgorithm;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import com.yihecode.camera.ai.web.api.InferenceApiController;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +50,11 @@ class ActiveCameraInferenceSchedulerServiceTest {
 
     @InjectMocks
     private ActiveCameraInferenceSchedulerService schedulerService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn(null);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
@@ -92,7 +100,6 @@ class ActiveCameraInferenceSchedulerServiceTest {
         Algorithm algorithm = algorithm(23L, "{\"plugin_id\":\"helmet-detector\"}", 0);
 
         when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("1");
-        when(configService.getByValTag("infer_default_plugin_id")).thenReturn("yolov8n");
         when(cameraService.listActives()).thenReturn(List.of(camera));
         when(cameraAlgorithmService.listByCamera(12L)).thenReturn(List.of(binding));
         when(algorithmService.getById(23L)).thenReturn(algorithm);
@@ -143,6 +150,60 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(0, ((Number) summary.get("dispatch_count")).intValue());
         verify(cameraService, never()).listActives();
         verify(inferenceApiController, never()).dispatch(any(), anyLong(), anyLong(), anyLong(), any(), anyInt());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dispatchActiveCameras_shouldThrottleByDeclaredInferenceTimeWhenCooldownIsZero() {
+        Camera camera = camera(21L, "rtsp://demo/stream21", 0F);
+        CameraAlgorithm binding = binding(21L, 31L);
+        Algorithm algorithm = algorithm(31L, "{\"plugin_id\":\"yolov8n\",\"inference_time_ms\":2000}", 0);
+
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("1");
+        when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn("0");
+        when(configService.getByValTag("infer_scheduler_latency_factor")).thenReturn("2");
+        when(cameraService.listActives()).thenReturn(List.of(camera));
+        when(cameraAlgorithmService.listByCamera(21L)).thenReturn(List.of(binding));
+        when(algorithmService.getById(31L)).thenReturn(algorithm);
+        when(inferenceApiController.dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt()))
+                .thenReturn(JsonResultUtils.success(Map.of("trace_id", "trace-21")));
+
+        Map<String, Object> first = schedulerService.dispatchActiveCameras();
+        Map<String, Object> second = schedulerService.dispatchActiveCameras();
+
+        assertEquals(1, ((Number) first.get("dispatch_count")).intValue());
+        assertEquals(0, ((Number) second.get("dispatch_count")).intValue());
+        assertEquals(1, ((Number) second.get("skip_count")).intValue());
+        List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
+        assertEquals("cooldown", skipped.get(0).get("reason"));
+        verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dispatchActiveCameras_shouldThrottleByObservedLatencyWhenCooldownIsZero() {
+        Camera camera = camera(22L, "rtsp://demo/stream22", 0F);
+        CameraAlgorithm binding = binding(22L, 32L);
+        Algorithm algorithm = algorithm(32L, "{\"plugin_id\":\"yolov8n\"}", 0);
+
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("1");
+        when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn("0");
+        when(configService.getByValTag("infer_scheduler_latency_factor")).thenReturn("1");
+        when(cameraService.listActives()).thenReturn(List.of(camera));
+        when(cameraAlgorithmService.listByCamera(22L)).thenReturn(List.of(binding));
+        when(algorithmService.getById(32L)).thenReturn(algorithm);
+        when(inferenceApiController.dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt()))
+                .thenReturn(JsonResultUtils.success(Map.of("trace_id", "trace-22", "result", Map.of("latency_ms", 3000))));
+
+        Map<String, Object> first = schedulerService.dispatchActiveCameras();
+        Map<String, Object> second = schedulerService.dispatchActiveCameras();
+
+        assertEquals(1, ((Number) first.get("dispatch_count")).intValue());
+        assertEquals(0, ((Number) second.get("dispatch_count")).intValue());
+        assertEquals(1, ((Number) second.get("skip_count")).intValue());
+        List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
+        assertEquals("cooldown", skipped.get(0).get("reason"));
+        verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 
     private Camera camera(Long id, String rtspUrl, Float intervalTime) {
