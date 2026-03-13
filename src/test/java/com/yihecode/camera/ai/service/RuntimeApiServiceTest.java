@@ -112,9 +112,15 @@ class RuntimeApiServiceTest {
         assertEquals(Boolean.TRUE, items.get(0).get("ready"));
         assertEquals("http://zlm.example/live/1.live.flv", items.get(0).get("play_url"));
         assertEquals("rtmp://127.0.0.1:1935/live/1", items.get(0).get("push_url"));
+        assertEquals(3, ((Number) items.get(0).get("suggested_frame_stride")).intValue());
+        assertEquals(5200, ((Number) items.get(0).get("suggested_min_dispatch_ms")).intValue());
+        assertEquals("scheduler_feedback", items.get(0).get("suggestion_source"));
         assertEquals(Boolean.FALSE, items.get(1).get("ready"));
         assertEquals("", items.get(1).get("play_url"));
         assertEquals("", items.get(1).get("push_url"));
+        assertEquals(3, ((Number) items.get(1).get("suggested_frame_stride")).intValue());
+        assertEquals(5200, ((Number) items.get(1).get("suggested_min_dispatch_ms")).intValue());
+        assertEquals("scheduler_feedback", items.get(1).get("suggestion_source"));
 
         Map<String, Object> scheduler = (Map<String, Object>) plan.get("scheduler");
         assertEquals(4, scheduler.get("concurrency_level"));

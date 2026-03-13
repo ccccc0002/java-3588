@@ -104,6 +104,18 @@ public class RuntimeApiService {
                 ? Collections.emptyMap()
                 : activeCameraInferenceSchedulerService.getLastSummary();
         Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), normalizedBudget);
+        int recommendedFrameStride = toInt(throttleHint.get("recommended_frame_stride"));
+        int suggestedMinDispatchMs = resolveSuggestedMinDispatchMs(scheduler, throttleHint);
+        String suggestionSource = String.valueOf(throttleHint.getOrDefault("strategy_source", "scheduler_feedback"));
+
+        for (Map<String, Object> item : items) {
+            if (item == null) {
+                continue;
+            }
+            item.put("suggested_frame_stride", Math.max(recommendedFrameStride, 1));
+            item.put("suggested_min_dispatch_ms", Math.max(suggestedMinDispatchMs, 0));
+            item.put("suggestion_source", suggestionSource);
+        }
 
         data.put("budget", normalizedBudget);
         data.put("stream_count", activeCameras.size());
@@ -136,6 +148,15 @@ public class RuntimeApiService {
         hint.put("estimated_budget_per_stream", streamCount <= 0 ? budget : budget / streamCount);
         hint.put("strategy_source", "scheduler_feedback");
         return hint;
+    }
+
+    private int resolveSuggestedMinDispatchMs(Map<String, Object> scheduler, Map<String, Object> throttleHint) {
+        int schedulerCooldown = toInt(scheduler == null ? null : scheduler.get("max_effective_cooldown_ms"));
+        if (schedulerCooldown > 0) {
+            return schedulerCooldown;
+        }
+        int stride = toInt(throttleHint == null ? null : throttleHint.get("recommended_frame_stride"));
+        return Math.max(stride, 1) * 1000;
     }
 
     private List<Map<String, Object>> buildStreamItems(List<VideoPlay> activeStreams, Map<Long, Camera> cameraMap) {
