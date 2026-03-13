@@ -1,0 +1,89 @@
+{
+  "status": "passed",
+  "timestamp": "2026-03-13T06:09:14.238504+00:00",
+  "base_url": "http://127.0.0.1:18082",
+  "dispatch_url": "http://127.0.0.1:18082/api/inference/dispatch",
+  "stream_url": "http://127.0.0.1:18082/report/stream?id=2032338172777648129",
+  "camera_id": 1,
+  "model_id": 1,
+  "algorithm_id": 1,
+  "plugin_id": "yolov8n",
+  "dispatch_http_status": 200,
+  "stream_http_status": 200,
+  "trace_id": "alarm-verify-42fb53aaf74443f9abfe8bd8043ab61c",
+  "report_id": 2032338172777648129,
+  "alert_count": 5,
+  "bbox_count": 5,
+  "image_bytes": 147904,
+  "overlay_metrics": {
+    "decoded": true,
+    "overlay_hit": true,
+    "image_width": 640,
+    "image_height": 640,
+    "bbox_metrics": [
+      {
+        "bbox": [
+          211,
+          242,
+          282,
+          507
+        ],
+        "sample_count": 2028,
+        "red_count": 1620,
+        "red_ratio": 0.798817,
+        "hit": true
+      },
+      {
+        "bbox": [
+          96,
+          137,
+          549,
+          450
+        ],
+        "sample_count": 4608,
+        "red_count": 3874,
+        "red_ratio": 0.840712,
+        "hit": true
+      },
+      {
+        "bbox": [
+          110,
+          236,
+          225,
+          536
+        ],
+        "sample_count": 2502,
+        "red_count": 1986,
+        "red_ratio": 0.793765,
+        "hit": true
+      },
+      {
+        "bbox": [
+          477,
+          226,
+          560,
+          523
+        ],
+        "sample_count": 2292,
+        "red_count": 1876,
+        "red_ratio": 0.818499,
+        "hit": true
+      },
+      {
+        "bbox": [
+          80,
+          327,
+          116,
+          513
+        ],
+        "sample_count": 1344,
+        "red_count": 1137,
+        "red_ratio": 0.845982,
+        "hit": true
+      }
+    ],
+    "total_red_count": 10493,
+    "total_sample_count": 12774,
+    "overall_red_ratio": 0.821434
+  }
+}

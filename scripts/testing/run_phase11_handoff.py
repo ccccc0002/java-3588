@@ -57,6 +57,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=120)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--verify-alarm-preview", action="store_true")
+    parser.add_argument("--alarm-preview-timeout-sec", type=float, default=45.0)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -217,27 +219,82 @@ def build_phase10_argv(args: argparse.Namespace, phase10_output_dir: str) -> Lis
     return argv
 
 
+def build_alarm_preview_argv(args: argparse.Namespace, alarm_preview_output_dir: str) -> List[str]:
+    return [
+        "--base-url",
+        args.base_url,
+        "--camera-id",
+        str(args.camera_id),
+        "--model-id",
+        str(args.model_id),
+        "--algorithm-id",
+        str(args.algorithm_id),
+        "--source",
+        args.source,
+        "--plugin-id",
+        args.plugin_id,
+        "--timeout-sec",
+        str(float(args.alarm_preview_timeout_sec)),
+        "--output-dir",
+        alarm_preview_output_dir,
+    ]
+
+
+def default_alarm_preview_runner(argv: List[str]) -> Dict[str, Any]:
+    script_path = SCRIPT_DIR / "verify_alarm_stream_annotation.py"
+    cmd = [sys.executable, str(script_path), *argv]
+    completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    return {
+        "exit_code": int(completed.returncode),
+        "stdout": completed.stdout or "",
+        "stderr": completed.stderr or "",
+    }
+
+
+def compact_text(value: str, max_chars: int = 2000) -> str:
+    text = str(value or "").strip()
+    if len(text) <= max_chars:
+        return text
+    return text[-max_chars:]
+
+
 def build_summary(
     args: argparse.Namespace,
     started_at: str,
     finished_at: str,
     phase10_exit_code: int,
     phase10_output_dir: str,
+    alarm_preview_output_dir: str,
+    alarm_preview_exit_code: Optional[int],
+    alarm_preview_run: Optional[Dict[str, Any]],
     before: Dict[str, Any],
     after: Dict[str, Any],
 ) -> Dict[str, Any]:
-    status = "passed" if phase10_exit_code == 0 else "failed"
+    alarm_preview_enabled = bool(args.verify_alarm_preview)
+    alarm_preview_passed = (not alarm_preview_enabled) or (alarm_preview_exit_code == 0)
+    status = "passed" if phase10_exit_code == 0 and alarm_preview_passed else "failed"
     memory_delta_mb: Optional[float] = None
     before_used = ((before.get("memory") or {}) if isinstance(before, dict) else {}).get("used_mb")
     after_used = ((after.get("memory") or {}) if isinstance(after, dict) else {}).get("used_mb")
     if isinstance(before_used, (int, float)) and isinstance(after_used, (int, float)):
         memory_delta_mb = round(float(after_used) - float(before_used), 2)
+    alarm_preview_status = "skipped"
+    if alarm_preview_enabled:
+        alarm_preview_status = "passed" if alarm_preview_exit_code == 0 else "failed"
     return {
         "started_at": started_at,
         "finished_at": finished_at,
         "status": status,
         "phase10_exit_code": int(phase10_exit_code),
         "phase10_output_dir": phase10_output_dir,
+        "alarm_preview": {
+            "enabled": alarm_preview_enabled,
+            "status": alarm_preview_status,
+            "exit_code": alarm_preview_exit_code,
+            "output_dir": alarm_preview_output_dir,
+            "stdout": compact_text((alarm_preview_run or {}).get("stdout", "")),
+            "stderr": compact_text((alarm_preview_run or {}).get("stderr", "")),
+        },
         "dry_run": bool(args.dry_run),
         "resource": {
             "before": before,
@@ -251,6 +308,7 @@ def main(
     argv: Optional[Sequence[str]] = None,
     phase10_runner: Optional[Callable[[Optional[Sequence[str]]], int]] = None,
     resource_collector: Optional[Callable[[str], Dict[str, Any]]] = None,
+    alarm_preview_runner: Optional[Callable[[List[str]], Dict[str, Any]]] = None,
 ) -> int:
     args = parse_args(argv)
     output_dir = Path(args.output_dir)
@@ -266,6 +324,18 @@ def main(
     runner = phase10_runner or run_phase10_acceptance.main
     phase10_exit_code = int(runner(phase10_argv))
 
+    alarm_preview_output_dir = str(output_dir / "alarm-preview")
+    alarm_preview_exit_code: Optional[int] = None
+    alarm_preview_run: Optional[Dict[str, Any]] = None
+    if phase10_exit_code == 0 and args.verify_alarm_preview:
+        preview_argv = build_alarm_preview_argv(args, alarm_preview_output_dir)
+        preview_runner = alarm_preview_runner or default_alarm_preview_runner
+        alarm_preview_run = preview_runner(preview_argv)
+        try:
+            alarm_preview_exit_code = int((alarm_preview_run or {}).get("exit_code", 1))
+        except Exception:
+            alarm_preview_exit_code = 1
+
     after = collector("after")
     finished_at = utc_now()
 
@@ -275,12 +345,15 @@ def main(
         finished_at=finished_at,
         phase10_exit_code=phase10_exit_code,
         phase10_output_dir=phase10_output_dir,
+        alarm_preview_output_dir=alarm_preview_output_dir,
+        alarm_preview_exit_code=alarm_preview_exit_code,
+        alarm_preview_run=alarm_preview_run,
         before=before,
         after=after,
     )
     summary_path.write_text(json.dumps(summary, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=True, indent=2))
-    return 0 if phase10_exit_code == 0 else 1
+    return 0 if summary.get("status") == "passed" else 1
 
 
 if __name__ == "__main__":

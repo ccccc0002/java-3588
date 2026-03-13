@@ -38,6 +38,9 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "6",
                 "--soak-max-iterations",
                 "2",
+                "--verify-alarm-preview",
+                "--alarm-preview-timeout-sec",
+                "55",
                 "--output-dir",
                 "tmp/out",
                 "--dry-run",
@@ -52,6 +55,8 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertEqual(args.soak_duration_sec, 120)
         self.assertEqual(args.soak_interval_sec, 6)
         self.assertEqual(args.soak_max_iterations, 2)
+        self.assertTrue(args.verify_alarm_preview)
+        self.assertEqual(args.alarm_preview_timeout_sec, 55)
         self.assertEqual(args.output_dir, "tmp/out")
         self.assertTrue(args.dry_run)
 
@@ -85,6 +90,41 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertIn("--output-dir", argv)
         self.assertIn("tmp/out/phase10-acceptance", argv)
 
+    def test_build_alarm_preview_argv_includes_expected_flags(self):
+        args = run_phase11_handoff.parse_args(
+            [
+                "--base-url",
+                "http://127.0.0.1:18082",
+                "--camera-id",
+                "8",
+                "--model-id",
+                "9",
+                "--algorithm-id",
+                "10",
+                "--source",
+                "test://frame",
+                "--plugin-id",
+                "yolov8n",
+                "--alarm-preview-timeout-sec",
+                "66",
+            ]
+        )
+        argv = run_phase11_handoff.build_alarm_preview_argv(args, "tmp/out/alarm-preview")
+        self.assertIn("--base-url", argv)
+        self.assertIn("http://127.0.0.1:18082", argv)
+        self.assertIn("--camera-id", argv)
+        self.assertIn("8", argv)
+        self.assertIn("--model-id", argv)
+        self.assertIn("9", argv)
+        self.assertIn("--algorithm-id", argv)
+        self.assertIn("10", argv)
+        self.assertIn("--plugin-id", argv)
+        self.assertIn("yolov8n", argv)
+        self.assertIn("--timeout-sec", argv)
+        self.assertIn("66.0", argv)
+        self.assertIn("--output-dir", argv)
+        self.assertIn("tmp/out/alarm-preview", argv)
+
     def test_main_writes_summary_and_resource_snapshots(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             fake_snapshots = [
@@ -115,8 +155,52 @@ class RunPhase11HandoffTests(unittest.TestCase):
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             self.assertEqual(summary["status"], "passed")
             self.assertEqual(summary["phase10_exit_code"], 0)
+            self.assertEqual(summary["alarm_preview"]["status"], "skipped")
             self.assertEqual(summary["resource"]["before"]["cpu"]["loadavg_1m"], 1.2)
             self.assertEqual(summary["resource"]["after"]["memory"]["used_mb"], 120.0)
+
+    def test_main_runs_alarm_preview_stage_when_enabled(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_snapshots = [
+                {"label": "before", "cpu": {"loadavg_1m": 1.1}, "memory": {"used_mb": 200.0}},
+                {"label": "after", "cpu": {"loadavg_1m": 1.3}, "memory": {"used_mb": 210.0}},
+            ]
+
+            def fake_collector(label):
+                return dict(fake_snapshots[0] if label == "before" else fake_snapshots[1])
+
+            preview_calls = []
+
+            def fake_preview_runner(argv):
+                preview_calls.append(list(argv))
+                return {
+                    "exit_code": 0,
+                    "stdout": '{"status":"passed"}',
+                    "stderr": "",
+                }
+
+            with mock.patch.object(run_phase11_handoff.run_phase10_acceptance, "main", return_value=0):
+                exit_code = run_phase11_handoff.main(
+                    [
+                        "--base-url",
+                        "http://127.0.0.1:18082",
+                        "--output-dir",
+                        temp_dir,
+                        "--verify-alarm-preview",
+                        "--dry-run",
+                    ],
+                    resource_collector=fake_collector,
+                    alarm_preview_runner=fake_preview_runner,
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(len(preview_calls), 1)
+            self.assertIn("--base-url", preview_calls[0])
+            self.assertIn("http://127.0.0.1:18082", preview_calls[0])
+
+            summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
+            self.assertEqual(summary["alarm_preview"]["status"], "passed")
+            self.assertEqual(summary["alarm_preview"]["exit_code"], 0)
 
 
 if __name__ == "__main__":
