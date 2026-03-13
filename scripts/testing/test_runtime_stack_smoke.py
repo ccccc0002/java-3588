@@ -314,6 +314,34 @@ class RuntimeStackSmokeTests(unittest.TestCase):
                     min_plan_ready_stream_count=2,
                 )
 
+    def test_run_stack_smoke_handles_invalid_ready_stream_values(self):
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}), \
+             mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {
+                 'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}],
+                 'stream_count': 'invalid',
+                 'ready_stream_count': 'bad',
+                 'telemetry_status': 'ok',
+             }}), \
+             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {
+                 'ready_stream_count': 'NaN',
+                 'stream_count': 'none',
+                 'telemetry_status': 'ok',
+             }}), \
+             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [], 'alerts': []}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 0, 'alert_count': 0, 'labels': []}), \
+             mock.patch.object(runtime_stack_smoke, 'verify_play_url', return_value={'http_status': 200, 'bytes_read': 8, 'readable': True}):
+            with self.assertRaisesRegex(RuntimeError, 'snapshot ready stream count below minimum'):
+                runtime_stack_smoke.run_stack_smoke(
+                    runtime_api_url='http://127.0.0.1:18081',
+                    bridge_url='http://127.0.0.1:19080',
+                    bootstrap_token='edge-demo-bootstrap',
+                    plugin_id='yolov8n',
+                    source='test://frame',
+                    min_snapshot_ready_stream_count=1,
+                )
+
 
 if __name__ == '__main__':
     unittest.main()

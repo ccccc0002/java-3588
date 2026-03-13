@@ -110,6 +110,13 @@ def verify_play_url(play_url: str, timeout_sec: float = 10.0, http_open=None) ->
         }
 
 
+def _to_int_default(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
+
+
 def _normalize_runtime_telemetry(data: Dict[str, Any]) -> Dict[str, Any]:
     telemetry_status = str(data.get('telemetry_status', 'ok')).strip().lower()
     if telemetry_status != 'degraded':
@@ -202,8 +209,8 @@ def run_stack_smoke(
         raise RuntimeError(
             f"plan telemetry status mismatch: expected={expected_plan_status} actual={plan_telemetry['telemetry']['status']}"
         )
-    snapshot_ready_stream_count = int(snapshot_data.get('ready_stream_count', 0))
-    plan_ready_stream_count = int(plan_data.get('ready_stream_count', 0))
+    snapshot_ready_stream_count = _to_int_default(snapshot_data.get('ready_stream_count', 0), 0)
+    plan_ready_stream_count = _to_int_default(plan_data.get('ready_stream_count', 0), 0)
     if min_snapshot_ready_stream_count and min_snapshot_ready_stream_count > 0 and snapshot_ready_stream_count < int(min_snapshot_ready_stream_count):
         raise RuntimeError(
             f"snapshot ready stream count below minimum: actual={snapshot_ready_stream_count} minimum={int(min_snapshot_ready_stream_count)}"
@@ -249,7 +256,7 @@ def run_stack_smoke(
             'health': {'backend': runtime_backend, 'status': ((runtime_health.get('data') or {}) if isinstance(runtime_health, dict) else {}).get('status', '')},
             'token': {'token': token},
             'snapshot': {
-                'stream_count': int(snapshot_data.get('stream_count', len(streams) or 0)),
+                'stream_count': _to_int_default(snapshot_data.get('stream_count', len(streams) or 0), len(streams) or 0),
                 'ready_stream_count': snapshot_ready_stream_count,
                 'play_url': play_url,
                 'telemetry': snapshot_telemetry['telemetry'],
@@ -258,7 +265,7 @@ def run_stack_smoke(
             'plan': {
                 'budget': plan_data.get('budget'),
                 'ready_stream_count': plan_ready_stream_count,
-                'stream_count': plan_data.get('stream_count'),
+                'stream_count': _to_int_default(plan_data.get('stream_count', 0), 0),
                 'telemetry': plan_telemetry['telemetry'],
                 'throttle_hint': plan_telemetry['throttle_hint'],
             },
