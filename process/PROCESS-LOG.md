@@ -1343,3 +1343,17 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065838-PHASE2-EXEC.json |
 | 2026-03-14 06:58:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 06:58:38 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: resource-gated phase11 handoff pass on RK3588 synced at f0ec100 |
+| 2026-03-14 07:10:28 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-071028-PHASE2-EXEC.json |
+| 2026-03-14 07:10:28 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 statistics upgrade shipped: added /statistic/alarm/trend combined-filter API and trend chart with quick ranges (today/24h/7d/30d); validated on RK3588 with controller tests and UI smoke. |
+| 2026-03-14 07:10:38 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-071038-PHASE2-EXEC.json |
+| 2026-03-14 07:10:38 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Synced commit 90c5973 for statistics trend API/UI with RK3588 test+smoke pass. |
+| 2026-03-14 07:10:39 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-071038-PHASE2-EXEC.json |
+| 2026-03-14 07:10:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:10:39 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Synced commit 90c5973 for statistics trend API/UI with RK3588 test+smoke pass. |
+| 2026-03-14 07:20:57 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-072057-PHASE2-EXEC.json |
+| 2026-03-14 07:20:57 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 reliability uplift: yolov8n MPP+RGA decode now retries transient RTSP SETUP/5xx failures with backoff; concurrent quality diagnostics and tmux backlog lanes converged to all-pass on RK3588. |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-072107-PHASE2-EXEC.json |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Commit bb57cd5 pushed: MPP decode RTSP retry/backoff + tests; RK backlog-r3 11/11 pass. |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-072107-PHASE2-EXEC.json |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Commit bb57cd5 pushed: MPP decode RTSP retry/backoff + tests; RK backlog-r3 11/11 pass. |
