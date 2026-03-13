@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 13:14:13",
+    "time":  "2026-03-13 13:16:27",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9)."
+    "summary":  "compact after checkpoint: GitHub sync complete at 0c80590: added RK3588 entrypoint Run-Phase10-Acceptance.sh for one-command phase10 acceptance execution; board dry-run validated with passed summary."
 }
