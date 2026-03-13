@@ -230,6 +230,46 @@ class ActiveCameraInferenceSchedulerServiceTest {
         verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void dispatchActiveCameras_shouldScaleLatencyCooldownByConcurrencyPressure() {
+        Camera camera1 = camera(31L, "rtsp://demo/stream31", 0F);
+        Camera camera2 = camera(32L, "rtsp://demo/stream32", 0F);
+        CameraAlgorithm binding1 = binding(31L, 41L);
+        CameraAlgorithm binding2 = binding(32L, 42L);
+        Algorithm algorithm1 = algorithm(41L, "{\"plugin_id\":\"yolov8n\",\"inference_time_ms\":1000}", 0);
+        Algorithm algorithm2 = algorithm(42L, "{\"plugin_id\":\"yolov8n\",\"inference_time_ms\":1000}", 0);
+
+        when(configService.getByValTag("infer_scheduler_enabled")).thenReturn("1");
+        when(configService.getByValTag("infer_scheduler_cooldown_ms")).thenReturn("0");
+        when(configService.getByValTag("infer_scheduler_latency_factor")).thenReturn("1");
+        when(configService.getByValTag("infer_scheduler_concurrency_baseline")).thenReturn("1");
+        when(cameraService.listActives()).thenReturn(List.of(camera1, camera2));
+        when(cameraAlgorithmService.listByCamera(31L)).thenReturn(List.of(binding1));
+        when(cameraAlgorithmService.listByCamera(32L)).thenReturn(List.of(binding2));
+        when(algorithmService.getById(41L)).thenReturn(algorithm1);
+        when(algorithmService.getById(42L)).thenReturn(algorithm2);
+        when(inferenceApiController.dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt()))
+                .thenReturn(JsonResultUtils.success(Map.of("trace_id", "trace-pressure")));
+
+        Map<String, Object> first = schedulerService.dispatchActiveCameras();
+        Map<String, Object> second = schedulerService.dispatchActiveCameras();
+
+        assertEquals(2, ((Number) first.get("dispatch_count")).intValue());
+        assertEquals(0, ((Number) second.get("dispatch_count")).intValue());
+        assertEquals(2, ((Number) second.get("skip_count")).intValue());
+        assertEquals(2, ((Number) second.get("concurrency_level")).intValue());
+        assertEquals(2.0D, ((Number) second.get("concurrency_pressure")).doubleValue(), 0.0001D);
+
+        List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
+        assertEquals("cooldown", skipped.get(0).get("reason"));
+        assertEquals(2000L, ((Number) skipped.get(0).get("latency_cooldown_ms")).longValue());
+        assertEquals(2000L, ((Number) skipped.get(0).get("effective_cooldown_ms")).longValue());
+        assertEquals(2, ((Number) skipped.get(0).get("concurrency_level")).intValue());
+        assertEquals(2.0D, ((Number) skipped.get(0).get("concurrency_pressure")).doubleValue(), 0.0001D);
+        verify(inferenceApiController, times(2)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
+    }
+
     private Camera camera(Long id, String rtspUrl, Float intervalTime) {
         Camera camera = new Camera();
         camera.setId(id);
