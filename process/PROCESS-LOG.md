@@ -691,3 +691,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-095340-PHASE2-EXEC.json |
 | 2026-03-13 09:53:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 09:53:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: dashboardSummary now outputs scheduler/throttle telemetry; index_tj dashboard renders scheduler pressure/stride/dispatch cards; RK3588 targeted regression passed. |
+| 2026-03-13 09:55:08 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-095508-PHASE2-EXEC.json |
+| 2026-03-13 09:55:08 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 dashboard telemetry milestone synced: scheduler/throttle telemetry is exposed in /stream/dashboard/summary and rendered in dashboard scheduler cards; RK3588 regression passed (22/22); GitHub synced to 1535d88. |
+| 2026-03-13 09:55:17 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-095516-PHASE2-EXEC.json |
+| 2026-03-13 09:55:17 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 1535d88 after RK3588 pass: dashboard summary + frontend scheduler telemetry panel landed. |
+| 2026-03-13 09:55:17 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-095517-PHASE2-EXEC.json |
+| 2026-03-13 09:55:17 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:55:17 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 1535d88 after RK3588 pass: dashboard summary + frontend scheduler telemetry panel landed. |

@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T09:53:28+08:00",
-                                   "summary":  "Phase10 dashboard telemetry wiring: stream dashboard summary now includes scheduler/throttle hints and frontend shows pressure/stride/min-dispatch metrics; RK3588 tests passed (22/22).",
+                                   "updated_at":  "2026-03-13T09:55:08+08:00",
+                                   "summary":  "Phase10 dashboard telemetry milestone synced: scheduler/throttle telemetry is exposed in /stream/dashboard/summary and rendered in dashboard scheduler cards; RK3588 regression passed (22/22); GitHub synced to 1535d88.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "mvn -Dtest=StreamControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "pending",
-                                                        "github_sync_ref":  "",
-                                                        "updated_at":  "2026-03-13T09:53:28+08:00"
+                                                        "github_sync_status":  "synced",
+                                                        "github_sync_ref":  "1535d88",
+                                                        "updated_at":  "2026-03-13T09:55:08+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -509,6 +509,16 @@
                         "edge_test_command":  "mvn -Dtest=StreamControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  ""
+                    },
+                    {
+                        "timestamp":  "2026-03-13T09:55:08+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 dashboard telemetry milestone synced: scheduler/throttle telemetry is exposed in /stream/dashboard/summary and rendered in dashboard scheduler cards; RK3588 regression passed (22/22); GitHub synced to 1535d88.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=StreamControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1535d88"
                     }
                 ]
 }
