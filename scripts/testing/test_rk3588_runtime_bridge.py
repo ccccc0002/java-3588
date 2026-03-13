@@ -19,7 +19,18 @@ class FakeRuntimeClient:
         self.plan_calls = 0
         self.token_calls = 0
         self.snapshot_payload = {'device_count': 2, 'ready_stream_count': 1, 'algorithm_count': 3}
-        self.plan_payload = {'stream_count': 2, 'ready_stream_count': 1, 'items': [{'stream_id': 'cam-1'}]}
+        self.plan_payload = {
+            'stream_count': 2,
+            'ready_stream_count': 1,
+            'telemetry_status': 'ok',
+            'telemetry_error': '',
+            'throttle_hint': {
+                'recommended_frame_stride': 3,
+                'suggested_min_dispatch_ms': 5200,
+                'strategy_source': 'scheduler_feedback',
+            },
+            'items': [{'stream_id': 'cam-1'}],
+        }
 
     def issue_token(self):
         self.token_calls += 1
@@ -214,6 +225,10 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['detections'], [])
         self.assertEqual(payload['plan_summary']['ready_stream_count'], 1)
         self.assertEqual(payload['plan_summary']['budget'], 12.5)
+        self.assertEqual(payload['plan_summary']['telemetry_status'], 'ok')
+        self.assertEqual(payload['plan_summary']['telemetry_error'], '')
+        self.assertEqual(payload['plan_summary']['recommended_frame_stride'], 3)
+        self.assertEqual(payload['plan_summary']['suggested_min_dispatch_ms'], 5200)
 
     def test_infer_propagates_plugin_alerts(self):
         service = rk3588_runtime_bridge.RuntimeBridgeService(
@@ -303,6 +318,10 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['runtime_fallback']['mode'], 'offline')
         self.assertEqual(payload['plan_summary']['ready_stream_count'], 0)
         self.assertEqual(payload['plan_summary']['fallback']['mode'], 'offline')
+        self.assertEqual(payload['plan_summary']['telemetry_status'], 'degraded')
+        self.assertEqual(payload['plan_summary']['telemetry_error'], 'runtime_offline')
+        self.assertEqual(payload['plan_summary']['recommended_frame_stride'], 1)
+        self.assertEqual(payload['plan_summary']['suggested_min_dispatch_ms'], 1000)
         self.assertEqual(payload['plugin']['plugin_id'], 'yolov8n')
 
 

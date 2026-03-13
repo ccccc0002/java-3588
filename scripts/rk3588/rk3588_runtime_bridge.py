@@ -364,17 +364,35 @@ def build_offline_plan(budget: float, message: str) -> Dict[str, Any]:
         'budget': budget,
         'stream_count': 0,
         'ready_stream_count': 0,
+        'telemetry_status': 'degraded',
+        'telemetry_error': 'runtime_offline',
+        'throttle_hint': {
+            'recommended_frame_stride': 1,
+            'suggested_min_dispatch_ms': 1000,
+            'strategy_source': 'offline_fallback',
+        },
         'items': [],
         'fallback': {'mode': 'offline', 'message': message},
     }
 
 
 def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
+    telemetry_status = str(plan.get('telemetry_status', 'ok')).strip().lower()
+    if telemetry_status != 'degraded':
+        telemetry_status = 'ok'
+    telemetry_error = str(plan.get('telemetry_error', '')).strip()
+    throttle_hint = plan.get('throttle_hint') if isinstance(plan.get('throttle_hint'), dict) else {}
+    recommended_frame_stride = to_int(throttle_hint.get('recommended_frame_stride'))
+    suggested_min_dispatch_ms = to_int(throttle_hint.get('suggested_min_dispatch_ms'))
     summary = {
         'budget': budget,
         'stream_count': to_int(plan.get('stream_count')) or 0,
         'ready_stream_count': to_int(plan.get('ready_stream_count')) or 0,
         'item_count': len(plan.get('items', [])) if isinstance(plan.get('items'), list) else 0,
+        'telemetry_status': telemetry_status,
+        'telemetry_error': telemetry_error,
+        'recommended_frame_stride': recommended_frame_stride if recommended_frame_stride and recommended_frame_stride > 0 else 1,
+        'suggested_min_dispatch_ms': suggested_min_dispatch_ms if suggested_min_dispatch_ms and suggested_min_dispatch_ms > 0 else 1000,
     }
     if isinstance(plan.get('fallback'), dict):
         summary['fallback'] = dict(plan['fallback'])
@@ -480,5 +498,4 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
-
 
