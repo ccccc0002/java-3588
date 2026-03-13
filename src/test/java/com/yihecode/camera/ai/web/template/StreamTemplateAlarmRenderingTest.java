@@ -20,30 +20,33 @@ class StreamTemplateAlarmRenderingTest {
     }
 
     @Test
-    void streamIndexTj_shouldSupportAlarmDetailDrawerPreview() throws IOException {
+    void streamIndexTj_shouldSupportAlarmDetailPopupPreview() throws IOException {
         String content;
         try (InputStream inputStream = new ClassPathResource("templates/stream/index_tj.ftl").getInputStream()) {
             content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertTrue(content.contains("openAlarmDetailById"), "index_tj should support alarm detail click handler");
-        assertTrue(content.contains("openAlarmDetailByData"), "index_tj should support drawer preview render");
-        assertTrue(content.contains("alarm-detail-drawer"), "index_tj should contain drawer detail style/container");
+        assertTrue(content.contains("renderAlarmDetail"), "index_tj should support alarm detail render function");
+        assertTrue(content.contains("window.openAlarmDetail"), "index_tj should expose alarm detail click handler");
+        assertTrue(content.contains("layer.open"), "index_tj should open alarm detail by layer popup");
+        assertTrue(content.contains("window.addAlarmAlert = function(json) {}"), "index_tj should keep realtime alert popup disabled");
     }
 
     @Test
-    void streamIndexTj_shouldSupportThemeAndLanguageGlobalSwitch() throws IOException {
+    void streamIndexTj_shouldSupportDashboardGridAndCharts() throws IOException {
         String content;
         try (InputStream inputStream = new ClassPathResource("templates/stream/index_tj.ftl").getInputStream()) {
             content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        assertTrue(content.contains("id=\"theme-switch\""), "index_tj should contain global theme switch");
-        assertTrue(content.contains("id=\"lang-switch\""), "index_tj should contain global language switch");
-        assertTrue(content.contains("window.applyTheme"), "index_tj should expose theme apply function");
-        assertTrue(content.contains("window.applyLanguage"), "index_tj should expose language apply function");
-        assertTrue(content.contains("stream.dashboard.theme"), "index_tj should persist selected theme");
-        assertTrue(content.contains("stream.dashboard.lang"), "index_tj should persist selected language");
+        assertTrue(content.contains("id=\"grid_1\""), "index_tj should contain 1-grid switch");
+        assertTrue(content.contains("id=\"grid_4\""), "index_tj should contain 4-grid switch");
+        assertTrue(content.contains("id=\"grid_9\""), "index_tj should contain 9-grid switch");
+        assertTrue(content.contains("id=\"grid_16\""), "index_tj should contain 16-grid switch");
+        assertTrue(content.contains("window.show = function(nextCols)"), "index_tj should provide grid switch logic");
+        assertTrue(content.contains("id=\"chart-trend\""), "index_tj should contain trend chart container");
+        assertTrue(content.contains("id=\"chart-pie\""), "index_tj should contain pie chart container");
+        assertTrue(content.contains("id=\"chart-ranking\""), "index_tj should contain ranking chart container");
     }
 
     private void assertTemplateSupportsAlertFields(String path) throws IOException {
