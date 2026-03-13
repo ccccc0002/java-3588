@@ -85,6 +85,18 @@ def default_command_runner(stage_name: str, command: List[str], summary_path: st
     }
 
 
+def parse_last_json_object(stdout_text: str) -> Optional[Dict[str, Any]]:
+    lines = [line.strip() for line in str(stdout_text or "").splitlines() if line.strip()]
+    for line in reversed(lines):
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return payload
+    return None
+
+
 def default_bridge_runner(command: str, bridge_args: List[str]) -> Dict[str, Any]:
     completed = subprocess.run([sys.executable, str(BRIDGE_CTL_PATH), command, *bridge_args], capture_output=True, text=True)
     payload: Dict[str, Any] = {}
@@ -230,9 +242,24 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
     return stages
 
 
-def read_stage_summary(summary_path: Path, exit_code: int) -> Dict[str, Any]:
+def read_stage_summary(
+    summary_path: Path,
+    exit_code: int,
+    stage_name: str = "",
+    stdout_text: str = "",
+) -> Dict[str, Any]:
     if summary_path.exists():
-        return json.loads(summary_path.read_text(encoding="utf-8"))
+        result = json.loads(summary_path.read_text(encoding="utf-8"))
+        if isinstance(result, dict):
+            return result
+    if stage_name == "runtime_stack_smoke":
+        parsed = parse_last_json_object(stdout_text)
+        if parsed is not None:
+            return {
+                "status": "failed" if exit_code != 0 else "passed",
+                "source": "stdout_json",
+                "payload": parsed,
+            }
     return {"status": "failed" if exit_code != 0 else "passed", "missing_summary": True}
 
 
@@ -338,7 +365,12 @@ def main(
             stage_output_dir.mkdir(parents=True, exist_ok=True)
             child_summary_path = stage_output_dir / "summary.json"
             run_result = runner(stage["name"], stage["command"], str(child_summary_path))
-            child_summary = read_stage_summary(child_summary_path, int(run_result.get("exit_code", 1)))
+            child_summary = read_stage_summary(
+                child_summary_path,
+                int(run_result.get("exit_code", 1)),
+                stage_name=stage["name"],
+                stdout_text=str(run_result.get("stdout", "")),
+            )
             passed = int(run_result.get("exit_code", 1)) == 0 and str(child_summary.get("status")) == "passed"
             detail = f"status={child_summary.get('status')}; exit_code={run_result.get('exit_code', 1)}; summary_path={child_summary_path}"
             stage_result = StageResult(stage=stage["name"], passed=passed, detail=detail, exit_code=int(run_result.get("exit_code", 1)), summary=child_summary)

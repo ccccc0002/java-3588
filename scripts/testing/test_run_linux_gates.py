@@ -142,6 +142,19 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertNotIn('--dry-run', command)
         self.assertNotIn('--fail-fast', command)
 
+    def test_read_stage_summary_parses_runtime_stack_stdout_json(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            summary_path = pathlib.Path(temp_dir) / 'missing-summary.json'
+            summary = run_linux_gates.read_stage_summary(
+                summary_path=summary_path,
+                exit_code=0,
+                stage_name='runtime_stack_smoke',
+                stdout_text='log line\n{"runtime_api": {"health": {"backend": "java"}}}\n',
+            )
+        self.assertEqual('passed', summary['status'])
+        self.assertEqual('stdout_json', summary['source'])
+        self.assertEqual('java', summary['payload']['runtime_api']['health']['backend'])
+
     def test_dry_run_writes_combined_passing_summary(self):
         def fake_runner(stage_name, command, summary_path):
             self.assertIn('--cookie', command)
