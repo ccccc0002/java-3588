@@ -938,3 +938,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135416-PHASE2-EXEC.json |
 | 2026-03-13 13:54:16 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: alert image pipeline hardened: data-uri + raw image annotation fallback; rk3588 tests green. |
+| 2026-03-13 13:55:01 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-135501-PHASE2-EXEC.json |
+| 2026-03-13 13:55:01 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 alert-image fix synced: InferenceReportBridgeService now parses data-uri base64 and annotates raw image_base64 using alert bbox/label before persistence; prevents raw alarm images and improves preview reliability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). GitHub synced to c9b75af. |
+| 2026-03-13 13:55:02 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-135502-PHASE2-EXEC.json |
+| 2026-03-13 13:55:02 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Phase6 sync checkpoint: alarm annotated-image persistence fix pushed (c9b75af). |
+| 2026-03-13 13:55:03 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135502-PHASE2-EXEC.json |
+| 2026-03-13 13:55:03 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:55:03 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: Phase6 sync checkpoint: alarm annotated-image persistence fix pushed (c9b75af). |

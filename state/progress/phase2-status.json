@@ -35,16 +35,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T13:54:14+08:00",
-                                  "summary":  "Phase6 alert-image closure: inference report bridge now supports data URI base64 decoding and enforces annotation overlay when only raw image_base64 is provided; prevents raw-image alarm records and stabilizes preview availability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest).",
+                                  "updated_at":  "2026-03-13T13:55:01+08:00",
+                                  "summary":  "Phase6 alert-image fix synced: InferenceReportBridgeService now parses data-uri base64 and annotates raw image_base64 using alert bbox/label before persistence; prevents raw alarm images and improves preview reliability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). GitHub synced to c9b75af.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "",
-                                                       "updated_at":  "2026-03-13T13:54:14+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "c9b75af",
+                                                       "updated_at":  "2026-03-13T13:55:01+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -867,6 +867,16 @@
                         "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  ""
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:55:01+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 alert-image fix synced: InferenceReportBridgeService now parses data-uri base64 and annotates raw image_base64 using alert bbox/label before persistence; prevents raw alarm images and improves preview reliability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). GitHub synced to c9b75af.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=InferenceReportBridgeServiceTest,InferenceApiControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "c9b75af"
                     }
                 ]
 }
