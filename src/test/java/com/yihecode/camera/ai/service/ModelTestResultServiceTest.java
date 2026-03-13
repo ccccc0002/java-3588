@@ -2,6 +2,7 @@ package com.yihecode.camera.ai.service;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,6 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ModelTestResultServiceTest {
 
     private final ModelTestResultService modelTestResultService = new ModelTestResultService();
+
+    @BeforeAll
+    static void setupHeadlessMode() {
+        System.setProperty("java.awt.headless", "true");
+    }
 
     @TempDir
     Path tempDir;

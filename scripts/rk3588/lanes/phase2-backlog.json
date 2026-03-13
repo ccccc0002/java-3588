@@ -12,6 +12,14 @@
     "command": "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test"
   },
   {
+    "name": "phase5",
+    "command": "mvn -Dtest=AlgorithmPackageLifecycleServiceTest,AlgorithmPackageLifecycleControllerTest,ModelControllerTest,ModelTestCaptureServiceTest,ModelTestResultServiceTest test"
+  },
+  {
+    "name": "phase3",
+    "command": "mvn -Dtest=IndexControllerTest,LoginControllerTest,StreamControllerTest test"
+  },
+  {
     "name": "phase4",
     "command": "mvn -Dtest=CameraControllerTest,OnvifDiscoveryServiceTest test"
   },

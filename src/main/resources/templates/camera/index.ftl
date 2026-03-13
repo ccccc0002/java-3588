@@ -32,6 +32,10 @@
                         </a>
                     </div>
                 </div>
+                <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+                    <button type="button" class="pear-btn pear-btn-xs pear-btn-primary" id="expandTreeBtn">展开全部</button>
+                    <button type="button" class="pear-btn pear-btn-xs" id="collapseTreeBtn">收起全部</button>
+                </div>
                 <div class="treeDiv" style="overflow: auto; height: calc(100vh - 20px);">
                     <div id="treeData" class="demo"></div>
                 </div>
@@ -644,6 +648,18 @@
                 treeInst.jstree(true).refresh();
             }
         }
+
+        $('#expandTreeBtn').on('click', function() {
+            if (treeInst != null) {
+                treeInst.jstree(true).open_all();
+            }
+        });
+
+        $('#collapseTreeBtn').on('click', function() {
+            if (treeInst != null) {
+                treeInst.jstree(true).close_all();
+            }
+        });
 
         // 重置表单
         window.resetFormData = function() {
