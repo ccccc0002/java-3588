@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T11:51:55+08:00",
-                                   "summary":  "Phase10 smoke gate strict mode added: runtime_stack_smoke now supports expected snapshot/plan telemetry status assertions (any|ok|degraded), enabling stricter acceptance gating for capacity checks; tests expanded and RK3588 python test passed (7/7); GitHub synced to b3d086c.",
+                                   "updated_at":  "2026-03-13T11:55:26+08:00",
+                                   "summary":  "Phase10 acceptance gating expanded: runtime_stack_smoke adds configurable thresholds for plan concurrency pressure and suggested min dispatch ms, enabling hard capacity guardrails in edge smoke; tests expanded and RK3588 python test passed (9/9); GitHub synced to db6c94b.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "b3d086c",
-                                                        "updated_at":  "2026-03-13T11:51:55+08:00"
+                                                        "github_sync_ref":  "db6c94b",
+                                                        "updated_at":  "2026-03-13T11:55:26+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -699,6 +699,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "b3d086c"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T11:55:26+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 acceptance gating expanded: runtime_stack_smoke adds configurable thresholds for plan concurrency pressure and suggested min dispatch ms, enabling hard capacity guardrails in edge smoke; tests expanded and RK3588 python test passed (9/9); GitHub synced to db6c94b.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "db6c94b"
                     }
                 ]
 }

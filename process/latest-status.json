@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 11:52:10",
+    "time":  "2026-03-13 11:55:40",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at b3d086c: runtime_stack_smoke strict telemetry expectation flags landed (snapshot/plan any|ok|degraded); RK3588 python regression passed."
+    "summary":  "compact after checkpoint: GitHub sync complete at db6c94b: runtime_stack_smoke now supports plan pressure/min-dispatch threshold gates for hard acceptance criteria; RK3588 python regression passed (9/9)."
 }
