@@ -705,3 +705,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 10:07:33 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-100732-PHASE2-EXEC.json |
 | 2026-03-13 10:07:33 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:07:33 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: throttle_hint added suggested_min_dispatch_ms and dashboard now prefers this runtime hint; RK3588 targeted tests all green. |
+| 2026-03-13 10:08:33 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-100833-PHASE2-EXEC.json |
+| 2026-03-13 10:08:34 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 telemetry refinement synced: throttle_hint now includes suggested_min_dispatch_ms and dashboard uses it directly; RK3588 targeted tests passed (22/22); GitHub synced to 65ac12b. |
+| 2026-03-13 10:08:42 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-100842-PHASE2-EXEC.json |
+| 2026-03-13 10:08:42 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path. |
+| 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-100843-PHASE2-EXEC.json |
+| 2026-03-13 10:08:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path. |
