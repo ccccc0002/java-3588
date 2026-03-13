@@ -115,6 +115,13 @@
         .alarm-img { width: 100%; height: 110px; margin-bottom: 6px; position: relative; border-radius: 8px; overflow: hidden; background: #000; }
         .alarm-tit { font-size: 12px; color: #c5d9f7; margin: 0; padding: 0; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .alarm-mask { position: absolute; border: 1px solid #ff6a75; background: rgba(255, 79, 88, .25); color: #fff; font-size: 11px; line-height: 1.1; padding: 1px 2px; white-space: nowrap; }
+        .detail-wrap { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 10px; box-sizing: border-box; background: #061528; }
+        .detail-img { flex: 1; min-height: 260px; position: relative; border-radius: 10px; overflow: hidden; border: 1px solid rgba(95, 173, 255, .35); background: #000; }
+        .detail-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .detail-item { padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(95, 173, 255, .35); background: rgba(15, 62, 125, .35); color: #deecff; font-size: 12px; line-height: 1.45; word-break: break-all; }
+        .detail-detections { max-height: 180px; overflow: auto; border-radius: 8px; border: 1px solid rgba(95, 173, 255, .35); background: rgba(8, 29, 58, .66); padding: 8px; display: grid; gap: 8px; }
+        .detail-empty { color: #9fb9dd; font-size: 12px; }
 
         .chart-row { height: 240px; display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .chart-card {
@@ -144,6 +151,7 @@
             .chart-row { grid-template-columns: 1fr; grid-auto-rows: 260px; height: auto; }
             .video-list-wrapper { min-height: 420px; }
             .quick-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .detail-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -296,6 +304,9 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     var cameraMap = new Map();
     var containerMap = new Map();
     var frameMap = new Map();
+    var staticsStore = new Map();
+    var gridRestoreTimer = null;
+    var gridRenderSeq = 0;
 
     var trendChart = null;
     var pieChart = null;
@@ -336,6 +347,125 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     function safeText(v, d) {
         if (v === null || v === undefined || v === '') return d || '';
         return String(v);
+    }
+
+    function escapeHtml(raw) {
+        return safeText(raw, '').replace(/[&<>"']/g, function(ch) {
+            if (ch === '&') return '&amp;';
+            if (ch === '<') return '&lt;';
+            if (ch === '>') return '&gt;';
+            if (ch === '"') return '&quot;';
+            return '&#39;';
+        });
+    }
+
+    function toInt(raw, d) {
+        var n = parseInt(raw, 10);
+        if (isNaN(n)) return d || 0;
+        return n;
+    }
+
+    function normalizeStaticsItem(item, fallbackId) {
+        var name = safeText(item && item.name, '未命名算法');
+        var algorithmId = safeText(item && (item.algorithmId !== undefined ? item.algorithmId : item.id), '');
+        var itemId = algorithmId || safeText(item && item.id, fallbackId || ('fallback_' + randomStr(4)));
+        var valRaw = item && (item.staticsFlagVal !== undefined ? item.staticsFlagVal : item.value);
+        return {
+            id: itemId,
+            algorithmId: algorithmId,
+            name: name,
+            staticsFlagVal: toInt(valRaw, 0)
+        };
+    }
+
+    function setStaticsStore(items) {
+        staticsStore.clear();
+        for (var i = 0; i < items.length; i++) {
+            var normalized = normalizeStaticsItem(items[i], 'summary_' + i);
+            var key = normalized.algorithmId ? ('alg_' + normalized.algorithmId) : ('name_' + normalized.name);
+            staticsStore.set(key, normalized);
+        }
+    }
+
+    function renderStaticsStore() {
+        if (staticsStore.size === 0) {
+            $('#statics-items').html('<div>未配置统计算法，请点击统计配置</div>');
+            return;
+        }
+
+        var datas = [];
+        staticsStore.forEach(function(v) {
+            datas.push({
+                id: v.id,
+                name: v.name,
+                staticsFlagVal: v.staticsFlagVal
+            });
+        });
+        var html = template('statics-item-tpl', { datas: datas });
+        $('#statics-items').html(html);
+    }
+
+    function bumpStaticsCounter(algorithmId, algorithmName) {
+        var keyById = '';
+        if (algorithmId !== null && algorithmId !== undefined && algorithmId !== '') {
+            keyById = 'alg_' + algorithmId;
+        }
+
+        var hitKey = '';
+        if (keyById && staticsStore.has(keyById)) {
+            hitKey = keyById;
+        } else if (algorithmName) {
+            staticsStore.forEach(function(v, k) {
+                if (!hitKey && v.name === algorithmName) hitKey = k;
+            });
+        }
+
+        if (!hitKey) {
+            if (keyById) hitKey = keyById;
+            else hitKey = 'name_' + safeText(algorithmName, '算法_' + (staticsStore.size + 1));
+            staticsStore.set(hitKey, normalizeStaticsItem({
+                id: keyById ? algorithmId : hitKey,
+                algorithmId: algorithmId,
+                name: safeText(algorithmName, '未命名算法'),
+                staticsFlagVal: 0
+            }, hitKey));
+        }
+
+        var current = staticsStore.get(hitKey);
+        staticsStore.set(hitKey, {
+            id: current.id,
+            algorithmId: current.algorithmId,
+            name: current.name,
+            staticsFlagVal: toInt(current.staticsFlagVal, 0) + 1
+        });
+        renderStaticsStore();
+    }
+
+    function formatAlarmDetections(paramsRaw) {
+        var arr = parseArray(paramsRaw);
+        if (arr.length === 0) {
+            return '<div class="detail-empty">检测结果: 无</div>';
+        }
+
+        var rows = '';
+        for (var i = 0; i < arr.length; i++) {
+            var item = arr[i] || {};
+            var bbox = item.bbox || item.position || [];
+            var label = safeText(item.label_zh || item.type || item.label, 'target');
+            var score = item.score;
+            if (score === undefined || score === null || score === '') score = item.confidence;
+            var scoreText = '-';
+            if (score !== undefined && score !== null && score !== '') {
+                var scoreNum = parseFloat(score);
+                scoreText = isNaN(scoreNum) ? safeText(score, '-') : scoreNum.toFixed(3);
+            }
+            var bboxText = '-';
+            if (Array.isArray(bbox) && bbox.length >= 4) {
+                bboxText = '[' + toInt(bbox[0], 0) + ', ' + toInt(bbox[1], 0) + ', ' + toInt(bbox[2], 0) + ', ' + toInt(bbox[3], 0) + ']';
+            }
+            rows += '<div class="detail-item">目标: ' + escapeHtml(label) + ' | 置信度: ' + escapeHtml(scoreText) + ' | 框: ' + escapeHtml(bboxText) + '</div>';
+        }
+        return rows;
     }
 
     function setGridActive(n) {
@@ -392,22 +522,27 @@ layui.use(['jquery', 'loading', 'popup'], function() {
 
     function renderAlarmDetail(data, autoClose) {
         var boxId = 'alarm_detail_' + randomStr(8);
+        var detailWidth = Math.max(560, Math.min(window.innerWidth - 32, 980));
+        var detailHeight = Math.max(420, Math.min(window.innerHeight - 36, 760));
         var html = '' +
             '<div class="detail-wrap">' +
             '  <div class="detail-img" id="' + boxId + '"><img src="/report/stream?id=' + data.id + '" params=\'' + data.params + '\' onload="handleImgLoad(this, \'" + boxId + "\');"/></div>' +
             '  <div class="detail-grid">' +
-            '    <div class="detail-item">算法: ' + safeText(data.algorithmName, '-') + '</div>' +
-            '    <div class="detail-item">摄像头: ' + safeText(data.cameraName, '-') + '</div>' +
-            '    <div class="detail-item">区域: ' + safeText(data.wareName, '-') + '</div>' +
-            '    <div class="detail-item">时间: ' + safeText(data.alarmTime, '-') + '</div>' +
+            '    <div class="detail-item">算法: ' + escapeHtml(safeText(data.algorithmName, '-')) + '</div>' +
+            '    <div class="detail-item">摄像头: ' + escapeHtml(safeText(data.cameraName, '-')) + '</div>' +
+            '    <div class="detail-item">区域: ' + escapeHtml(safeText(data.wareName, '-')) + '</div>' +
+            '    <div class="detail-item">时间: ' + escapeHtml(safeText(data.alarmTime, '-')) + '</div>' +
             '  </div>' +
+            '  <div class="detail-detections">' + formatAlarmDetections(data.params) + '</div>' +
             '</div>';
         layer.open({
             type: 1,
             title: autoClose ? '实时告警' : '告警详情',
             shade: 0.15,
-            area: ['720px', '82%'],
-            time: autoClose ? 3000 : 0,
+            maxmin: !autoClose,
+            area: [detailWidth + 'px', detailHeight + 'px'],
+            time: autoClose ? 8000 : 0,
+            shadeClose: true,
             content: html
         });
     }
@@ -454,12 +589,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     };
 
     window.addAlarm = function(json) {
-        var algorithmId = json.algorithmId;
-        if ($('#statics_' + algorithmId).length > 0) {
-            var oldVal = parseInt($('#statics_' + algorithmId).text(), 10);
-            if (isNaN(oldVal)) oldVal = 0;
-            $('#statics_' + algorithmId).text(oldVal + 1);
-        }
+        bumpStaticsCounter(json.algorithmId, safeText(json.algorithmName, '未命名算法'));
 
         var oldCounter = parseInt($('#alarm-counter').text(), 10);
         if (isNaN(oldCounter)) oldCounter = 0;
@@ -552,8 +682,14 @@ layui.use(['jquery', 'loading', 'popup'], function() {
 
     window.show = function(nextCols) {
         if (!validGrid(nextCols)) nextCols = 1;
+        gridRenderSeq += 1;
+        var seq = gridRenderSeq;
 
         var oldPlayingCameraIds = getPlayingCameraIdsByGridOrder();
+        if (gridRestoreTimer) {
+            clearTimeout(gridRestoreTimer);
+            gridRestoreTimer = null;
+        }
 
         playerMap.forEach(function(player, containerId) {
             window.closeVideo(containerId);
@@ -581,9 +717,15 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         }
 
         if (oldPlayingCameraIds.length > 0) {
-            setTimeout(function() {
+            gridRestoreTimer = setTimeout(function() {
+                if (seq !== gridRenderSeq) return;
                 restorePlayingByCameraIds(oldPlayingCameraIds);
+                window.refreshDashboard();
+                renderStaticsStore();
             }, 60);
+        } else {
+            window.refreshDashboard();
+            renderStaticsStore();
         }
     };
 
@@ -743,20 +885,12 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     };
 
     window.handleStaticsTpl = function() {
-        var renderStats = function(items) {
-            if (!Array.isArray(items) || items.length === 0) {
-                $('#statics-items').html('<div>未配置统计算法，请点击统计配置</div>');
-                return;
-            }
-            var html = template('statics-item-tpl', { datas: items });
-            $('#statics-items').html(html);
-        };
-
         $.post('/stream/statics/algorithms', {}, function(res) {
             var items = [];
             if (res && res.code === 0 && Array.isArray(res.data)) items = res.data;
             if (items.length > 0) {
-                renderStats(items);
+                setStaticsStore(items);
+                renderStaticsStore();
                 return;
             }
 
@@ -773,12 +907,13 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                         staticsFlagVal: pie[i].value || 0
                     });
                 }
-                renderStats(fallback);
+                setStaticsStore(fallback);
+                renderStaticsStore();
             }).fail(function() {
-                renderStats([]);
+                renderStaticsStore();
             });
         }).fail(function() {
-            renderStats([]);
+            renderStaticsStore();
         });
     };
 
@@ -788,21 +923,41 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         box.find('.alarm-mask').remove();
 
         var sWidth = $(obj).width();
+        var sHeight = $(obj).height();
         var nWidth = obj.naturalWidth;
-        if (!nWidth) return;
+        var nHeight = obj.naturalHeight;
+        if (!nWidth || !nHeight || !sWidth || !sHeight) return;
 
-        var ratio = (sWidth / nWidth).toFixed(2);
+        var xScale = sWidth / nWidth;
+        var yScale = sHeight / nHeight;
+        var scale = Math.min(xScale, yScale);
+        var drawW = nWidth * scale;
+        var drawH = nHeight * scale;
+        var hasLetterbox = Math.abs(drawW - sWidth) > 1 || Math.abs(drawH - sHeight) > 1;
+        var offsetX = hasLetterbox ? (sWidth - drawW) / 2 : 0;
+        var offsetY = hasLetterbox ? (sHeight - drawH) / 2 : 0;
+        if (hasLetterbox) {
+            xScale = scale;
+            yScale = scale;
+        }
+
         var arr = parseArray($(obj).attr('params'));
         for (var i = 0; i < arr.length; i++) {
-            var type = arr[i].type;
-            var confidence = arr[i].confidence;
-            var p = arr[i].position;
+            var p = arr[i].position || arr[i].bbox;
             if (!p || p.length < 4) continue;
             var startX = p[0];
             var startY = p[1];
             var width = p[2] - p[0];
             var height = p[3] - p[1];
-            box.append('<div class="alarm-mask" style="left:' + (startX * ratio) + 'px;top:' + (startY * ratio) + 'px;width:' + (width * ratio) + 'px;height:' + (height * ratio) + 'px;">' + type + '/' + confidence + '</div>');
+            var type = safeText(arr[i].label_zh || arr[i].type || arr[i].label, 'target');
+            var confidence = arr[i].confidence;
+            if (confidence === undefined || confidence === null || confidence === '') confidence = arr[i].score;
+            var confText = '';
+            if (confidence !== undefined && confidence !== null && confidence !== '') {
+                var cNum = parseFloat(confidence);
+                confText = '/' + (isNaN(cNum) ? safeText(confidence, '-') : cNum.toFixed(2));
+            }
+            box.append('<div class="alarm-mask" style="left:' + (offsetX + startX * xScale) + 'px;top:' + (offsetY + startY * yScale) + 'px;width:' + (width * xScale) + 'px;height:' + (height * yScale) + 'px;">' + escapeHtml(type + confText) + '</div>');
         }
     };
 
