@@ -45,11 +45,17 @@ public class RuntimeApiService {
         int deadLetterSize = toInt(inferenceDeadLetterService.stats().get("queue_size"));
         Map<Long, Camera> cameraMap = toCameraMap(activeCameras);
         List<Map<String, Object>> streamItems = buildStreamItems(activeStreams, cameraMap);
+        Map<String, Object> scheduler = activeCameraInferenceSchedulerService == null
+                ? Collections.emptyMap()
+                : activeCameraInferenceSchedulerService.getLastSummary();
+        Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), 10.0D);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("sessions", Collections.emptyMap());
         data.put("streams", streamItems);
         data.put("media", buildMediaConfig());
+        data.put("scheduler", scheduler);
+        data.put("throttle_hint", throttleHint);
         data.put("session_count", activeStreams.size());
         data.put("stream_count", activeCameras.size());
         data.put("ready_stream_count", streamItems.size());

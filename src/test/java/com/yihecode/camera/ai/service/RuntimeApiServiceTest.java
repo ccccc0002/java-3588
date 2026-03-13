@@ -58,6 +58,11 @@ class RuntimeApiServiceTest {
         when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
         when(pluginRegistryService.list()).thenReturn(List.of(new PluginRegistryRecord(), new PluginRegistryRecord(), new PluginRegistryRecord()));
         when(inferenceDeadLetterService.stats()).thenReturn(Collections.singletonMap("queue_size", 4));
+        when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Map.of(
+                "concurrency_level", 3,
+                "concurrency_pressure", 1.5D,
+                "max_effective_cooldown_ms", 2600
+        ));
         when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
         stubMediaConfig();
         when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
@@ -79,6 +84,13 @@ class RuntimeApiServiceTest {
         assertEquals("ffmpeg", media.get("ffmpeg_bin"));
         assertEquals("mpp", media.get("decode_backend"));
         assertEquals("rga", media.get("decode_hwaccel"));
+
+        Map<String, Object> scheduler = (Map<String, Object>) snapshot.get("scheduler");
+        assertEquals(3, scheduler.get("concurrency_level"));
+        assertEquals(1.5D, ((Number) scheduler.get("concurrency_pressure")).doubleValue());
+        Map<String, Object> throttleHint = (Map<String, Object>) snapshot.get("throttle_hint");
+        assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
 
         List<Map<String, Object>> streams = (List<Map<String, Object>>) snapshot.get("streams");
         assertEquals(1, streams.size());
