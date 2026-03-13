@@ -6,11 +6,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
+from urllib import parse as urlparse
 from urllib import error, request
 
 
@@ -27,7 +29,8 @@ class RuntimeApiControllerConfig:
     wait_seconds: float = 40.0
     poll_interval: float = 1.0
     stop_wait_seconds: float = 10.0
-    stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar'
+    # Scope pkill to runtime-api JVM (--server.port=18081) to avoid stopping the main web app (18082).
+    stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar.*18081'
     fallback_stop_pattern: str = PYTHON_FALLBACK_PATTERN
     env_path: Optional[Path] = None
     snapshot_seed_path: Optional[Path] = None
@@ -150,6 +153,54 @@ def derive_runtime_api_base_url(health_url: str) -> str:
     if health_url.endswith(marker):
         return health_url[:-len(marker)]
     return health_url.rsplit('/api/', 1)[0] if '/api/' in health_url else health_url.rstrip('/')
+
+
+def resolve_health_port(health_url: str) -> Optional[int]:
+    text = str(health_url or '').strip()
+    if not text:
+        return None
+    try:
+        parsed = urlparse.urlparse(text)
+    except Exception:
+        return None
+    if parsed.port is not None:
+        return int(parsed.port)
+    if parsed.scheme == 'https':
+        return 443
+    if parsed.scheme == 'http':
+        return 80
+    return None
+
+
+def resolve_pids_by_listen_port(port: int) -> list[int]:
+    if int(port) <= 0:
+        return []
+    completed = subprocess.run(['ss', '-lntp'], capture_output=True, text=True)
+    if completed.returncode != 0:
+        return []
+    needle = f':{int(port)}'
+    pids: set[int] = set()
+    for line in str(completed.stdout or '').splitlines():
+        if needle not in line:
+            continue
+        for match in re.findall(r'pid=(\d+)', line):
+            try:
+                pids.add(int(match))
+            except ValueError:
+                continue
+    return sorted(pids)
+
+
+def kill_pids(pids: list[int]) -> list[Dict[str, Any]]:
+    results: list[Dict[str, Any]] = []
+    for pid in pids:
+        completed = subprocess.run(['kill', str(pid)], capture_output=True, text=True)
+        results.append({
+            'pid': int(pid),
+            'exit_code': int(completed.returncode),
+            'stderr': str(completed.stderr or ''),
+        })
+    return results
 
 
 def request_json(url: str, method: str = 'GET', headers: Optional[Dict[str, str]] = None, payload: Optional[Dict[str, Any]] = None, timeout: float = 5.0) -> Dict[str, Any]:
@@ -294,6 +345,30 @@ def stop_runtime_api(config: RuntimeApiControllerConfig) -> Dict[str, Any]:
     health = wait_for_down(config)
     if int(health.get('http_status', 0)) != 200:
         return {'status': 'stopped', 'patterns': patterns, 'results': stop_results, 'health': health}
+    health_port = resolve_health_port(config.health_url)
+    if health_port is not None:
+        port_pids = resolve_pids_by_listen_port(health_port)
+        if port_pids:
+            port_kill_results = kill_pids(port_pids)
+            stop_results.append({
+                'port_stop': {
+                    'port': int(health_port),
+                    'pids': port_pids,
+                    'results': port_kill_results,
+                }
+            })
+            for item in port_kill_results:
+                if int(item.get('exit_code', 1)) not in (0, 1):
+                    return {
+                        'status': 'stop_failed',
+                        'pattern': f'listen_port:{health_port}',
+                        'exit_code': int(item.get('exit_code', 1)),
+                        'stderr': str(item.get('stderr', '')),
+                        'results': stop_results,
+                    }
+            health = wait_for_down(config)
+            if int(health.get('http_status', 0)) != 200:
+                return {'status': 'stopped', 'patterns': patterns, 'results': stop_results, 'health': health}
     return {'status': 'stop_pending_exit', 'patterns': patterns, 'results': stop_results, 'health': health}
 
 
@@ -339,7 +414,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--wait-seconds', type=float, default=40.0)
     parser.add_argument('--poll-interval', type=float, default=1.0)
     parser.add_argument('--stop-wait-seconds', type=float, default=10.0)
-    parser.add_argument('--stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar')
+    parser.add_argument('--stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar.*18081')
     parser.add_argument('--env', action='append', default=[])
     return parser.parse_args(argv)
 

@@ -169,6 +169,41 @@ class RuntimeApiControllerTests(unittest.TestCase):
             self.assertEqual('python_fallback', result['backend'])
             self.assertEqual('python_fallback', popen_mock.call_args_list[1].kwargs['env']['RUNTIME_API_BACKEND'])
 
+    def test_stop_runtime_api_falls_back_to_port_pid_kill_when_pattern_misses(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = runtime_api_ctl.RuntimeApiControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=repo_root / 'runtime',
+                start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Runtime-Api.sh',
+                health_url='http://127.0.0.1:18081/api/v1/runtime/health',
+                poll_interval=0.01,
+                stop_wait_seconds=1,
+                stop_pattern='java-rk3588-0.0.1-SNAPSHOT.jar.*18081',
+            )
+            run_side_effect = [
+                mock.Mock(returncode=1, stdout='', stderr=''),
+                mock.Mock(returncode=1, stdout='', stderr=''),
+                mock.Mock(returncode=0, stdout='LISTEN 0 0 *:18081 *:* users:(("java",pid=4567,fd=20))', stderr=''),
+                mock.Mock(returncode=0, stdout='', stderr=''),
+            ]
+            with mock.patch.object(runtime_api_ctl.subprocess, 'run', side_effect=run_side_effect) as run_mock, \
+                 mock.patch.object(runtime_api_ctl, 'wait_for_down', side_effect=[{'http_status': 200, 'payload': {}}, {'http_status': 0, 'payload': {'message': 'down'}}]):
+                result = runtime_api_ctl.stop_runtime_api(config)
+
+            self.assertEqual('stopped', result['status'])
+            self.assertEqual(
+                mock.call(['pkill', '-f', 'java-rk3588-0.0.1-SNAPSHOT.jar.*18081'], capture_output=True, text=True),
+                run_mock.call_args_list[0],
+            )
+            self.assertEqual(
+                mock.call(['pkill', '-f', 'runtime_api_fallback.py'], capture_output=True, text=True),
+                run_mock.call_args_list[1],
+            )
+            self.assertIn(mock.call(['ss', '-lntp'], capture_output=True, text=True), run_mock.call_args_list)
+            self.assertIn(mock.call(['kill', '4567'], capture_output=True, text=True), run_mock.call_args_list)
+            self.assertTrue(any('port_stop' in item for item in result['results']))
+
     def test_export_runtime_snapshot_seed_writes_snapshot_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = pathlib.Path(temp_dir)
@@ -225,7 +260,7 @@ class RuntimeApiControllerTests(unittest.TestCase):
 
         self.assertTrue(config.health_url.endswith('/api/v1/runtime/health'))
         self.assertEqual(40.0, config.wait_seconds)
-        self.assertEqual('java-rk3588-0.0.1-SNAPSHOT.jar', config.stop_pattern)
+        self.assertEqual('java-rk3588-0.0.1-SNAPSHOT.jar.*18081', config.stop_pattern)
 
 
 if __name__ == '__main__':
