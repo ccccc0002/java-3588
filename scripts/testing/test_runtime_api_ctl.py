@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 import pathlib
 import sys
 import tempfile
@@ -17,6 +18,24 @@ SPEC.loader.exec_module(runtime_api_ctl)
 
 
 class RuntimeApiControllerTests(unittest.TestCase):
+    def test_write_persisted_env_supports_symlink_target_with_missing_parent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = pathlib.Path(temp_dir)
+            runtime_dir = root / 'runtime'
+            runtime_dir.mkdir(parents=True, exist_ok=True)
+            target_file = root / 'tmp-runtime' / 'runtime-api.env'
+            symlink_path = runtime_dir / 'runtime-api.env'
+            try:
+                os.symlink(str(target_file), str(symlink_path))
+            except (AttributeError, NotImplementedError, OSError):
+                self.skipTest('symlink is not supported in this environment')
+
+            runtime_api_ctl.write_persisted_env(symlink_path, {'RUNTIME_BOOTSTRAP_TOKEN': 'edge-demo-bootstrap'})
+
+            self.assertTrue(target_file.exists())
+            content = target_file.read_text(encoding='utf-8')
+            self.assertIn('RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap', content)
+
     def test_start_runtime_api_uses_repo_script_health_and_env(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = pathlib.Path(temp_dir)

@@ -73,8 +73,12 @@ def load_persisted_env(env_path: Path) -> Dict[str, str]:
 
 def write_persisted_env(env_path: Path, env_values: Dict[str, str]) -> None:
     env_path.parent.mkdir(parents=True, exist_ok=True)
+    write_path = env_path
+    if env_path.is_symlink():
+        write_path = Path(os.path.realpath(str(env_path)))
+        write_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [f'{key}={env_values[key]}' for key in sorted(env_values.keys()) if str(key).strip()]
-    env_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
+    write_path.write_text('\n'.join(lines) + ('\n' if lines else ''), encoding='utf-8')
 
 
 def normalize_env_list(values: Optional[list[str]]) -> Dict[str, str]:

@@ -57,6 +57,40 @@ class RuntimeStackControllerTests(unittest.TestCase):
             start_bridge_mock.assert_called_once()
             start_worker_mock.assert_called_once()
 
+    def test_start_stack_can_include_java_app_when_enabled(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = runtime_stack_ctl.StackControllerConfig(repo_root=repo_root)
+            call_order = []
+
+            with mock.patch.object(
+                runtime_stack_ctl.zlm_runtime_ctl,
+                'start_runtime',
+                side_effect=lambda cfg: call_order.append('zlm') or {'status': 'started'},
+            ), mock.patch.object(
+                runtime_stack_ctl.java_app_ctl,
+                'start_app',
+                side_effect=lambda cfg: call_order.append('java_app') or {'status': 'started'},
+            ) as start_java_mock, mock.patch.object(
+                runtime_stack_ctl.runtime_api_ctl,
+                'start_runtime_api',
+                side_effect=lambda cfg, extra_env=None: call_order.append('runtime_api') or {'status': 'started'},
+            ), mock.patch.object(
+                runtime_stack_ctl.runtime_bridge_ctl,
+                'start_bridge',
+                side_effect=lambda cfg, extra_env=None: call_order.append('bridge') or {'status': 'started'},
+            ), mock.patch.object(
+                runtime_stack_ctl.media_worker_ctl,
+                'start_worker',
+                side_effect=lambda cfg, extra_env=None: call_order.append('worker') or {'status': 'started'},
+            ):
+                result = runtime_stack_ctl.start_stack(config, with_java_app=True)
+
+            self.assertEqual('started', result['status'])
+            self.assertEqual('started', result['java_app']['status'])
+            self.assertEqual(['zlm', 'java_app', 'runtime_api', 'bridge', 'worker'], call_order)
+            start_java_mock.assert_called_once()
+
     def test_start_stack_short_circuits_when_runtime_api_is_unhealthy(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = pathlib.Path(temp_dir)
@@ -161,7 +195,7 @@ class RuntimeStackControllerTests(unittest.TestCase):
 
             self.assertEqual('restart_blocked', result['status'])
             self.assertEqual('stop_pending_exit', result['worker']['status'])
-            stop_stack_mock.assert_called_once_with(config)
+            stop_stack_mock.assert_called_once_with(config, with_java_app=False)
             start_stack_mock.assert_not_called()
 
     def test_parse_args_supports_all_env_groups(self):
@@ -170,6 +204,7 @@ class RuntimeStackControllerTests(unittest.TestCase):
             '--runtime-api-env', 'RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap',
             '--bridge-env', 'DEFAULT_PLUGIN_ID=yolov8n',
             '--worker-env', 'RUNTIME_BOOTSTRAP_TOKEN=edge-demo-bootstrap',
+            '--with-java-app',
         ])
         config, runtime_api_env, bridge_env, worker_env = runtime_stack_ctl.build_config(args)
 
@@ -177,6 +212,7 @@ class RuntimeStackControllerTests(unittest.TestCase):
         self.assertEqual('edge-demo-bootstrap', runtime_api_env['RUNTIME_BOOTSTRAP_TOKEN'])
         self.assertEqual('yolov8n', bridge_env['DEFAULT_PLUGIN_ID'])
         self.assertEqual('edge-demo-bootstrap', worker_env['RUNTIME_BOOTSTRAP_TOKEN'])
+        self.assertTrue(args.with_java_app)
 
 
 if __name__ == '__main__':

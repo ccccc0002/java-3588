@@ -136,16 +136,16 @@
                               },
                    "Phase10":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T06:29:38+08:00",
-                                   "summary":  "Phase10 acceptance lane tightened: runtime stack smoke now enforces bridge decode runtime status=ok and decode mode=mpp-rga, aligning strict hardware decode acceptance.",
+                                   "updated_at":  "2026-03-14T06:42:49+08:00",
+                                   "summary":  "Phase10 acceptance stabilized on RK3588: acceptance lane now bootstraps runtime stack with Java app and passes with decode-runtime strict gates (status=ok, mode=mpp-rga).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_linux_gates.py (RK3588)",
+                                                        "edge_test_command":  "python3 scripts/rk3588/runtime_stack_ctl.py start --with-java-app ... \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "pending",
                                                         "github_sync_ref":  "local-uncommitted",
-                                                        "updated_at":  "2026-03-14T06:29:38+08:00"
+                                                        "updated_at":  "2026-03-14T06:42:49+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -1539,6 +1539,16 @@
                         "summary":  "Phase10 acceptance lane tightened: runtime stack smoke now enforces bridge decode runtime status=ok and decode mode=mpp-rga, aligning strict hardware decode acceptance.",
                         "edge_test_status":  "passed",
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_linux_gates.py (RK3588)",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:42:49+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "completed",
+                        "summary":  "Phase10 acceptance stabilized on RK3588: acceptance lane now bootstraps runtime stack with Java app and passes with decode-runtime strict gates (status=ok, mode=mpp-rga).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/rk3588/runtime_stack_ctl.py start --with-java-app ... \u0026\u0026 bash scripts/rk3588/Run-Phase10-Acceptance.sh --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
                     }

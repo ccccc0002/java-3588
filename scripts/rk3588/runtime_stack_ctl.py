@@ -15,6 +15,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import media_worker_ctl
+import java_app_ctl
 import runtime_api_ctl
 import runtime_bridge_ctl
 import zlm_runtime_ctl
@@ -77,6 +78,20 @@ def build_runtime_api_config(config: StackControllerConfig) -> runtime_api_ctl.R
     )
 
 
+def build_java_app_config(config: StackControllerConfig) -> java_app_ctl.AppControllerConfig:
+    defaults = java_app_ctl.default_config()
+    return java_app_ctl.AppControllerConfig(
+        repo_root=config.repo_root,
+        runtime_dir=config.runtime_dir,
+        start_script=config.repo_root / 'scripts' / 'rk3588' / 'Run-Java-App.sh',
+        health_url=defaults.health_url,
+        wait_seconds=defaults.wait_seconds,
+        poll_interval=defaults.poll_interval,
+        stop_wait_seconds=defaults.stop_wait_seconds,
+        stop_pattern=defaults.stop_pattern,
+    )
+
+
 def build_bridge_config(config: StackControllerConfig) -> runtime_bridge_ctl.ControllerConfig:
     defaults = runtime_bridge_ctl.default_config()
     return runtime_bridge_ctl.ControllerConfig(
@@ -122,22 +137,38 @@ def start_stack(
     runtime_api_env: Optional[Dict[str, str]] = None,
     bridge_env: Optional[Dict[str, str]] = None,
     worker_env: Optional[Dict[str, str]] = None,
+    with_java_app: bool = False,
 ) -> Dict[str, object]:
     zlm = zlm_runtime_ctl.start_runtime(build_zlm_config(config))
     if not is_start_ok(str(zlm.get('status', ''))):
         return {
             'status': 'zlm_unhealthy',
             'zlm': zlm,
+            'java_app': {'status': 'skipped'},
             'runtime_api': {'status': 'skipped'},
             'bridge': {'status': 'skipped'},
             'worker': {'status': 'skipped'},
         }
+
+    java_app: Dict[str, object] = {'status': 'skipped'}
+    if with_java_app:
+        java_app = java_app_ctl.start_app(build_java_app_config(config))
+        if not is_start_ok(str(java_app.get('status', ''))):
+            return {
+                'status': 'java_app_unhealthy',
+                'zlm': zlm,
+                'java_app': java_app,
+                'runtime_api': {'status': 'skipped'},
+                'bridge': {'status': 'skipped'},
+                'worker': {'status': 'skipped'},
+            }
 
     runtime_api = runtime_api_ctl.start_runtime_api(build_runtime_api_config(config), extra_env=runtime_api_env)
     if not is_start_ok(str(runtime_api.get('status', ''))):
         return {
             'status': 'runtime_api_unhealthy',
             'zlm': zlm,
+            'java_app': java_app,
             'runtime_api': runtime_api,
             'bridge': {'status': 'skipped'},
             'worker': {'status': 'skipped'},
@@ -148,6 +179,7 @@ def start_stack(
         return {
             'status': 'bridge_unhealthy',
             'zlm': zlm,
+            'java_app': java_app,
             'runtime_api': runtime_api,
             'bridge': bridge,
             'worker': {'status': 'skipped'},
@@ -158,38 +190,51 @@ def start_stack(
     return {
         'status': status,
         'zlm': zlm,
+        'java_app': java_app,
         'runtime_api': runtime_api,
         'bridge': bridge,
         'worker': worker,
     }
 
 
-def stop_stack(config: StackControllerConfig) -> Dict[str, object]:
+def stop_stack(config: StackControllerConfig, with_java_app: bool = False) -> Dict[str, object]:
     worker = media_worker_ctl.stop_worker(build_worker_config(config))
     bridge = runtime_bridge_ctl.stop_bridge(build_bridge_config(config))
     runtime_api = runtime_api_ctl.stop_runtime_api(build_runtime_api_config(config))
     zlm = zlm_runtime_ctl.stop_runtime(build_zlm_config(config))
+    java_app: Dict[str, object] = {'status': 'skipped'}
+    if with_java_app:
+        java_app = java_app_ctl.stop_app(build_java_app_config(config))
     status = 'stopped' if all(
         is_stop_ok(str(component.get('status', '')))
         for component in (worker, bridge, runtime_api, zlm)
     ) else 'partial'
+    if with_java_app and not is_stop_ok(str(java_app.get('status', ''))):
+        status = 'partial'
     return {
         'status': status,
         'worker': worker,
         'bridge': bridge,
         'runtime_api': runtime_api,
         'zlm': zlm,
+        'java_app': java_app,
     }
 
 
-def status_stack(config: StackControllerConfig) -> Dict[str, object]:
+def status_stack(config: StackControllerConfig, with_java_app: bool = False) -> Dict[str, object]:
     zlm = zlm_runtime_ctl.status_runtime(build_zlm_config(config))
     runtime_api = runtime_api_ctl.status_runtime_api(build_runtime_api_config(config))
     bridge = runtime_bridge_ctl.status_bridge(build_bridge_config(config))
     worker = media_worker_ctl.status_worker(build_worker_config(config))
+    java_app: Dict[str, object] = {'status': 'skipped'}
+    if with_java_app:
+        java_app = java_app_ctl.status_app(build_java_app_config(config))
+    components = [zlm, runtime_api, bridge, worker]
+    if with_java_app:
+        components.append(java_app)
     status = 'running' if all(
         str(component.get('status', '')) == 'running'
-        for component in (zlm, runtime_api, bridge, worker)
+        for component in components
     ) else 'degraded'
     return {
         'status': status,
@@ -197,6 +242,7 @@ def status_stack(config: StackControllerConfig) -> Dict[str, object]:
         'runtime_api': runtime_api,
         'bridge': bridge,
         'worker': worker,
+        'java_app': java_app,
     }
 
 
@@ -205,8 +251,9 @@ def restart_stack(
     runtime_api_env: Optional[Dict[str, str]] = None,
     bridge_env: Optional[Dict[str, str]] = None,
     worker_env: Optional[Dict[str, str]] = None,
+    with_java_app: bool = False,
 ) -> Dict[str, object]:
-    stopped = stop_stack(config)
+    stopped = stop_stack(config, with_java_app=with_java_app)
     if stopped.get('status') != 'stopped':
         return {
             'status': 'restart_blocked',
@@ -214,6 +261,7 @@ def restart_stack(
             'bridge': stopped.get('bridge', {}),
             'runtime_api': stopped.get('runtime_api', {}),
             'zlm': stopped.get('zlm', {}),
+            'java_app': stopped.get('java_app', {}),
             'stop': stopped,
         }
     return start_stack(
@@ -221,6 +269,7 @@ def restart_stack(
         runtime_api_env=runtime_api_env,
         bridge_env=bridge_env,
         worker_env=worker_env,
+        with_java_app=with_java_app,
     )
 
 
@@ -245,6 +294,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--runtime-api-env', action='append', default=[])
     parser.add_argument('--bridge-env', action='append', default=[])
     parser.add_argument('--worker-env', action='append', default=[])
+    parser.add_argument('--with-java-app', action='store_true')
     return parser.parse_args(argv)
 
 
@@ -264,13 +314,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     config, runtime_api_env, bridge_env, worker_env = build_config(args)
     if args.command == 'start':
-        result = start_stack(config, runtime_api_env=runtime_api_env, bridge_env=bridge_env, worker_env=worker_env)
+        result = start_stack(config, runtime_api_env=runtime_api_env, bridge_env=bridge_env, worker_env=worker_env, with_java_app=args.with_java_app)
     elif args.command == 'stop':
-        result = stop_stack(config)
+        result = stop_stack(config, with_java_app=args.with_java_app)
     elif args.command == 'restart':
-        result = restart_stack(config, runtime_api_env=runtime_api_env, bridge_env=bridge_env, worker_env=worker_env)
+        result = restart_stack(config, runtime_api_env=runtime_api_env, bridge_env=bridge_env, worker_env=worker_env, with_java_app=args.with_java_app)
     else:
-        result = status_stack(config)
+        result = status_stack(config, with_java_app=args.with_java_app)
     print(json.dumps(result, ensure_ascii=True))
     return 0 if result.get('status') in {'started', 'running', 'stopped', 'degraded'} else 1
 
