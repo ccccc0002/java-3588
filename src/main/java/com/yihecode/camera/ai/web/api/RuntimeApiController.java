@@ -63,7 +63,11 @@ public class RuntimeApiController {
         if (!runtimeAccessTokenService.isAuthorized(authorization)) {
             return error(HttpStatus.UNAUTHORIZED, "invalid_token", "token invalid or expired");
         }
-        return success(runtimeApiService.buildRuntimeSnapshot());
+        try {
+            return success(runtimeApiService.buildRuntimeSnapshot());
+        } catch (Exception ignored) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "runtime_snapshot_failed", "runtime snapshot unavailable");
+        }
     }
 
     @PostMapping("/inference/plan")
@@ -74,7 +78,11 @@ public class RuntimeApiController {
             return error(HttpStatus.UNAUTHORIZED, "invalid_token", "token invalid or expired");
         }
         Map<String, Object> request = payload == null ? Collections.emptyMap() : payload;
-        return success(runtimeApiService.buildInferencePlan(asDouble(request.get("budget"), 10.0D)));
+        try {
+            return success(runtimeApiService.buildInferencePlan(asDouble(request.get("budget"), 10.0D)));
+        } catch (Exception ignored) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "inference_plan_failed", "inference plan unavailable");
+        }
     }
 
     @GetMapping("/runtime/scheduler/summary")

@@ -126,6 +126,39 @@ class RuntimeApiControllerTest {
     }
 
     @Test
+    void runtimeSnapshot_shouldReturnServiceUnavailableWhenServiceFails() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-fail-snapshot")).thenReturn(true);
+        doThrow(new RuntimeException("snapshot failed"))
+                .when(runtimeApiService)
+                .buildRuntimeSnapshot();
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.runtimeSnapshot("Bearer token-fail-snapshot");
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        Map<String, Object> error = (Map<String, Object>) response.getBody().get("error");
+        assertEquals("runtime_snapshot_failed", error.get("code"));
+    }
+
+    @Test
+    void inferencePlan_shouldReturnServiceUnavailableWhenServiceFails() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-fail-plan")).thenReturn(true);
+        doThrow(new RuntimeException("plan failed"))
+                .when(runtimeApiService)
+                .buildInferencePlan(10.0D);
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.inferencePlan(
+                "Bearer token-fail-plan",
+                Collections.singletonMap("budget", 10.0D)
+        );
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertFalse((Boolean) response.getBody().get("success"));
+        Map<String, Object> error = (Map<String, Object>) response.getBody().get("error");
+        assertEquals("inference_plan_failed", error.get("code"));
+    }
+
+    @Test
     void schedulerSummary_shouldReturnDataWhenAuthorized() {
         when(runtimeAccessTokenService.isAuthorized("Bearer token-3")).thenReturn(true);
         when(activeCameraInferenceSchedulerService.getLastSummary()).thenReturn(Collections.singletonMap("concurrency_level", 2));
