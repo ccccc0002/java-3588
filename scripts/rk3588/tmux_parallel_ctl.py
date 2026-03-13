@@ -120,6 +120,22 @@ def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
     ]
 
 
+def load_lanes_from_file(path: Path) -> List[Tuple[str, str]]:
+    payload = json.loads(path.read_text(encoding='utf-8-sig'))
+    if not isinstance(payload, list):
+        raise ValueError('lane file must be a JSON array')
+    lanes: List[Tuple[str, str]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            raise ValueError('lane entry must be an object')
+        name = str(item.get('name', '')).strip()
+        command = str(item.get('command', '')).strip()
+        if not name or not command:
+            raise ValueError('lane entry requires name and command')
+        lanes.append((name, command))
+    return lanes
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Control tmux-based parallel lanes')
     parser.add_argument('command', choices=['start', 'status', 'stop', 'list'])
@@ -127,6 +143,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument('--workdir', default='.')
     parser.add_argument('--force', action='store_true', default=False)
     parser.add_argument('--lane', action='append', default=[])
+    parser.add_argument('--lane-file', default='')
     parser.add_argument('--with-default-lanes', action='store_true', default=False)
 
     parser.add_argument('--base-url', default='http://127.0.0.1:18082')
@@ -159,6 +176,8 @@ def start_session(args: argparse.Namespace) -> Dict[str, object]:
     lanes: List[Tuple[str, str]] = []
     if args.with_default_lanes:
         lanes.extend(build_default_lanes(args))
+    if args.lane_file:
+        lanes.extend(load_lanes_from_file(Path(args.lane_file).resolve()))
     for lane in args.lane:
         lanes.append(parse_lane(lane))
     if not lanes:

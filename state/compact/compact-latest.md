@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 19:19:19
+- generated_at: 2026-03-13 19:26:44
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,40 +10,17 @@
 
 ## Recent Checkpoints
 
-- 2026-03-13T19:19:18+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
-- 2026-03-13T18:56:34+08:00 | task=PHASE2-EXEC | stage=Phase2-UI-GridCount-Stability | event=phase_checkpoint
-- 2026-03-13T18:42:37+08:00 | task=PHASE2-EXEC | stage=Phase2-UI-GridSwitch-Validation | event=phase_checkpoint
-- 2026-03-13T18:30:35+08:00 | task=PHASE2-EXEC | stage=Phase2-UI-GridStatsAlarmHotfix | event=phase_checkpoint
-- 2026-03-13T18:20:18+08:00 | task=PHASE2-EXEC | stage=Phase2-UI-Hotfix | event=phase_checkpoint
-- 2026-03-13T16:17:44+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T16:15:49+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T16:11:59+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
+- 2026-03-13T19:26:44+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
+- 2026-03-13T19:26:34+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
+- 2026-03-13T19:26:33+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
+- 2026-03-13T19:26:32+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
+- 2026-03-13T19:26:31+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
+- 2026-03-13T19:26:11+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
+- 2026-03-13T19:26:10+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_checkpoint
+- 2026-03-13T19:26:09+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 14:21:44 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 sync checkpoint: dual-gate handoff orchestration + evidence pushed (a42a5d7). |
-| 2026-03-13 14:21:44 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-142144-PHASE2-EXEC.json |
-| 2026-03-13 14:21:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:21:44 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 dual-gate handoff synced: alarm preview + inference quality diagnostics both passed on RK3588; orchestration and evidence pushed to GitHub. |
-| 2026-03-13 14:21:45 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-142144-PHASE2-EXEC.json |
-| 2026-03-13 14:21:45 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:21:45 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 sync checkpoint: dual-gate handoff orchestration + evidence pushed (a42a5d7). |
-| 2026-03-13 14:24:47 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-142447-PHASE2-EXEC.json |
-| 2026-03-13 14:24:47 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-142447-PHASE2-EXEC.json |
-| 2026-03-13 14:24:47 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 checkpoint: RK3588 launcher script validated and summary captured in state/local/phase11-handoff-launcher-dryrun-20260313-142405-summary.json |
-| 2026-03-13 14:24:47 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:24:47 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 launcher delivered: scripts/rk3588/Run-Phase11-Handoff.sh added for one-command board execution; RK3588 launcher dry-run validated with passed summary artifact. |
-| 2026-03-13 14:24:48 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-142447-PHASE2-EXEC.json |
-| 2026-03-13 14:24:48 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:24:48 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 checkpoint: RK3588 launcher script validated and summary captured in state/local/phase11-handoff-launcher-dryrun-20260313-142405-summary.json |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260313-142534-PHASE2-EXEC.json |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-142534-PHASE2-EXEC.json |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Phase11 sync checkpoint: launcher support + RK3588 dry-run evidence pushed (3ac2560). |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 launcher synced: Run-Phase11-Handoff.sh and launcher test added, RK3588 dry-run execution passed, artifacts persisted. |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-142535-PHASE2-EXEC.json |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 14:25:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 sync checkpoint: launcher support + RK3588 dry-run evidence pushed (3ac2560). |
 | 2026-03-13 16:12:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-161159-PHASE2-EXEC.json |
 | 2026-03-13 16:12:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 dispatch-source hardening synced: /dispatch and replay paths no longer silently fallback to test://frame when camera RTSP/source is missing; /test keeps synthetic fallback for diagnostics only. RK3588 edge regression passed (InferenceApiControllerSourceResolutionTest, InferenceApiControllerTest, ActiveCameraInferenceSchedulerServiceTest, InferenceReportBridgeServiceTest), runtime rebuilt/restarted, web_ui_live_smoke 35/35, alarm-stream annotation verify passed. |
 | 2026-03-13 16:15:49 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-161548-PHASE2-EXEC.json |
@@ -61,3 +38,26 @@
 | 2026-03-13 19:19:18 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-191918-PHASE2-EXEC.json |
 | 2026-03-13 19:19:18 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-191918-PHASE2-EXEC.json |
 | 2026-03-13 19:19:18 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | tmux parallel lanes launched on RK3588 (media/ai/qa/integration); all lanes passed with rtsp source quality diagnostics and source-policy/integration smoke |
+| 2026-03-13 19:19:19 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 19:19:19 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | tmux parallel execution checkpoint compact |
+| 2026-03-13 19:19:38 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-191938-PHASE2-EXEC.json |
+| 2026-03-13 19:19:38 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | tmux parallel execution upgraded on RK3588: 4 lanes (media/ai/qa/integration) passed using live RTSP source and runtime smoke checks |
+| 2026-03-13 19:22:59 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192259-PHASE2-EXEC.json |
+| 2026-03-13 19:22:59 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | tmux parallel execution upgraded on RK3588 and synced to GitHub: 4 lanes (media/ai/qa/integration) passed with live RTSP source checks |
+| 2026-03-13 19:26:08 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-192608-PHASE2-EXEC.json |
+| 2026-03-13 19:26:08 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | phase2-backlog tmux lane passed: Config/Camera/WareHouse targeted Maven suite green on RK3588 |
+| 2026-03-13 19:26:09 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-192609-PHASE2-EXEC.json |
+| 2026-03-13 19:26:09 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | phase2-backlog tmux lane passed: Account/Model/Algorithm/AlgorithmPackageLifecycle targeted Maven suite green on RK3588 |
+| 2026-03-13 19:26:10 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-192610-PHASE2-EXEC.json |
+| 2026-03-13 19:26:10 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | phase2-backlog tmux lane passed: ActiveCameraInferenceSchedulerServiceTest green on RK3588 |
+| 2026-03-13 19:26:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-192611-PHASE2-EXEC.json |
+| 2026-03-13 19:26:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | phase2-backlog tmux lane passed: live RTSP inference quality diagnostics 10/10 with no invalid bbox/score |
+| 2026-03-13 19:26:31 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192630-PHASE2-EXEC.json |
+| 2026-03-13 19:26:31 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | tmux backlog lane validated Phase7 backend scope on RK3588: Config/Camera/WareHouse targeted tests passed |
+| 2026-03-13 19:26:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192632-PHASE2-EXEC.json |
+| 2026-03-13 19:26:32 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | tmux backlog lane validated Phase8 RBAC/account scope on RK3588: Account/Model/Algorithm/AlgorithmPackageLifecycle targeted tests passed |
+| 2026-03-13 19:26:33 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192633-PHASE2-EXEC.json |
+| 2026-03-13 19:26:33 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | tmux backlog lane validated Phase9 scheduler scope on RK3588: ActiveCameraInferenceSchedulerServiceTest passed |
+| 2026-03-13 19:26:34 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192634-PHASE2-EXEC.json |
+| 2026-03-13 19:26:34 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | tmux backlog lane extended Phase6 validation: live RTSP quality diagnostics passed (10/10, invalid bbox/score = 0) |
+| 2026-03-13 19:26:44 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-192643-PHASE2-EXEC.json |

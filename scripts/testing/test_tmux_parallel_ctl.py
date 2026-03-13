@@ -1,7 +1,9 @@
 import argparse
 import importlib.util
+import json
 import pathlib
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -66,6 +68,23 @@ class TmuxParallelCtlTests(unittest.TestCase):
              mock.patch.object(tmux_parallel_ctl, 'session_exists', return_value=False):
             result = tmux_parallel_ctl.status_session('phase2-parallel')
         self.assertEqual('not_running', result['status'])
+
+    def test_load_lanes_from_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            lane_file = pathlib.Path(temp_dir) / 'lanes.json'
+            lane_file.write_text(
+                json.dumps(
+                    [
+                        {'name': 'phase7', 'command': 'mvn -Dtest=ConfigControllerTest test'},
+                        {'name': 'phase9', 'command': 'mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test'},
+                    ]
+                ),
+                encoding='utf-8',
+            )
+            lanes = tmux_parallel_ctl.load_lanes_from_file(lane_file)
+
+        self.assertEqual(2, len(lanes))
+        self.assertEqual(('phase7', 'mvn -Dtest=ConfigControllerTest test'), lanes[0])
 
 
 if __name__ == '__main__':

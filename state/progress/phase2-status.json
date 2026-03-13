@@ -35,49 +35,58 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T19:22:58+08:00",
-                                  "summary":  "tmux parallel execution upgraded on RK3588 and synced to GitHub: 4 lanes (media/ai/qa/integration) passed with live RTSP source checks",
+                                  "updated_at":  "2026-03-13T19:26:34+08:00",
+                                  "summary":  "tmux backlog lane extended Phase6 validation: live RTSP quality diagnostics passed (10/10, invalid bbox/score = 0)",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-parallel --with-default-lanes --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --force",
+                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "18aeb46",
-                                                       "updated_at":  "2026-03-13T19:22:58+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "08d014f",
+                                                       "updated_at":  "2026-03-13T19:26:34+08:00"
                                                    }
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-12T13:21:11+08:00",
-                                  "summary":  "Phase7 parallel pass: warehouse page now surfaces synced/skipped_by_license summary; added sync2node/select2export coverage; license save now validates expire_at (yyyy-MM-dd); full targeted regression green."
-                              },
-                   "Phase8":  {
-                                  "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T08:53:47+08:00",
-                                  "summary":  "Phase8 account audit hardening: account save/delete permission-denied branches now log operation events; currentAccountId fallback unified; new AccountController deny-path tests added; RK3588 targeted regression passed; milestone synced.",
+                                  "updated_at":  "2026-03-13T19:26:30+08:00",
+                                  "summary":  "tmux backlog lane validated Phase7 backend scope on RK3588: Config/Camera/WareHouse targeted tests passed",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "adb2918",
-                                                       "updated_at":  "2026-03-13T08:53:47+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "08d014f",
+                                                       "updated_at":  "2026-03-13T19:26:30+08:00"
+                                                   }
+                              },
+                   "Phase8":  {
+                                  "status":  "in_progress",
+                                  "updated_at":  "2026-03-13T19:26:31+08:00",
+                                  "summary":  "tmux backlog lane validated Phase8 RBAC/account scope on RK3588: Account/Model/Algorithm/AlgorithmPackageLifecycle targeted tests passed",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "08d014f",
+                                                       "updated_at":  "2026-03-13T19:26:31+08:00"
                                                    }
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T09:10:52+08:00",
-                                  "summary":  "Phase9 scheduler diagnostics expanded: summary now exposes latency factor/update counts/max declared+observed+effective cooldown; cooldown skips carry source/base/latency/effective metadata; RK3588 edge test passed and synced to GitHub.",
+                                  "updated_at":  "2026-03-13T19:26:33+08:00",
+                                  "summary":  "tmux backlog lane validated Phase9 scheduler scope on RK3588: ActiveCameraInferenceSchedulerServiceTest passed",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "9fa1eda",
-                                                       "updated_at":  "2026-03-13T09:10:52+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "08d014f",
+                                                       "updated_at":  "2026-03-13T19:26:33+08:00"
                                                    }
                               },
                    "Phase10":  {
@@ -1027,6 +1036,46 @@
                         "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-parallel --with-default-lanes --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --force",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "18aeb46"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T19:26:30+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "tmux backlog lane validated Phase7 backend scope on RK3588: Config/Camera/WareHouse targeted tests passed",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "08d014f"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T19:26:31+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "tmux backlog lane validated Phase8 RBAC/account scope on RK3588: Account/Model/Algorithm/AlgorithmPackageLifecycle targeted tests passed",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "08d014f"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T19:26:33+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "tmux backlog lane validated Phase9 scheduler scope on RK3588: ActiveCameraInferenceSchedulerServiceTest passed",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "08d014f"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T19:26:34+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "tmux backlog lane extended Phase6 validation: live RTSP quality diagnostics passed (10/10, invalid bbox/score = 0)",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "08d014f"
                     }
                 ]
 }
