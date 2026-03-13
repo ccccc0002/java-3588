@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T09:55:08+08:00",
-                                   "summary":  "Phase10 dashboard telemetry milestone synced: scheduler/throttle telemetry is exposed in /stream/dashboard/summary and rendered in dashboard scheduler cards; RK3588 regression passed (22/22); GitHub synced to 1535d88.",
+                                   "updated_at":  "2026-03-13T10:07:22+08:00",
+                                   "summary":  "Phase10 telemetry contract refinement: throttle_hint now exposes suggested_min_dispatch_ms, stream dashboard consumes the field directly, and runtime/stream tests updated; RK3588 targeted tests passed (22/22).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "mvn -Dtest=StreamControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                                                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "1535d88",
-                                                        "updated_at":  "2026-03-13T09:55:08+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "",
+                                                        "updated_at":  "2026-03-13T10:07:22+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -519,6 +519,16 @@
                         "edge_test_command":  "mvn -Dtest=StreamControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "1535d88"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T10:07:22+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 telemetry contract refinement: throttle_hint now exposes suggested_min_dispatch_ms, stream dashboard consumes the field directly, and runtime/stream tests updated; RK3588 targeted tests passed (22/22).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=RuntimeApiServiceTest,StreamControllerTest,RuntimeApiControllerTest,ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }

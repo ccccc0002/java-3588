@@ -1,0 +1,24 @@
+{
+    "timestamp":  "2026-03-13T10:07:32+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase10",
+    "event":  "session_compacted",
+    "summary":  "compact after checkpoint: throttle_hint added suggested_min_dispatch_ms and dashboard now prefers this runtime hint; RK3588 targeted tests all green.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M process/PROCESS-LOG.md",
+                       " M process/latest-status.json",
+                       " M src/main/java/com/yihecode/camera/ai/service/RuntimeApiService.java",
+                       " M src/main/resources/templates/stream/index_tj.ftl",
+                       " M src/test/java/com/yihecode/camera/ai/service/RuntimeApiServiceTest.java",
+                       " M src/test/java/com/yihecode/camera/ai/web/StreamControllerTest.java",
+                       " M state/progress/phase2-status.json",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-100722-PHASE2-EXEC.json",
+                       "?? state/checkpoints/20260313/checkpoint-20260313-100732-PHASE2-EXEC.json"
+                   ]
+}

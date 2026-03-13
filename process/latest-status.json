@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:55:17",
+    "time":  "2026-03-13 10:07:33",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at 1535d88 after RK3588 pass: dashboard summary + frontend scheduler telemetry panel landed."
+    "summary":  "compact after checkpoint: throttle_hint added suggested_min_dispatch_ms and dashboard now prefers this runtime hint; RK3588 targeted tests all green."
 }
