@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,5 +81,24 @@ class StatisticControllerTest {
         assertEquals(1, names.size());
         assertEquals("cam-11", names.get(0));
         assertEquals(3, values.get(0));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void alarmTrend_shouldReturnDailyCountsForCombinedFilters() {
+        when(reportService.getCount(any(), any(), eq(11L), eq(7L), eq(1))).thenReturn(2, 3, 4);
+
+        JsonResult result = statisticController.alarmTrend("2026-03-01", "2026-03-03", 11L, 7L, 1);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        List<Object> xAxiss = (List<Object>) data.get("xAxiss");
+        List<Object> values = (List<Object>) data.get("values");
+        assertEquals(3, xAxiss.size());
+        assertEquals(3, values.size());
+        assertEquals(2, values.get(0));
+        assertEquals(3, values.get(1));
+        assertEquals(4, values.get(2));
+        verify(reportService, atLeast(3)).getCount(any(), any(), eq(11L), eq(7L), eq(1));
     }
 }

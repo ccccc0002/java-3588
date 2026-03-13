@@ -248,6 +248,37 @@ public class StatisticController {
     }
 
     /**
+     * 告警趋势：按天统计告警数量，支持时间/摄像头/算法/类型组合筛选
+     */
+    @PostMapping("/alarm/trend")
+    @ResponseBody
+    public JsonResult alarmTrend(String startDate, String endDate, Long cameraId, Long algorithmId, Integer type) {
+        Date start = getStartDate(startDate);
+        Date end = getEndDate(endDate);
+        long cursor = start.getTime();
+        long endExclusive = end.getTime();
+        long oneDayMs = 24L * 60L * 60L * 1000L;
+
+        List<String> xAxiss = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
+
+        int guard = 0;
+        while (cursor < endExclusive && guard < 366) {
+            long next = cursor + oneDayMs;
+            Integer count = reportService.getCount(cursor, next, cameraId, algorithmId, type);
+            xAxiss.add(DateUtil.format(new Date(cursor), "MM-dd"));
+            values.add(count == null ? 0 : count);
+            cursor = next;
+            guard++;
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("xAxiss", xAxiss);
+        data.put("values", values);
+        return JsonResultUtils.success(data);
+    }
+
+    /**
      *
      * @param startDate
      * @return

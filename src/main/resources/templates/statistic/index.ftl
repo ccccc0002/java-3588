@@ -18,6 +18,18 @@
             <form class="layui-form" action="">
                 <div class="layui-form-item">
                     <div class="layui-form-item layui-inline">
+                        <label class="layui-form-label">快捷时间</label>
+                        <div class="layui-input-inline">
+                            <select name="quickRange" lay-filter="quickRange">
+                                <option value="">自定义</option>
+                                <option value="today">今日</option>
+                                <option value="24h">最近24小时</option>
+                                <option value="7d">最近7天</option>
+                                <option value="30d">最近30天</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-inline">
                         <label class="layui-form-label">开始时间</label>
                         <div class="layui-input-inline">
                             <input type="text" name="startDate" id="startDate" value="${startDate!''}" class="layui-input">
@@ -93,7 +105,7 @@
             </div>
 
             <div class="layui-col-xs12 layui-col-sm12 layui-col-md6">
-                <div id="cameraAlgorithmChart"></div>
+                <div id="alarmTrendChart"></div>
             </div>
         </div>
     </div>
@@ -111,13 +123,39 @@
         laydate.render({ elem: '#startDate' });
         laydate.render({ elem: '#endDate' });
 
+        function formatDateInput(date) {
+            let y = date.getFullYear();
+            let m = String(date.getMonth() + 1).padStart(2, '0');
+            let d = String(date.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + d;
+        }
+
+        function applyQuickRange(rangeValue) {
+            let now = new Date();
+            let start = null;
+            let end = now;
+            if (rangeValue === 'today') {
+                start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            } else if (rangeValue === '24h') {
+                start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            } else if (rangeValue === '7d') {
+                start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            } else if (rangeValue === '30d') {
+                start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            }
+            if (start) {
+                $('#startDate').val(formatDateInput(start));
+                $('#endDate').val(formatDateInput(end));
+            }
+        }
+
         let dW = 0;
         let dH = 0;
         let qH = 0;
         let qW = 0;
         let algorithmRatioChart = null;
         let cameraColumnChart = null;
-        let cameraAlgorithmChart = null;
+        let alarmTrendChart = null;
 
         function setHeight() {
             if (dW < 768) {
@@ -188,29 +226,31 @@
             });
         }
 
-        function buildCameraAlgorithmChart() {
-            cameraAlgorithmChart = echarts.init(document.getElementById('cameraAlgorithmChart'), null, { width: qW, height: qH });
-            cameraAlgorithmChart.setOption({
-                title: { text: '摄像头算法告警统计' },
+        function buildAlarmTrendChart() {
+            alarmTrendChart = echarts.init(document.getElementById('alarmTrendChart'), null, { width: qW, height: qH });
+            alarmTrendChart.setOption({
+                title: { text: '告警趋势' },
                 tooltip: { trigger: 'axis' },
-                legend: { data: [], align: 'right', right: 20, left: 180 },
-                xAxis: [{ type: 'category', axisTick: { show: false }, data: [] }],
-                yAxis: [{ type: 'value' }],
-                series: []
+                xAxis: { type: 'category', data: [] },
+                yAxis: { type: 'value' },
+                series: [{
+                    data: [],
+                    type: 'line',
+                    smooth: true,
+                    areaStyle: {}
+                }]
             });
         }
 
-        function updateCameraAlgorithmChart(data) {
-            $.post('/statistic/camera2algorithm', data, function(res) {
-                let payload = (res && res.data) ? res.data : { algorithmNames: [], cameraNames: [], datas: [] };
-                cameraAlgorithmChart.setOption({
-                    legend: { data: payload.algorithmNames || [] },
-                    xAxis: [{ data: payload.cameraNames || [] }],
-                    series: payload.datas || []
+        function updateAlarmTrendChart(data) {
+            $.post('/statistic/alarm/trend', data, function(res) {
+                let payload = (res && res.data) ? res.data : { xAxiss: [], values: [] };
+                alarmTrendChart.setOption({
+                    xAxis: { data: payload.xAxiss || [] },
+                    series: [{ data: payload.values || [] }]
                 });
             });
         }
-
         function collectQueryData() {
             return {
                 startDate: $('#startDate').val(),
@@ -224,8 +264,13 @@
         function refreshCharts(data) {
             updateAlgorithmRatioChart(data);
             updateCameraColumnChart(data);
-            updateCameraAlgorithmChart(data);
+            updateAlarmTrendChart(data);
         }
+
+        form.on('select(quickRange)', function(data) {
+            applyQuickRange(data.value || '');
+            refreshCharts(collectQueryData());
+        });
 
         form.on('submit(query)', function(data) {
             refreshCharts(data.field);
@@ -246,7 +291,7 @@
             setHeight();
             if (algorithmRatioChart) { algorithmRatioChart.resize(); }
             if (cameraColumnChart) { cameraColumnChart.resize(); }
-            if (cameraAlgorithmChart) { cameraAlgorithmChart.resize(); }
+            if (alarmTrendChart) { alarmTrendChart.resize(); }
         });
 
         $(document).ready(function() {
@@ -258,7 +303,7 @@
 
             buildAlgorithmRatioChart();
             buildCameraColumnChart();
-            buildCameraAlgorithmChart();
+            buildAlarmTrendChart();
 
             refreshCharts({
                 startDate: '${startDate!''}',
