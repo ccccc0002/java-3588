@@ -1,11 +1,14 @@
 {
   "version": 1,
   "task_id": "PHASE2-EXEC",
-  "updated_at": "2026-03-12T17:45:00+08:00",
+  "updated_at": "2026-03-13T19:35:00+08:00",
   "constraints": {
     "edge_test_required_for_every_functional_change": true,
     "github_sync_required_for_milestones": true,
-    "github_sync_not_required_for_every_micro_change": true
+    "github_sync_not_required_for_every_micro_change": true,
+    "continuous_parallel_execution_default": true,
+    "no_midway_continue_confirmation": true,
+    "interrupt_only_on_hard_blocker": true
   },
   "edge_environment": {
     "host": "192.168.1.104",

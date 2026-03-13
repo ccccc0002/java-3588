@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 19:26:44
+- generated_at: 2026-03-13 20:13:13
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,6 +10,7 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T20:13:13+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 - 2026-03-13T19:26:44+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 - 2026-03-13T19:26:34+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-13T19:26:33+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
@@ -17,15 +18,9 @@
 - 2026-03-13T19:26:31+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-13T19:26:11+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
 - 2026-03-13T19:26:10+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_checkpoint
-- 2026-03-13T19:26:09+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 16:12:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-161159-PHASE2-EXEC.json |
-| 2026-03-13 16:12:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 dispatch-source hardening synced: /dispatch and replay paths no longer silently fallback to test://frame when camera RTSP/source is missing; /test keeps synthetic fallback for diagnostics only. RK3588 edge regression passed (InferenceApiControllerSourceResolutionTest, InferenceApiControllerTest, ActiveCameraInferenceSchedulerServiceTest, InferenceReportBridgeServiceTest), runtime rebuilt/restarted, web_ui_live_smoke 35/35, alarm-stream annotation verify passed. |
-| 2026-03-13 16:15:49 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-161548-PHASE2-EXEC.json |
-| 2026-03-13 16:15:49 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 source-policy guard added: new validate_dispatch_source_policy script verifies valid dispatch resolves RTSP source and invalid-camera dead-letter does not carry synthetic test://frame fallback. Guards passed on RK3588 and synced to GitHub (8551886). |
-| 2026-03-13 16:17:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-161744-PHASE2-EXEC.json |
 | 2026-03-13 16:17:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 live RTSP quality check passed on RK3588: 20/20 successful iterations on camera stream source, invalid_bbox=0, invalid_score=0, latency p50=1427.5ms / p95=1518.7ms, total_alert_count=49; evidence saved to runtime/test-out/inference-quality-rtsp-20260313-1618/summary.json. |
 | 2026-03-13 18:20:18 | PHASE2-EXEC | Phase2-UI-Hotfix | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-182018-PHASE2-EXEC.json |
 | 2026-03-13 18:20:19 | PHASE2-EXEC | Phase2-UI-Hotfix | phase_checkpoint | codex-agent | Fixed stream cockpit regressions: stabilized 1/4/9/16 grid layout, preserved playback across grid switch, added stats fallback rendering from dashboard summary, deployed and verified on RK3588, pushed commit b912e60 |
@@ -61,3 +56,8 @@
 | 2026-03-13 19:26:34 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-192634-PHASE2-EXEC.json |
 | 2026-03-13 19:26:34 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | tmux backlog lane extended Phase6 validation: live RTSP quality diagnostics passed (10/10, invalid bbox/score = 0) |
 | 2026-03-13 19:26:44 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-192643-PHASE2-EXEC.json |
+| 2026-03-13 19:26:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 19:26:44 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | tmux backlog parallel validation checkpoint compact |
+| 2026-03-13 20:13:13 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-201312-PHASE2-EXEC.json |
+| 2026-03-13 20:13:13 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-201312-PHASE2-EXEC.json |
+| 2026-03-13 20:13:13 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | execution policy updated: default continuous parallel mode enabled; no midway continue confirmation unless hard blocker |
