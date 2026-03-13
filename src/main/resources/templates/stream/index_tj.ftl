@@ -218,6 +218,7 @@
             <span class="scheduler-status-label" id="scheduler-status-label">Telemetry</span>
             <span class="scheduler-status-badge scheduler-status-ok" id="scheduler-status-badge" data-status="ok">OK</span>
         </div>
+        <div class="scheduler-metric-extra" id="scheduler-error-extra" data-value="">Telemetry Error: none</div>
         <div class="scheduler-metrics">
             <div class="scheduler-metric">
                 <div class="scheduler-metric-label" id="scheduler-pressure-label">Concurrency Pressure</div>
@@ -380,6 +381,8 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.telemetry': '[CN] Telemetry',
             'scheduler.statusOk': '[CN] OK',
             'scheduler.statusDegraded': '[CN] Degraded',
+            'scheduler.error': '[CN] Telemetry Error',
+            'scheduler.errorNone': '[CN] None',
             'alarm.latest': '[CN] Latest Alerts',
             'alarm.todayCount': '[CN] Today Alert Count',
             'alarm.type': '[CN] Alert Type',
@@ -433,6 +436,8 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.telemetry': '[TW] Telemetry',
             'scheduler.statusOk': '[TW] OK',
             'scheduler.statusDegraded': '[TW] Degraded',
+            'scheduler.error': '[TW] Telemetry Error',
+            'scheduler.errorNone': '[TW] None',
             'alarm.latest': '[TW] Latest Alerts',
             'alarm.todayCount': '[TW] Today Alert Count',
             'alarm.type': '[TW] Alert Type',
@@ -486,6 +491,8 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
             'scheduler.telemetry': 'Telemetry',
             'scheduler.statusOk': 'OK',
             'scheduler.statusDegraded': 'Degraded',
+            'scheduler.error': 'Telemetry Error',
+            'scheduler.errorNone': 'None',
             'alarm.latest': 'Latest Alerts',
             'alarm.todayCount': 'Today Alert Count',
             'alarm.type': 'Alert Type',
@@ -606,11 +613,15 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         var currentSource = $('#scheduler-source-extra').attr('data-value') || 'scheduler_feedback';
         var currentCooldown = $('#scheduler-cooldown-extra').attr('data-value') || '0';
         var currentTelemetryStatus = $('#scheduler-status-badge').attr('data-status') || 'ok';
+        var currentTelemetryError = $('#scheduler-error-extra').attr('data-value') || '';
         $('.overview-grid .overview-extra:eq(0)').html(window.t('overview.currentDate') + ' <span id=\"overview-date\">' + window.escapeHtml(currentDate) + '</span>');
         $('.overview-grid .overview-extra:eq(1)').html(window.t('overview.totalChannels') + '<span id=\"overview-total-camera\">' + window.escapeHtml(currentTotal) + '</span>');
         $('#scheduler-level-extra').text(window.t('scheduler.level') + ': ' + currentLevel);
         $('#scheduler-source-extra').text(window.t('scheduler.source') + ': ' + currentSource);
         $('#scheduler-cooldown-extra').text(window.t('scheduler.cooldown') + ': ' + currentCooldown + ' ms');
+        $('#scheduler-error-extra')
+            .attr('data-value', currentTelemetryError)
+            .text(window.t('scheduler.error') + ': ' + (currentTelemetryError ? currentTelemetryError : window.t('scheduler.errorNone')));
         $('#scheduler-status-badge')
             .removeClass('scheduler-status-ok scheduler-status-degraded')
             .addClass(currentTelemetryStatus === 'degraded' ? 'scheduler-status-degraded' : 'scheduler-status-ok')
@@ -1176,14 +1187,19 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         }
         var source = String(throttleHint.strategy_source || 'scheduler_feedback');
         var telemetryStatus = String(payload.telemetry_status || 'ok').toLowerCase() === 'degraded' ? 'degraded' : 'ok';
+        var telemetryError = String(payload.telemetry_error || '').trim();
         $('#scheduler-pressure').text(pressure.toFixed(2));
         $('#scheduler-stride').text(stride);
         $('#scheduler-dispatch').text(hintMinDispatch);
         $('#scheduler-level-extra').attr('data-value', String(level)).text(window.t('scheduler.level') + ': ' + level);
         $('#scheduler-source-extra').attr('data-value', source).text(window.t('scheduler.source') + ': ' + source);
         $('#scheduler-cooldown-extra').attr('data-value', String(maxCooldown)).text(window.t('scheduler.cooldown') + ': ' + maxCooldown + ' ms');
+        $('#scheduler-error-extra')
+            .attr('data-value', telemetryError)
+            .text(window.t('scheduler.error') + ': ' + (telemetryError ? telemetryError : window.t('scheduler.errorNone')));
         $('#scheduler-status-badge')
             .attr('data-status', telemetryStatus)
+            .attr('title', telemetryError)
             .removeClass('scheduler-status-ok scheduler-status-degraded')
             .addClass(telemetryStatus === 'degraded' ? 'scheduler-status-degraded' : 'scheduler-status-ok')
             .text(window.resolveTelemetryStatusText(telemetryStatus));
