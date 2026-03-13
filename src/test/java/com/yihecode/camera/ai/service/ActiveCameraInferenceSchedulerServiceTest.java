@@ -137,6 +137,11 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(1, ((Number) second.get("skip_count")).intValue());
         List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
         assertEquals("cooldown", skipped.get(0).get("reason"));
+        assertEquals("base", skipped.get(0).get("cooldown_source"));
+        assertEquals("camera_interval", skipped.get(0).get("base_cooldown_source"));
+        assertEquals(60000L, ((Number) skipped.get(0).get("base_cooldown_ms")).longValue());
+        assertEquals(0L, ((Number) skipped.get(0).get("latency_cooldown_ms")).longValue());
+        assertEquals(60000L, ((Number) skipped.get(0).get("effective_cooldown_ms")).longValue());
         verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 
@@ -176,6 +181,15 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(1, ((Number) second.get("skip_count")).intValue());
         List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
         assertEquals("cooldown", skipped.get(0).get("reason"));
+        assertEquals("latency", skipped.get(0).get("cooldown_source"));
+        assertEquals("config_default", skipped.get(0).get("base_cooldown_source"));
+        assertEquals(0L, ((Number) skipped.get(0).get("base_cooldown_ms")).longValue());
+        assertEquals(4000L, ((Number) skipped.get(0).get("latency_cooldown_ms")).longValue());
+        assertEquals(4000L, ((Number) skipped.get(0).get("effective_cooldown_ms")).longValue());
+        assertEquals(2000L, ((Number) skipped.get(0).get("declared_inference_ms")).longValue());
+        assertEquals(0L, ((Number) skipped.get(0).get("observed_latency_ms")).longValue());
+        assertEquals(4000L, ((Number) second.get("max_effective_cooldown_ms")).longValue());
+        assertEquals(2000L, ((Number) second.get("max_declared_inference_ms")).longValue());
         verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 
@@ -203,6 +217,16 @@ class ActiveCameraInferenceSchedulerServiceTest {
         assertEquals(1, ((Number) second.get("skip_count")).intValue());
         List<Map<String, Object>> skipped = (List<Map<String, Object>>) second.get("skipped");
         assertEquals("cooldown", skipped.get(0).get("reason"));
+        assertEquals("latency", skipped.get(0).get("cooldown_source"));
+        assertEquals("config_default", skipped.get(0).get("base_cooldown_source"));
+        assertEquals(0L, ((Number) skipped.get(0).get("base_cooldown_ms")).longValue());
+        assertEquals(3000L, ((Number) skipped.get(0).get("latency_cooldown_ms")).longValue());
+        assertEquals(3000L, ((Number) skipped.get(0).get("effective_cooldown_ms")).longValue());
+        assertEquals(0L, ((Number) skipped.get(0).get("declared_inference_ms")).longValue());
+        assertEquals(3000L, ((Number) skipped.get(0).get("observed_latency_ms")).longValue());
+        assertEquals(1, ((Number) first.get("latency_update_count")).intValue());
+        assertEquals(3000L, ((Number) second.get("max_observed_latency_ms")).longValue());
+        assertEquals(3000L, ((Number) second.get("max_effective_cooldown_ms")).longValue());
         verify(inferenceApiController, times(1)).dispatch(any(), isNull(), isNull(), isNull(), isNull(), anyInt());
     }
 

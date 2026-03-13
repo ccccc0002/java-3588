@@ -55,6 +55,7 @@ public class ActiveCameraInferenceSchedulerService {
 
     public Map<String, Object> dispatchActiveCameras() {
         long nowMs = currentTimeMillis();
+        double latencyFactor = resolveLatencyFactor();
         Map<String, Object> summary = new LinkedHashMap<>();
         List<Map<String, Object>> skipped = new ArrayList<>();
         List<Map<String, Object>> errors = new ArrayList<>();
@@ -64,6 +65,11 @@ public class ActiveCameraInferenceSchedulerService {
         summary.put("dispatch_count", 0);
         summary.put("skip_count", 0);
         summary.put("error_count", 0);
+        summary.put("latency_factor", latencyFactor);
+        summary.put("latency_update_count", 0);
+        summary.put("max_declared_inference_ms", 0L);
+        summary.put("max_observed_latency_ms", 0L);
+        summary.put("max_effective_cooldown_ms", 0L);
         summary.put("skipped", skipped);
         summary.put("errors", errors);
         summary.put("executed_at_ms", nowMs);
@@ -108,10 +114,22 @@ public class ActiveCameraInferenceSchedulerService {
                 }
 
                 String dispatchKey = buildDispatchKey(camera.getId(), algorithm.getId());
-                long cooldownMs = resolveCooldownMs(dispatchKey, camera, algorithm);
+                CooldownDecision cooldown = resolveCooldownMs(dispatchKey, camera, algorithm, latencyFactor);
+                updateMax(summary, "max_declared_inference_ms", cooldown.getDeclaredLatencyMs());
+                updateMax(summary, "max_observed_latency_ms", cooldown.getObservedLatencyMs());
+                updateMax(summary, "max_effective_cooldown_ms", cooldown.getEffectiveCooldownMs());
                 Long lastDispatchMs = lastDispatchAtMs.get(dispatchKey);
-                if (cooldownMs > 0 && lastDispatchMs != null && (nowMs - lastDispatchMs) < cooldownMs) {
-                    addSkipped(summary, skipped, camera.getId(), algorithm.getId(), "cooldown");
+                if (cooldown.getEffectiveCooldownMs() > 0 && lastDispatchMs != null && (nowMs - lastDispatchMs) < cooldown.getEffectiveCooldownMs()) {
+                    Map<String, Object> cooldownMeta = new LinkedHashMap<>();
+                    cooldownMeta.put("cooldown_source", cooldown.getSource());
+                    cooldownMeta.put("base_cooldown_source", cooldown.getBaseSource());
+                    cooldownMeta.put("base_cooldown_ms", cooldown.getBaseCooldownMs());
+                    cooldownMeta.put("latency_cooldown_ms", cooldown.getLatencyCooldownMs());
+                    cooldownMeta.put("effective_cooldown_ms", cooldown.getEffectiveCooldownMs());
+                    cooldownMeta.put("declared_inference_ms", cooldown.getDeclaredLatencyMs());
+                    cooldownMeta.put("observed_latency_ms", cooldown.getObservedLatencyMs());
+                    cooldownMeta.put("elapsed_since_last_dispatch_ms", Math.max(nowMs - lastDispatchMs, 0L));
+                    addSkipped(summary, skipped, camera.getId(), algorithm.getId(), "cooldown", cooldownMeta);
                     continue;
                 }
 
@@ -120,7 +138,11 @@ public class ActiveCameraInferenceSchedulerService {
                     JsonResult result = inferenceApiController.dispatch(body, null, null, null, null, 1);
                     if (result != null && Integer.valueOf(0).equals(result.getCode())) {
                         lastDispatchAtMs.put(dispatchKey, nowMs);
-                        updateObservedLatency(dispatchKey, extractLatencyMs(result.getData()));
+                        long latestLatency = extractLatencyMs(result.getData());
+                        if (updateObservedLatency(dispatchKey, latestLatency)) {
+                            increment(summary, "latency_update_count");
+                            updateMax(summary, "max_observed_latency_ms", observedLatencyMs.get(dispatchKey));
+                        }
                         increment(summary, "dispatch_count");
                     } else {
                         addError(summary, errors, camera.getId(), algorithm.getId(), result == null ? "dispatch_result_null" : String.valueOf(result.getMsg()));
@@ -173,35 +195,50 @@ public class ActiveCameraInferenceSchedulerService {
         }
     }
 
-    private long resolveCooldownMs(String dispatchKey, Camera camera, Algorithm algorithm) {
+    private CooldownDecision resolveCooldownMs(String dispatchKey, Camera camera, Algorithm algorithm, double latencyFactor) {
         long algorithmCooldown = secondsToMillis(algorithm == null ? null : algorithm.getIntervalTime());
+        long baseCooldown = algorithmCooldown;
+        String baseSource = "algorithm_interval";
         if (algorithmCooldown > 0) {
-            return Math.max(algorithmCooldown, resolveLatencyCooldownMs(dispatchKey, algorithm));
+            Long declared = extractDeclaredInferenceMs(algorithm == null ? null : algorithm.getParams());
+            Long observed = observedLatencyMs.get(dispatchKey);
+            long latencyCooldown = resolveLatencyCooldownMs(declared, observed, latencyFactor);
+            return buildCooldownDecision(baseCooldown, latencyCooldown, declared, observed, baseSource);
         }
+
         long cameraCooldown = secondsToMillis(camera == null ? null : camera.getIntervalTime());
+        baseCooldown = cameraCooldown;
+        baseSource = "camera_interval";
         if (cameraCooldown > 0) {
-            return Math.max(cameraCooldown, resolveLatencyCooldownMs(dispatchKey, algorithm));
+            Long declared = extractDeclaredInferenceMs(algorithm == null ? null : algorithm.getParams());
+            Long observed = observedLatencyMs.get(dispatchKey);
+            long latencyCooldown = resolveLatencyCooldownMs(declared, observed, latencyFactor);
+            return buildCooldownDecision(baseCooldown, latencyCooldown, declared, observed, baseSource);
         }
+
         String value = getConfig(CONFIG_COOLDOWN_MS);
-        long fallback;
+        long fallback = DEFAULT_COOLDOWN_MS;
         try {
             long parsed = Long.parseLong(StrUtil.blankToDefault(value, String.valueOf(DEFAULT_COOLDOWN_MS)).trim());
             fallback = Math.max(parsed, 0L);
         } catch (Exception ex) {
-            fallback = DEFAULT_COOLDOWN_MS;
+            fallback = Math.max(DEFAULT_COOLDOWN_MS, 0L);
         }
-        return Math.max(fallback, resolveLatencyCooldownMs(dispatchKey, algorithm));
+        baseCooldown = fallback;
+        baseSource = "config_default";
+
+        Long declared = extractDeclaredInferenceMs(algorithm == null ? null : algorithm.getParams());
+        Long observed = observedLatencyMs.get(dispatchKey);
+        long latencyCooldown = resolveLatencyCooldownMs(declared, observed, latencyFactor);
+        return buildCooldownDecision(baseCooldown, latencyCooldown, declared, observed, baseSource);
     }
 
-    private long resolveLatencyCooldownMs(String dispatchKey, Algorithm algorithm) {
-        Long observed = observedLatencyMs.get(dispatchKey);
-        Long declared = extractDeclaredInferenceMs(algorithm == null ? null : algorithm.getParams());
+    private long resolveLatencyCooldownMs(Long declared, Long observed, double latencyFactor) {
         long baseline = Math.max(observed == null ? 0L : observed, declared == null ? 0L : declared);
         if (baseline <= 0L) {
             return 0L;
         }
-        double factor = resolveLatencyFactor();
-        return Math.max(Math.round(baseline * factor), 0L);
+        return Math.max(Math.round(baseline * latencyFactor), 0L);
     }
 
     private double resolveLatencyFactor() {
@@ -284,9 +321,9 @@ public class ActiveCameraInferenceSchedulerService {
         return 0L;
     }
 
-    private void updateObservedLatency(String dispatchKey, long latestLatencyMs) {
+    private boolean updateObservedLatency(String dispatchKey, long latestLatencyMs) {
         if (latestLatencyMs <= 0L || StrUtil.isBlank(dispatchKey)) {
-            return;
+            return false;
         }
         observedLatencyMs.compute(dispatchKey, (k, prev) -> {
             if (prev == null || prev <= 0L) {
@@ -294,6 +331,38 @@ public class ActiveCameraInferenceSchedulerService {
             }
             return Math.round(prev * 0.7D + latestLatencyMs * 0.3D);
         });
+        return true;
+    }
+
+    private CooldownDecision buildCooldownDecision(long baseCooldown,
+                                                   long latencyCooldown,
+                                                   Long declared,
+                                                   Long observed,
+                                                   String baseSource) {
+        long normalizedBase = Math.max(baseCooldown, 0L);
+        long normalizedLatency = Math.max(latencyCooldown, 0L);
+        long effective = Math.max(normalizedBase, normalizedLatency);
+
+        String source;
+        if (normalizedBase > 0L && normalizedLatency > 0L) {
+            source = "base+latency";
+        } else if (normalizedLatency > 0L) {
+            source = "latency";
+        } else if (normalizedBase > 0L) {
+            source = "base";
+        } else {
+            source = "none";
+        }
+
+        return new CooldownDecision(
+                effective,
+                normalizedBase,
+                normalizedLatency,
+                declared == null ? 0L : Math.max(declared, 0L),
+                observed == null ? 0L : Math.max(observed, 0L),
+                StrUtil.blankToDefault(baseSource, "unknown"),
+                source
+        );
     }
 
     private Long firstPositiveLong(Long... values) {
@@ -359,11 +428,23 @@ public class ActiveCameraInferenceSchedulerService {
                             Long cameraId,
                             Long algorithmId,
                             String reason) {
+        addSkipped(summary, skipped, cameraId, algorithmId, reason, null);
+    }
+
+    private void addSkipped(Map<String, Object> summary,
+                            List<Map<String, Object>> skipped,
+                            Long cameraId,
+                            Long algorithmId,
+                            String reason,
+                            Map<String, Object> details) {
         increment(summary, "skip_count");
         Map<String, Object> item = new HashMap<>();
         item.put("camera_id", cameraId);
         item.put("algorithm_id", algorithmId);
         item.put("reason", reason);
+        if (details != null && !details.isEmpty()) {
+            item.putAll(details);
+        }
         skipped.add(item);
     }
 
@@ -385,10 +466,74 @@ public class ActiveCameraInferenceSchedulerService {
         summary.put(key, current.intValue() + 1);
     }
 
+    private void updateMax(Map<String, Object> summary, String key, Number candidate) {
+        if (candidate == null) {
+            return;
+        }
+        long value = Math.max(candidate.longValue(), 0L);
+        Number current = (Number) summary.getOrDefault(key, 0L);
+        long max = Math.max(current == null ? 0L : current.longValue(), value);
+        summary.put(key, max);
+    }
+
     private String firstNonBlank(String first, String second) {
         if (StrUtil.isNotBlank(first)) {
             return first;
         }
         return StrUtil.isNotBlank(second) ? second : null;
+    }
+
+    private static final class CooldownDecision {
+        private final long effectiveCooldownMs;
+        private final long baseCooldownMs;
+        private final long latencyCooldownMs;
+        private final long declaredLatencyMs;
+        private final long observedLatencyMs;
+        private final String baseSource;
+        private final String source;
+
+        private CooldownDecision(long effectiveCooldownMs,
+                                 long baseCooldownMs,
+                                 long latencyCooldownMs,
+                                 long declaredLatencyMs,
+                                 long observedLatencyMs,
+                                 String baseSource,
+                                 String source) {
+            this.effectiveCooldownMs = effectiveCooldownMs;
+            this.baseCooldownMs = baseCooldownMs;
+            this.latencyCooldownMs = latencyCooldownMs;
+            this.declaredLatencyMs = declaredLatencyMs;
+            this.observedLatencyMs = observedLatencyMs;
+            this.baseSource = baseSource;
+            this.source = source;
+        }
+
+        private long getEffectiveCooldownMs() {
+            return effectiveCooldownMs;
+        }
+
+        private long getBaseCooldownMs() {
+            return baseCooldownMs;
+        }
+
+        private long getLatencyCooldownMs() {
+            return latencyCooldownMs;
+        }
+
+        private long getDeclaredLatencyMs() {
+            return declaredLatencyMs;
+        }
+
+        private long getObservedLatencyMs() {
+            return observedLatencyMs;
+        }
+
+        private String getBaseSource() {
+            return baseSource;
+        }
+
+        private String getSource() {
+            return source;
+        }
     }
 }
