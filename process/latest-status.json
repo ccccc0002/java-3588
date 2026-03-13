@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 09:11:03",
+    "time":  "2026-03-13 09:17:25",
     "task_id":  "PHASE2-EXEC",
-    "stage":  "Phase9",
+    "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Scheduler observability added: cooldown skip metadata includes source/base/latency/effective values; summary adds max declared/observed/effective + latency update counter; ActiveCameraInferenceSchedulerServiceTest passes on RK3588 and commit 9fa1eda pushed."
+    "summary":  "compact after checkpoint: Auto frame-throttle v1 landed: ActiveCameraInferenceSchedulerService computes concurrency pressure from active dispatch contexts and applies it to latency-based cooldown; diagnostics now include concurrency metadata; added scheduler concurrency-pressure test and RK3588 edge test passed (7/7)."
 }
