@@ -171,6 +171,8 @@ def run_stack_smoke(
     expected_plan_telemetry_status: str = 'any',
     max_plan_concurrency_pressure: float = 0.0,
     max_plan_suggested_min_dispatch_ms: int = 0,
+    min_snapshot_ready_stream_count: int = 0,
+    min_plan_ready_stream_count: int = 0,
 ) -> Dict[str, Any]:
     runtime_health = get_runtime_health(runtime_api_url, timeout_sec=timeout_sec)
     runtime_backend = extract_runtime_api_backend(runtime_health)
@@ -199,6 +201,16 @@ def run_stack_smoke(
     if expected_plan_status in {'ok', 'degraded'} and plan_telemetry['telemetry']['status'] != expected_plan_status:
         raise RuntimeError(
             f"plan telemetry status mismatch: expected={expected_plan_status} actual={plan_telemetry['telemetry']['status']}"
+        )
+    snapshot_ready_stream_count = int(snapshot_data.get('ready_stream_count', 0))
+    plan_ready_stream_count = int(plan_data.get('ready_stream_count', 0))
+    if min_snapshot_ready_stream_count and min_snapshot_ready_stream_count > 0 and snapshot_ready_stream_count < int(min_snapshot_ready_stream_count):
+        raise RuntimeError(
+            f"snapshot ready stream count below minimum: actual={snapshot_ready_stream_count} minimum={int(min_snapshot_ready_stream_count)}"
+        )
+    if min_plan_ready_stream_count and min_plan_ready_stream_count > 0 and plan_ready_stream_count < int(min_plan_ready_stream_count):
+        raise RuntimeError(
+            f"plan ready stream count below minimum: actual={plan_ready_stream_count} minimum={int(min_plan_ready_stream_count)}"
         )
     if max_plan_concurrency_pressure and max_plan_concurrency_pressure > 0:
         actual_pressure = float(plan_telemetry['throttle_hint']['concurrency_pressure'])
@@ -238,14 +250,14 @@ def run_stack_smoke(
             'token': {'token': token},
             'snapshot': {
                 'stream_count': int(snapshot_data.get('stream_count', len(streams) or 0)),
-                'ready_stream_count': int(snapshot_data.get('ready_stream_count', 0)),
+                'ready_stream_count': snapshot_ready_stream_count,
                 'play_url': play_url,
                 'telemetry': snapshot_telemetry['telemetry'],
                 'throttle_hint': snapshot_telemetry['throttle_hint'],
             },
             'plan': {
                 'budget': plan_data.get('budget'),
-                'ready_stream_count': plan_data.get('ready_stream_count'),
+                'ready_stream_count': plan_ready_stream_count,
                 'stream_count': plan_data.get('stream_count'),
                 'telemetry': plan_telemetry['telemetry'],
                 'throttle_hint': plan_telemetry['throttle_hint'],
@@ -281,6 +293,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument('--expect-plan-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
     parser.add_argument('--max-plan-concurrency-pressure', type=float, default=0.0)
     parser.add_argument('--max-plan-suggested-min-dispatch-ms', type=int, default=0)
+    parser.add_argument('--min-snapshot-ready-stream-count', type=int, default=0)
+    parser.add_argument('--min-plan-ready-stream-count', type=int, default=0)
     return parser.parse_args(argv)
 
 
@@ -301,6 +315,8 @@ def main(argv=None) -> int:
         expected_plan_telemetry_status=args.expect_plan_telemetry_status.strip().lower(),
         max_plan_concurrency_pressure=args.max_plan_concurrency_pressure,
         max_plan_suggested_min_dispatch_ms=args.max_plan_suggested_min_dispatch_ms,
+        min_snapshot_ready_stream_count=args.min_snapshot_ready_stream_count,
+        min_plan_ready_stream_count=args.min_plan_ready_stream_count,
     )
     print(json.dumps(result, ensure_ascii=True))
     return 0
