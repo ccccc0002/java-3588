@@ -59,6 +59,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=120)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--max-memory-used-delta-mb", type=float, default=0.0)
+    parser.add_argument("--max-loadavg-1m", type=float, default=0.0)
     parser.add_argument("--verify-alarm-preview", action="store_true")
     parser.add_argument("--alarm-preview-timeout-sec", type=float, default=45.0)
     parser.add_argument("--verify-quality-diagnostics", action="store_true")
@@ -327,6 +329,24 @@ def build_summary(
     after_used = ((after.get("memory") or {}) if isinstance(after, dict) else {}).get("used_mb")
     if isinstance(before_used, (int, float)) and isinstance(after_used, (int, float)):
         memory_delta_mb = round(float(after_used) - float(before_used), 2)
+    max_memory_used_delta_mb = float(getattr(args, "max_memory_used_delta_mb", 0.0) or 0.0)
+    max_loadavg_1m = float(getattr(args, "max_loadavg_1m", 0.0) or 0.0)
+    resource_gate_enabled = max_memory_used_delta_mb > 0.0 or max_loadavg_1m > 0.0
+    resource_gate_violations: List[str] = []
+    if max_memory_used_delta_mb > 0.0 and isinstance(memory_delta_mb, (int, float)) and memory_delta_mb > max_memory_used_delta_mb:
+        resource_gate_violations.append(
+            f"memory_used_delta_mb {memory_delta_mb} exceeds max_memory_used_delta_mb {max_memory_used_delta_mb}"
+        )
+    after_loadavg_1m = ((after.get("cpu") or {}) if isinstance(after, dict) else {}).get("loadavg_1m")
+    if max_loadavg_1m > 0.0 and isinstance(after_loadavg_1m, (int, float)) and float(after_loadavg_1m) > max_loadavg_1m:
+        resource_gate_violations.append(
+            f"after.loadavg_1m {after_loadavg_1m} exceeds max_loadavg_1m {max_loadavg_1m}"
+        )
+    resource_gate_status = "skipped"
+    if resource_gate_enabled:
+        resource_gate_status = "passed" if not resource_gate_violations else "failed"
+    if status == "passed" and resource_gate_status == "failed":
+        status = "failed"
     alarm_preview_status = "skipped"
     if alarm_preview_enabled:
         alarm_preview_status = "passed" if alarm_preview_exit_code == 0 else "failed"
@@ -360,6 +380,13 @@ def build_summary(
             "before": before,
             "after": after,
             "memory_used_delta_mb": memory_delta_mb,
+        },
+        "resource_gate": {
+            "enabled": resource_gate_enabled,
+            "status": resource_gate_status,
+            "max_memory_used_delta_mb": max_memory_used_delta_mb,
+            "max_loadavg_1m": max_loadavg_1m,
+            "violations": resource_gate_violations,
         },
     }
 

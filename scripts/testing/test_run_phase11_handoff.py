@@ -38,6 +38,10 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "6",
                 "--soak-max-iterations",
                 "2",
+                "--max-memory-used-delta-mb",
+                "128",
+                "--max-loadavg-1m",
+                "3.5",
                 "--verify-alarm-preview",
                 "--alarm-preview-timeout-sec",
                 "55",
@@ -62,6 +66,8 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertEqual(args.soak_duration_sec, 120)
         self.assertEqual(args.soak_interval_sec, 6)
         self.assertEqual(args.soak_max_iterations, 2)
+        self.assertEqual(args.max_memory_used_delta_mb, 128.0)
+        self.assertEqual(args.max_loadavg_1m, 3.5)
         self.assertTrue(args.verify_alarm_preview)
         self.assertEqual(args.alarm_preview_timeout_sec, 55)
         self.assertTrue(args.verify_quality_diagnostics)
@@ -218,6 +224,7 @@ class RunPhase11HandoffTests(unittest.TestCase):
             self.assertEqual(summary["phase10_exit_code"], 0)
             self.assertEqual(summary["alarm_preview"]["status"], "skipped")
             self.assertEqual(summary["quality_diagnostics"]["status"], "skipped")
+            self.assertEqual(summary["resource_gate"]["status"], "skipped")
             self.assertEqual(summary["resource"]["before"]["cpu"]["loadavg_1m"], 1.2)
             self.assertEqual(summary["resource"]["after"]["memory"]["used_mb"], 120.0)
 
@@ -304,6 +311,34 @@ class RunPhase11HandoffTests(unittest.TestCase):
             summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["quality_diagnostics"]["status"], "passed")
             self.assertEqual(summary["quality_diagnostics"]["exit_code"], 0)
+
+    def test_main_fails_when_resource_gate_exceeded(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_snapshots = [
+                {"label": "before", "cpu": {"loadavg_1m": 0.8}, "memory": {"used_mb": 100.0}},
+                {"label": "after", "cpu": {"loadavg_1m": 1.1}, "memory": {"used_mb": 130.0}},
+            ]
+
+            def fake_collector(label):
+                return dict(fake_snapshots[0] if label == "before" else fake_snapshots[1])
+
+            with mock.patch.object(run_phase11_handoff.run_phase10_acceptance, "main", return_value=0):
+                exit_code = run_phase11_handoff.main(
+                    [
+                        "--output-dir",
+                        temp_dir,
+                        "--max-memory-used-delta-mb",
+                        "10",
+                        "--dry-run",
+                    ],
+                    resource_collector=fake_collector,
+                )
+
+            self.assertEqual(exit_code, 1)
+            summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
+            self.assertEqual(summary["status"], "failed")
+            self.assertEqual(summary["resource_gate"]["status"], "failed")
+            self.assertTrue(summary["resource_gate"]["violations"])
 
 
 if __name__ == "__main__":
