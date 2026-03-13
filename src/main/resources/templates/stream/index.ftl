@@ -27,8 +27,8 @@
         .main-shell { height: calc(100vh - 20px); display: flex; flex-direction: column; gap: 10px; }
         .card-shell { border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(180deg, rgba(20, 53, 98, .75), var(--card)); }
         .main-card { display: flex; flex-direction: row; min-height: 0; flex: 1; }
-        .video-card { flex: 1; min-width: 0; }
-        .alarm-card { width: 340px; padding: 10px; min-height: 0; }
+        .video-card { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+        .alarm-card { width: 340px; padding: 10px; min-height: 0; display: flex; flex-direction: column; }
 
         .statics-info { margin: 0; padding: 10px 12px 6px; }
         .statics-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -69,10 +69,20 @@
         .stream-nav-list .layui-btn:hover { border-color: rgba(162, 223, 255, .85); color: #fff; }
         .stream-nav-list .layui-btn.active { background: linear-gradient(135deg, #2b7dff, #00bcff); border-color: #b7e2ff; color: #fff; }
 
-        .video-list-wrapper { height: calc(100vh - 500px) !important; min-height: 300px; padding: 0 12px 10px; }
+        .video-list-wrapper { flex: 1; min-height: 300px; padding: 0 12px 10px; }
         #video-list { height: 100%; display: grid; gap: 8px; }
 
-        .stream-panel { background: #040e1d; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #7f98bf; }
+        .rel > a { display: block; width: 100%; height: 100%; text-decoration: none; }
+        .stream-panel {
+            width: 100%;
+            height: 100%;
+            background: #040e1d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            color: #7f98bf;
+        }
         .rel { position: relative; border: 1px solid rgba(95, 173, 255, .35); border-radius: 10px; overflow: hidden; }
         .cv { position: absolute; top: 0; left: 0; border: 0; }
         .stop-btn { position: absolute; right: 8px; bottom: 8px; color: #ffadb5; z-index: 3; }
@@ -84,7 +94,7 @@
         .video-alarm-counter { color: var(--sub); font-size: 12px; margin-bottom: 8px; }
         .alarm_counter { text-decoration: underline; font-size: 18px; color: #ffd67d; margin-left: 4px; }
         .video-alarm-scroll-list { min-height: 0; flex: 1; overflow: hidden; }
-        #alarm-list { height: 100% !important; overflow-y: auto; }
+        #alarm-list { height: 100%; overflow-y: auto; }
 
         .alarm-box {
             margin: 0;
@@ -128,7 +138,7 @@
             .main-card { flex-direction: column; }
             .alarm-card { width: auto; }
             .chart-row { grid-template-columns: 1fr; grid-auto-rows: 260px; height: auto; }
-            .video-list-wrapper { height: 420px !important; }
+            .video-list-wrapper { min-height: 420px; }
             .quick-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
@@ -329,6 +339,16 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         $('#grid_' + n).addClass('active');
     }
 
+    function updateGridGeometry() {
+        var dim = dimOf(cols);
+        var vh = $('#video-list-wrapper').height();
+        var gap = 8;
+        var cellH = parseInt((vh - (dim - 1) * gap) / dim, 10);
+        if (isNaN(cellH) || cellH < 120) cellH = 120;
+        $('#video-list').css('grid-template-columns', 'repeat(' + dim + ', minmax(0, 1fr))');
+        $('#video-list').css('grid-auto-rows', cellH + 'px');
+    }
+
     function tickClock() {
         var now = new Date();
         var pad = function(v) { return v < 10 ? '0' + v : '' + v; };
@@ -506,15 +526,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         cols = nextCols;
         setGridActive(cols);
 
-        var dim = dimOf(cols);
-        var vh = $('#video-list-wrapper').height();
-        var gap = 8;
-        var cellH = parseInt((vh - (dim - 1) * gap) / dim, 10);
-        if (cellH < 120) cellH = 120;
-
         $('#video-list').empty();
-        $('#video-list').css('grid-template-columns', 'repeat(' + dim + ', minmax(0, 1fr))');
-        $('#video-list').css('grid-auto-rows', cellH + 'px');
+        updateGridGeometry();
 
         for (var i = 0; i < cols; i++) {
             var id = randomStr(10);
@@ -523,15 +536,13 @@ layui.use(['jquery', 'loading', 'popup'], function() {
                 '  <a href="javascript:void(0);" onclick="openForm(\'' + id + '\');">' +
                 '    <div class="stream-panel lo' + id + '">' +
                 '      <span id="cl_' + id + '">点击选择摄像头</span>' +
-                '      <video id="' + id + '" style="display:none;object-fit:contain;max-width:100%;max-height:100%;" muted></video>' +
+                '      <video id="' + id + '" style="display:none;width:100%;height:100%;object-fit:contain;" muted></video>' +
                 '    </div>' +
                 '  </a>' +
                 '  <div class="stop-btn"><a href="javascript:void(0);" onclick="handleCloseByHand(\'' + id + '\');"><i class="layui-icon layui-icon-close-fill"></i></a></div>' +
                 '</div>';
             $('#video-list').append(html);
         }
-
-        $('#alarm-list').css('height', (vh - 10) + 'px');
     };
 
     window.openForm = function(id) {
@@ -836,6 +847,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     };
 
     $(window).on('resize', function() {
+        updateGridGeometry();
         if (trendChart) trendChart.resize();
         if (pieChart) pieChart.resize();
         if (rankingChart) rankingChart.resize();
