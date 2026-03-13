@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 13:10:07",
+    "time":  "2026-03-13 13:14:13",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6)."
+    "summary":  "compact after checkpoint: GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9)."
 }

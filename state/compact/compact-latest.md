@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 13:10:07
+- generated_at: 2026-03-13 13:14:13
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T13:14:13+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
+- 2026-03-13T13:14:12+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
+- 2026-03-13T13:13:59+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T13:10:07+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T13:09:52+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T12:05:35+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 - 2026-03-13T12:05:20+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
 - 2026-03-13T12:02:43+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
-- 2026-03-13T12:02:43+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_checkpoint
-- 2026-03-13T12:02:30+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=phase_started
-- 2026-03-13T11:58:29+08:00 | task=PHASE2-EXEC | stage=Phase10 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-13 11:52:10 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 11:52:10 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at b3d086c: runtime_stack_smoke strict telemetry expectation flags landed (snapshot/plan any/ok/degraded); RK3588 python regression passed. |
-| 2026-03-13 11:55:27 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-115527-PHASE2-EXEC.json |
-| 2026-03-13 11:55:27 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 acceptance gating expanded: runtime_stack_smoke adds configurable thresholds for plan concurrency pressure and suggested min dispatch ms, enabling hard capacity guardrails in edge smoke; tests expanded and RK3588 python test passed (9/9); GitHub synced to db6c94b. |
-| 2026-03-13 11:55:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 11:55:39 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-115539-PHASE2-EXEC.json |
-| 2026-03-13 11:55:39 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at db6c94b: runtime_stack_smoke now supports plan pressure/min-dispatch threshold gates for hard acceptance criteria; RK3588 python regression passed (9/9). |
-| 2026-03-13 11:55:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-115539-PHASE2-EXEC.json |
 | 2026-03-13 11:55:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 11:55:40 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at db6c94b: runtime_stack_smoke now supports plan pressure/min-dispatch threshold gates for hard acceptance criteria; RK3588 python regression passed (9/9). |
 | 2026-03-13 11:58:14 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-115814-PHASE2-EXEC.json |
@@ -61,3 +53,11 @@
 | 2026-03-13 13:10:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131006-PHASE2-EXEC.json |
 | 2026-03-13 13:10:06 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6). |
 | 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131006-PHASE2-EXEC.json |
+| 2026-03-13 13:10:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6). |
+| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-131359-PHASE2-EXEC.json |
+| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 acceptance execution improved: added run_phase10_acceptance preset runner + shell entry, and linux gate orchestrator now supports optional runtime_stack_smoke stage composition with threshold passthrough; RK3588 python regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 9/9); GitHub synced to 1e45b22. |
+| 2026-03-13 13:14:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:14:12 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131412-PHASE2-EXEC.json |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9). |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131413-PHASE2-EXEC.json |

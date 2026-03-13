@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T13:09:52+08:00",
-                                   "summary":  "Phase10 gate orchestration upgraded: run_linux_gates now supports optional runtime_stack_smoke stage with telemetry/capacity threshold args passthrough, enabling one-command Linux gate composition; tests expanded and RK3588 python test passed (6/6); GitHub synced to 4216178.",
+                                   "updated_at":  "2026-03-13T13:13:59+08:00",
+                                   "summary":  "Phase10 acceptance execution improved: added run_phase10_acceptance preset runner + shell entry, and linux gate orchestrator now supports optional runtime_stack_smoke stage composition with threshold passthrough; RK3588 python regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 9/9); GitHub synced to 1e45b22.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "4216178",
-                                                        "updated_at":  "2026-03-13T13:09:52+08:00"
+                                                        "github_sync_ref":  "1e45b22",
+                                                        "updated_at":  "2026-03-13T13:13:59+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -749,6 +749,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "4216178"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:13:59+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 acceptance execution improved: added run_phase10_acceptance preset runner + shell entry, and linux gate orchestrator now supports optional runtime_stack_smoke stage composition with threshold passthrough; RK3588 python regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 9/9); GitHub synced to 1e45b22.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1e45b22"
                     }
                 ]
 }

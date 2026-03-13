@@ -869,3 +869,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131006-PHASE2-EXEC.json |
 | 2026-03-13 13:10:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:10:07 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 4216178: run_linux_gates now can include runtime_stack_smoke stage with threshold passthrough, enabling composite Linux acceptance gates; RK3588 regression passed (6/6). |
+| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-131359-PHASE2-EXEC.json |
+| 2026-03-13 13:13:59 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 acceptance execution improved: added run_phase10_acceptance preset runner + shell entry, and linux gate orchestrator now supports optional runtime_stack_smoke stage composition with threshold passthrough; RK3588 python regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 9/9); GitHub synced to 1e45b22. |
+| 2026-03-13 13:14:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:14:12 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-131412-PHASE2-EXEC.json |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9). |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131413-PHASE2-EXEC.json |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:14:13 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 1e45b22: phase10 acceptance preset runner added (run_phase10_acceptance + Run-Phase10-Acceptance.sh) and linux gates can compose runtime_stack_smoke stage; RK3588 regression passed (9/9). |
