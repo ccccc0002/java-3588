@@ -1108,3 +1108,5 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-205300-PHASE2-EXEC.json |
 | 2026-03-13 20:53:01 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | phase9 worker-pool scheduler checkpoint compact |
+| 2026-03-13 20:53:58 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-205358-PHASE2-EXEC.json |
+| 2026-03-13 20:53:58 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588). |

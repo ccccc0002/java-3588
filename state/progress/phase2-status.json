@@ -77,16 +77,16 @@
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T20:52:31+08:00",
-                                  "summary":  "Phase9 advanced: scheduler dispatch now supports configurable worker pool for RK3588 multi-core utilization; config UI/API wired; targeted tests passed on edge.",
+                                  "updated_at":  "2026-03-13T20:53:58+08:00",
+                                  "summary":  "Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
                                                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "09e2032",
-                                                       "updated_at":  "2026-03-13T20:52:31+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "240e396",
+                                                       "updated_at":  "2026-03-13T20:53:58+08:00"
                                                    }
                               },
                    "Phase10":  {
@@ -1116,6 +1116,16 @@
                         "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "09e2032"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T20:53:58+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest,ConfigControllerTest,RuntimeApiServiceTest,RuntimeApiControllerTest,StreamControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "240e396"
                     }
                 ]
 }
