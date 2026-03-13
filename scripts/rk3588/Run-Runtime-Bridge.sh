@@ -15,6 +15,7 @@ BOOTSTRAP_HEADER_NAME="${BOOTSTRAP_HEADER_NAME:-X-Bootstrap-Token}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-5}"
 PLAN_BUDGET="${PLAN_BUDGET:-10}"
 DECODE_MODE="${DECODE_MODE:-mpp-rga}"
+DECODE_FFMPEG_BIN="${DECODE_FFMPEG_BIN:-ffmpeg}"
 PLUGINS_ROOT="${PLUGINS_ROOT:-${REPO_ROOT}/scripts/rk3588/plugins}"
 DEFAULT_PLUGIN_ID="${DEFAULT_PLUGIN_ID:-yolov8n}"
 EXPECTED_PLUGIN_RUNTIME="${EXPECTED_PLUGIN_RUNTIME:-rk3588_rknn}"
@@ -32,6 +33,7 @@ exec python3 "${REPO_ROOT}/scripts/rk3588/rk3588_runtime_bridge.py" \
   --timeout-sec "${TIMEOUT_SEC}" \
   --plan-budget "${PLAN_BUDGET}" \
   --decode-mode "${DECODE_MODE}" \
+  --decode-ffmpeg-bin "${DECODE_FFMPEG_BIN}" \
   --plugins-root "${PLUGINS_ROOT}" \
   --default-plugin-id "${DEFAULT_PLUGIN_ID}" \
   --expected-plugin-runtime "${EXPECTED_PLUGIN_RUNTIME}" \

@@ -176,6 +176,8 @@ def run_stack_smoke(
     expected_runtime_api_backend: str = '',
     expected_snapshot_telemetry_status: str = 'any',
     expected_plan_telemetry_status: str = 'any',
+    expected_bridge_decode_runtime_status: str = 'any',
+    expected_bridge_decode_mode: str = '',
     max_plan_concurrency_pressure: float = 0.0,
     max_plan_suggested_min_dispatch_ms: int = 0,
     min_snapshot_ready_stream_count: int = 0,
@@ -232,6 +234,19 @@ def run_stack_smoke(
                 f"plan min dispatch exceeds threshold: actual={actual_dispatch} threshold={int(max_plan_suggested_min_dispatch_ms)}"
             )
     bridge_health = get_bridge_health(bridge_url, timeout_sec=timeout_sec)
+    decode_runtime = bridge_health.get('decode_runtime') if isinstance(bridge_health.get('decode_runtime'), dict) else {}
+    bridge_decode_runtime_status = str(decode_runtime.get('status', 'unknown')).strip().lower()
+    bridge_decode_mode = str(decode_runtime.get('normalized_mode', '')).strip().lower()
+    expected_bridge_status = str(expected_bridge_decode_runtime_status or 'any').strip().lower()
+    expected_bridge_mode = str(expected_bridge_decode_mode or '').strip().lower()
+    if expected_bridge_status in {'ok', 'degraded'} and bridge_decode_runtime_status != expected_bridge_status:
+        raise RuntimeError(
+            f'bridge decode runtime status mismatch: expected={expected_bridge_status} actual={bridge_decode_runtime_status or "unknown"}'
+        )
+    if expected_bridge_mode and bridge_decode_mode != expected_bridge_mode:
+        raise RuntimeError(
+            f'bridge decode mode mismatch: expected={expected_bridge_mode} actual={bridge_decode_mode or "<empty>"}'
+        )
 
     infer_request = runtime_bridge_infer_smoke.build_request_payload(
         source=source,
@@ -263,6 +278,8 @@ def run_stack_smoke(
     acceptance_gates = {
         'expected_snapshot_telemetry_status': expected_snapshot_status,
         'expected_plan_telemetry_status': expected_plan_status,
+        'expected_bridge_decode_runtime_status': expected_bridge_status,
+        'expected_bridge_decode_mode': expected_bridge_mode,
         'max_plan_concurrency_pressure': float(max_plan_concurrency_pressure) if max_plan_concurrency_pressure else 0.0,
         'max_plan_suggested_min_dispatch_ms': int(max_plan_suggested_min_dispatch_ms) if max_plan_suggested_min_dispatch_ms else 0,
         'min_snapshot_ready_stream_count': int(min_snapshot_ready_stream_count) if min_snapshot_ready_stream_count else 0,
@@ -274,6 +291,8 @@ def run_stack_smoke(
             'plan_ready_stream_count': plan_ready_stream_count,
             'plan_concurrency_pressure': float(plan_telemetry['throttle_hint']['concurrency_pressure']),
             'plan_suggested_min_dispatch_ms': int(plan_telemetry['throttle_hint']['suggested_min_dispatch_ms']),
+            'bridge_decode_runtime_status': bridge_decode_runtime_status,
+            'bridge_decode_mode': bridge_decode_mode,
         },
     }
 
@@ -301,6 +320,8 @@ def run_stack_smoke(
                 'status': bridge_health.get('status'),
                 'runtime': bridge_health.get('runtime'),
                 'decode': bridge_health.get('decode'),
+                'decode_runtime_status': bridge_decode_runtime_status,
+                'decode_mode': bridge_decode_mode,
             },
             'infer': infer_summary,
         },
@@ -325,6 +346,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument('--expect-runtime-api-backend', default='')
     parser.add_argument('--expect-snapshot-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
     parser.add_argument('--expect-plan-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
+    parser.add_argument('--expect-bridge-decode-runtime-status', default='any', choices=['any', 'ok', 'degraded'])
+    parser.add_argument('--expect-bridge-decode-mode', default='')
     parser.add_argument('--max-plan-concurrency-pressure', type=float, default=0.0)
     parser.add_argument('--max-plan-suggested-min-dispatch-ms', type=int, default=0)
     parser.add_argument('--min-snapshot-ready-stream-count', type=int, default=0)
@@ -347,6 +370,8 @@ def main(argv=None) -> int:
         expected_runtime_api_backend=args.expect_runtime_api_backend.strip(),
         expected_snapshot_telemetry_status=args.expect_snapshot_telemetry_status.strip().lower(),
         expected_plan_telemetry_status=args.expect_plan_telemetry_status.strip().lower(),
+        expected_bridge_decode_runtime_status=args.expect_bridge_decode_runtime_status.strip().lower(),
+        expected_bridge_decode_mode=args.expect_bridge_decode_mode.strip().lower(),
         max_plan_concurrency_pressure=args.max_plan_concurrency_pressure,
         max_plan_suggested_min_dispatch_ms=args.max_plan_suggested_min_dispatch_ms,
         min_snapshot_ready_stream_count=args.min_snapshot_ready_stream_count,

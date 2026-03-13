@@ -53,6 +53,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--expect-runtime-api-backend", default="")
     parser.add_argument("--expect-snapshot-telemetry-status", default="any", choices=["any", "ok", "degraded"])
     parser.add_argument("--expect-plan-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-bridge-decode-runtime-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-bridge-decode-mode", default="")
     parser.add_argument("--max-plan-concurrency-pressure", type=float, default=0.0)
     parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
     parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
@@ -234,6 +236,8 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                     "--expect-runtime-api-backend", args.expect_runtime_api_backend,
                     "--expect-snapshot-telemetry-status", args.expect_snapshot_telemetry_status,
                     "--expect-plan-telemetry-status", args.expect_plan_telemetry_status,
+                    "--expect-bridge-decode-runtime-status", args.expect_bridge_decode_runtime_status,
+                    "--expect-bridge-decode-mode", args.expect_bridge_decode_mode,
                     "--max-plan-concurrency-pressure", str(args.max_plan_concurrency_pressure),
                     "--max-plan-suggested-min-dispatch-ms", str(args.max_plan_suggested_min_dispatch_ms),
                     "--min-snapshot-ready-stream-count", str(args.min_snapshot_ready_stream_count),

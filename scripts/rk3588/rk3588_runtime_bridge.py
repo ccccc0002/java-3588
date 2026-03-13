@@ -19,6 +19,10 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from plugin_runtime import EXPECTED_PLUGIN_RUNTIME, PluginPackageManager, PluginRuntimeError
+try:
+    from hw_support import cached_runtime_capabilities as _cached_runtime_capabilities
+except Exception:
+    _cached_runtime_capabilities = None
 
 BRIDGE_VERSION = '0.3.0'
 AUTH_ERROR_CODES = {'invalid_token', 'token_invalid', 'token_expired', 'unauthorized', 'access_denied'}
@@ -42,6 +46,7 @@ class RuntimeBridgeConfig:
     timeout_sec: float = 5.0
     default_plan_budget: float = 10.0
     decode_mode: str = DEFAULT_DECODE_MODE
+    decode_ffmpeg_bin: str = 'ffmpeg'
     bridge_version: str = BRIDGE_VERSION
     plugins_root: str = ''
     default_plugin_id: str = ''
@@ -162,17 +167,25 @@ class RuntimeBridgeService:
         token_provider: Optional[TokenProvider],
         bridge_version: str = BRIDGE_VERSION,
         decode_mode: str = DEFAULT_DECODE_MODE,
+        decode_ffmpeg_bin: str = 'ffmpeg',
         default_plan_budget: float = 10.0,
         now_ms: Optional[Callable[[], int]] = None,
         plugin_manager: Optional[PluginPackageManager] = None,
+        decode_capability_probe: Optional[Callable[[str], Any]] = None,
     ):
         self.runtime_client = runtime_client
         self.token_provider = token_provider
         self.bridge_version = bridge_version
         self.decode_mode = normalize_decode_mode(decode_mode)
+        self.decode_ffmpeg_bin = str(decode_ffmpeg_bin or 'ffmpeg').strip() or 'ffmpeg'
         self.default_plan_budget = default_plan_budget
         self.now_ms = now_ms or (lambda: int(time.time() * 1000))
         self.plugin_manager = plugin_manager
+        self.decode_runtime = build_decode_runtime_diagnostics(
+            decode_mode=self.decode_mode,
+            ffmpeg_bin=self.decode_ffmpeg_bin,
+            capability_probe=decode_capability_probe,
+        )
 
     def handle_health(self) -> Tuple[int, Dict[str, Any]]:
         plugin_inventory = self.plugin_manager.inventory() if self.plugin_manager is not None else None
@@ -183,6 +196,7 @@ class RuntimeBridgeService:
                 'status': 'ok',
                 'runtime': 'rknn',
                 'decode': f'bridge:{decode_label}',
+                'decode_runtime': dict(self.decode_runtime),
                 'version': self.bridge_version,
                 'runtime_snapshot': snapshot,
             }
@@ -195,6 +209,7 @@ class RuntimeBridgeService:
                 'status': 'ok',
                 'runtime': 'rknn',
                 'decode': f'bridge:{decode_label}',
+                'decode_runtime': dict(self.decode_runtime),
                 'version': self.bridge_version,
                 'runtime_snapshot': build_offline_snapshot(str(exc)),
                 'runtime_fallback': {'mode': 'offline', 'message': str(exc)},
@@ -379,6 +394,81 @@ def build_offline_plan(budget: float, message: str) -> Dict[str, Any]:
     }
 
 
+def default_decode_capability_probe(ffmpeg_bin: str) -> Any:
+    if _cached_runtime_capabilities is None:
+        raise RuntimeError('hw_support capability probe is unavailable')
+    return _cached_runtime_capabilities(ffmpeg_bin=ffmpeg_bin)
+
+
+def build_decode_runtime_diagnostics(
+    decode_mode: str,
+    ffmpeg_bin: str = 'ffmpeg',
+    capability_probe: Optional[Callable[[str], Any]] = None,
+) -> Dict[str, Any]:
+    normalized_mode = normalize_decode_mode(decode_mode)
+    diagnostics: Dict[str, Any] = {
+        'requested_mode': str(decode_mode or '').strip() or DEFAULT_DECODE_MODE,
+        'normalized_mode': normalized_mode,
+        'ffmpeg_bin': str(ffmpeg_bin or 'ffmpeg').strip() or 'ffmpeg',
+        'status': 'ok',
+        'ready': True,
+        'missing_requirements': [],
+        'message': '',
+        'capabilities': {},
+    }
+    if normalized_mode != 'mpp-rga':
+        diagnostics['message'] = 'decode mode does not require mpp-rga capability validation'
+        return diagnostics
+
+    probe = capability_probe or default_decode_capability_probe
+    try:
+        capabilities = probe(diagnostics['ffmpeg_bin'])
+    except Exception as exc:
+        diagnostics['status'] = 'degraded'
+        diagnostics['ready'] = False
+        diagnostics['missing_requirements'] = ['capability_probe_failed']
+        diagnostics['message'] = str(exc)
+        return diagnostics
+
+    capability_payload = {
+        'ffmpeg_path': str(getattr(capabilities, 'ffmpeg_path', '') or '').strip(),
+        'ffmpeg_available': bool(getattr(capabilities, 'ffmpeg_available', False)),
+        'ffmpeg_h264_rkmpp_decoder': bool(getattr(capabilities, 'ffmpeg_h264_rkmpp_decoder', False)),
+        'ffmpeg_hevc_rkmpp_decoder': bool(getattr(capabilities, 'ffmpeg_hevc_rkmpp_decoder', False)),
+        'ffmpeg_h264_rkmpp_encoder': bool(getattr(capabilities, 'ffmpeg_h264_rkmpp_encoder', False)),
+        'ffmpeg_hevc_rkmpp_encoder': bool(getattr(capabilities, 'ffmpeg_hevc_rkmpp_encoder', False)),
+        'ffmpeg_scale_rkrga': bool(getattr(capabilities, 'ffmpeg_scale_rkrga', False)),
+        'gst_inspect_available': bool(getattr(capabilities, 'gst_inspect_available', False)),
+        'gst_launch_available': bool(getattr(capabilities, 'gst_launch_available', False)),
+        'gst_mppvideodec': bool(getattr(capabilities, 'gst_mppvideodec', False)),
+        'gst_mpph264enc': bool(getattr(capabilities, 'gst_mpph264enc', False)),
+        'gst_mpph265enc': bool(getattr(capabilities, 'gst_mpph265enc', False)),
+        'gst_rgaconvert': bool(getattr(capabilities, 'gst_rgaconvert', False)),
+        'has_ffmpeg_mpp_rga_decode': bool(getattr(capabilities, 'has_ffmpeg_mpp_rga_decode', False)),
+        'has_ffmpeg_mpp_rga_transcode': bool(getattr(capabilities, 'has_ffmpeg_mpp_rga_transcode', False)),
+        'has_gstreamer_mpp_rga': bool(getattr(capabilities, 'has_gstreamer_mpp_rga', False)),
+    }
+    diagnostics['capabilities'] = capability_payload
+
+    requirement_map = {
+        'ffmpeg_h264_rkmpp_decoder': 'h264_rkmpp',
+        'ffmpeg_hevc_rkmpp_decoder': 'hevc_rkmpp',
+        'ffmpeg_scale_rkrga': 'scale_rkrga',
+    }
+    missing = [name for field, name in requirement_map.items() if not capability_payload.get(field, False)]
+    diagnostics['missing_requirements'] = missing
+    diagnostics['ready'] = len(missing) == 0
+    diagnostics['status'] = 'ok' if diagnostics['ready'] else 'degraded'
+    if diagnostics['ready']:
+        diagnostics['message'] = 'mpp-rga decode capability probe passed'
+    else:
+        diagnostics['message'] = (
+            'Required ffmpeg-rockchip features are missing for mpp-rga decode: '
+            + ', '.join(missing)
+        )
+    return diagnostics
+
+
 def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
     telemetry_status = str(plan.get('telemetry_status', 'ok')).strip().lower()
     if telemetry_status != 'degraded':
@@ -458,6 +548,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--timeout-sec', type=float, default=5.0)
     parser.add_argument('--plan-budget', type=float, default=10.0)
     parser.add_argument('--decode-mode', default=DEFAULT_DECODE_MODE)
+    parser.add_argument('--decode-ffmpeg-bin', default='ffmpeg')
     parser.add_argument('--bridge-version', default=BRIDGE_VERSION)
     parser.add_argument('--plugins-root', default=str(SCRIPT_DIR / 'plugins'))
     parser.add_argument('--default-plugin-id', default='')
@@ -476,6 +567,7 @@ def build_service(args: argparse.Namespace) -> RuntimeBridgeService:
         timeout_sec=args.timeout_sec,
         default_plan_budget=args.plan_budget,
         decode_mode=args.decode_mode,
+        decode_ffmpeg_bin=args.decode_ffmpeg_bin,
         bridge_version=args.bridge_version,
         plugins_root=args.plugins_root,
         default_plugin_id=args.default_plugin_id,
@@ -494,6 +586,7 @@ def build_service(args: argparse.Namespace) -> RuntimeBridgeService:
         token_provider=token_provider,
         bridge_version=config.bridge_version,
         decode_mode=config.decode_mode,
+        decode_ffmpeg_bin=config.decode_ffmpeg_bin,
         default_plan_budget=config.default_plan_budget,
         plugin_manager=plugin_manager,
     )
@@ -503,7 +596,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     BridgeRequestHandler.service = build_service(args)
     server = ThreadingHTTPServer((args.listen_host, args.listen_port), BridgeRequestHandler)
-    print(json.dumps({'listen_host': args.listen_host, 'listen_port': args.listen_port, 'runtime_url': args.runtime_url, 'decode_mode': normalize_decode_mode(args.decode_mode), 'plugins_root': args.plugins_root, 'default_plugin_id': args.default_plugin_id}, ensure_ascii=True))
+    print(json.dumps({'listen_host': args.listen_host, 'listen_port': args.listen_port, 'runtime_url': args.runtime_url, 'decode_mode': normalize_decode_mode(args.decode_mode), 'decode_ffmpeg_bin': args.decode_ffmpeg_bin, 'plugins_root': args.plugins_root, 'default_plugin_id': args.default_plugin_id}, ensure_ascii=True))
     try:
         server.serve_forever()
     except KeyboardInterrupt:

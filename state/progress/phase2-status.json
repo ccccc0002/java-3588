@@ -80,16 +80,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T22:54:13+08:00",
-                                  "summary":  "Phase6 bridge decode baseline aligned: runtime bridge decode_mode default switched to mpp-rga (stub kept for compatibility), RK3588 bridge/python suites passed.",
+                                  "updated_at":  "2026-03-14T06:25:25+08:00",
+                                  "summary":  "Phase6 decode observability hardened: bridge /health now reports mpp-rga capability diagnostics (h264_rkmpp/hevc_rkmpp/scale_rkrga, missing requirements, ffmpeg path), and runtime stack smoke/gates now support decode runtime status+mode assertions.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_tmux_parallel_ctl.py scripts/testing/test_web_ui_live_smoke.py",
+                                                       "edge_test_command":  "python -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py \u0026\u0026 python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py (RK3588)",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "3753054",
-                                                       "updated_at":  "2026-03-13T22:54:13+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "local-uncommitted",
+                                                       "updated_at":  "2026-03-14T06:25:25+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -1519,6 +1519,16 @@
                         "summary":  "Autowave regression after decode baseline patch passed 8/8 on RK3588 (media/ai/qa/integration + nextwave lanes all green).",
                         "edge_test_status":  "passed",
                         "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-autowave --force --with-default-lanes --lane-file scripts/rk3588/lanes/phase2-nextwave.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 sleep 35 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-autowave --tail-lines 8",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "local-uncommitted"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:25:25+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 decode observability hardened: bridge /health now reports mpp-rga capability diagnostics (h264_rkmpp/hevc_rkmpp/scale_rkrga, missing requirements, ffmpeg path), and runtime stack smoke/gates now support decode runtime status+mode assertions.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py \u0026\u0026 python3 -m unittest scripts/testing/test_rk3588_runtime_bridge.py scripts/testing/test_runtime_stack_smoke.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py (RK3588)",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  "local-uncommitted"
                     }

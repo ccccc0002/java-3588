@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 22:57:12
+- generated_at: 2026-03-14 06:25:35
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T06:25:35+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
+- 2026-03-14T06:25:35+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
+- 2026-03-14T06:25:25+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-13T22:57:12+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-13T22:57:12+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-13T22:56:59+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T22:54:30+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 - 2026-03-13T22:54:30+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
-- 2026-03-13T22:54:14+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T22:52:51+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
-- 2026-03-13T22:52:51+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-13 22:47:19 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224719-PHASE2-EXEC.json |
-| 2026-03-13 22:47:19 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5 closeout lane passed on RK3588: package lifecycle + model capture/result tests stable (20 tests). |
-| 2026-03-13 22:47:20 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224719-PHASE2-EXEC.json |
-| 2026-03-13 22:47:20 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 closeout/nextwave both passed on RK3588: quality RTSP + source policy lanes green. |
-| 2026-03-13 22:47:20 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224720-PHASE2-EXEC.json |
-| 2026-03-13 22:47:20 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 closeout lane reconfirmed on RK3588: Config/Camera/WareHouse controller suite passed (39 tests). |
-| 2026-03-13 22:47:21 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224720-PHASE2-EXEC.json |
 | 2026-03-13 22:47:21 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 nextwave lane passed on RK3588: UI smoke stabilized under parallel run (skip-capture policy). |
 | 2026-03-13 22:47:21 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-224721-PHASE2-EXEC.json |
 | 2026-03-13 22:47:21 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 closeout/nextwave lanes passed on RK3588: runtime-api + scheduler regression suites green. |
@@ -61,3 +54,10 @@
 | 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-225711-PHASE2-EXEC.json |
 | 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Post-decode-patch autowave 8/8 pass. |
 | 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-225712-PHASE2-EXEC.json |
+| 2026-03-13 22:57:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 22:57:12 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: Post-decode-patch autowave 8/8 pass. |
+| 2026-03-14 06:25:25 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-062525-PHASE2-EXEC.json |
+| 2026-03-14 06:25:25 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 decode observability hardened: bridge /health now reports mpp-rga capability diagnostics (h264_rkmpp/hevc_rkmpp/scale_rkrga, missing requirements, ffmpeg path), and runtime stack smoke/gates now support decode runtime status+mode assertions. |
+| 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-062534-PHASE2-EXEC.json |
+| 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Decode capability diagnostics + runtime stack decode assertions delivered and validated local/RK3588. |
+| 2026-03-14 06:25:35 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-062535-PHASE2-EXEC.json |

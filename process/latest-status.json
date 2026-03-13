@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 22:57:12",
+    "time":  "2026-03-14 06:25:35",
     "task_id":  "PHASE2-EXEC",
-    "stage":  "Phase8",
+    "stage":  "Phase6",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Post-decode-patch autowave 8/8 pass."
+    "summary":  "compact after checkpoint: Decode capability diagnostics + runtime stack decode assertions delivered and validated local/RK3588."
 }

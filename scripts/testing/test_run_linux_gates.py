@@ -41,6 +41,8 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--expect-runtime-api-backend', 'java',
             '--expect-snapshot-telemetry-status', 'ok',
             '--expect-plan-telemetry-status', 'degraded',
+            '--expect-bridge-decode-runtime-status', 'ok',
+            '--expect-bridge-decode-mode', 'mpp-rga',
             '--max-plan-concurrency-pressure', '1.9',
             '--max-plan-suggested-min-dispatch-ms', '5200',
             '--min-snapshot-ready-stream-count', '1',
@@ -80,6 +82,8 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.expect_runtime_api_backend, 'java')
         self.assertEqual(args.expect_snapshot_telemetry_status, 'ok')
         self.assertEqual(args.expect_plan_telemetry_status, 'degraded')
+        self.assertEqual(args.expect_bridge_decode_runtime_status, 'ok')
+        self.assertEqual(args.expect_bridge_decode_mode, 'mpp-rga')
         self.assertEqual(args.max_plan_concurrency_pressure, 1.9)
         self.assertEqual(args.max_plan_suggested_min_dispatch_ms, 5200)
         self.assertEqual(args.min_snapshot_ready_stream_count, 1)
@@ -107,6 +111,8 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--expect-runtime-api-backend', 'java',
             '--expect-snapshot-telemetry-status', 'ok',
             '--expect-plan-telemetry-status', 'ok',
+            '--expect-bridge-decode-runtime-status', 'ok',
+            '--expect-bridge-decode-mode', 'mpp-rga',
             '--max-plan-concurrency-pressure', '1.8',
             '--max-plan-suggested-min-dispatch-ms', '5000',
             '--min-snapshot-ready-stream-count', '1',
@@ -123,6 +129,10 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertIn('http://127.0.0.1:19080', command)
         self.assertIn('--expect-runtime-api-backend', command)
         self.assertIn('java', command)
+        self.assertIn('--expect-bridge-decode-runtime-status', command)
+        self.assertIn('ok', command)
+        self.assertIn('--expect-bridge-decode-mode', command)
+        self.assertIn('mpp-rga', command)
         self.assertIn('--max-plan-concurrency-pressure', command)
         self.assertIn('1.8', command)
         self.assertIn('--min-plan-ready-stream-count', command)

@@ -1,6 +1,7 @@
 import importlib.util
 import pathlib
 import sys
+import types
 import unittest
 
 
@@ -331,6 +332,95 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['plan_summary']['concurrency_level'], 0)
         self.assertEqual(payload['plan_summary']['concurrency_pressure'], 1.0)
         self.assertEqual(payload['plugin']['plugin_id'], 'yolov8n')
+
+    def test_health_includes_decode_runtime_ready_details_for_mpp_rga(self):
+        capabilities = types.SimpleNamespace(
+            ffmpeg_path='/opt/ffmpeg-rockchip/bin/ffmpeg',
+            ffmpeg_available=True,
+            ffmpeg_h264_rkmpp_decoder=True,
+            ffmpeg_hevc_rkmpp_decoder=True,
+            ffmpeg_h264_rkmpp_encoder=True,
+            ffmpeg_hevc_rkmpp_encoder=True,
+            ffmpeg_scale_rkrga=True,
+            gst_inspect_available=True,
+            gst_launch_available=True,
+            gst_mppvideodec=True,
+            gst_mpph264enc=True,
+            gst_mpph265enc=True,
+            gst_rgaconvert=True,
+            has_ffmpeg_mpp_rga_decode=True,
+            has_ffmpeg_mpp_rga_transcode=True,
+            has_gstreamer_mpp_rga=True,
+        )
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeRuntimeClient(),
+            token_provider=None,
+            decode_mode='mpp-rga',
+            decode_capability_probe=lambda _ffmpeg_bin: capabilities,
+            decode_ffmpeg_bin='ffmpeg',
+        )
+
+        status_code, payload = service.handle_health()
+
+        self.assertEqual(status_code, 200)
+        decode_runtime = payload['decode_runtime']
+        self.assertEqual('mpp-rga', decode_runtime['normalized_mode'])
+        self.assertEqual('ok', decode_runtime['status'])
+        self.assertTrue(decode_runtime['ready'])
+        self.assertEqual([], decode_runtime['missing_requirements'])
+        self.assertEqual('/opt/ffmpeg-rockchip/bin/ffmpeg', decode_runtime['capabilities']['ffmpeg_path'])
+        self.assertTrue(decode_runtime['capabilities']['has_ffmpeg_mpp_rga_decode'])
+        self.assertEqual('bridge:mpp-rga', payload['decode'])
+
+    def test_health_marks_decode_runtime_degraded_when_mpp_requirements_missing(self):
+        capabilities = types.SimpleNamespace(
+            ffmpeg_path='ffmpeg',
+            ffmpeg_available=True,
+            ffmpeg_h264_rkmpp_decoder=True,
+            ffmpeg_hevc_rkmpp_decoder=False,
+            ffmpeg_h264_rkmpp_encoder=True,
+            ffmpeg_hevc_rkmpp_encoder=False,
+            ffmpeg_scale_rkrga=False,
+            gst_inspect_available=True,
+            gst_launch_available=True,
+            gst_mppvideodec=False,
+            gst_mpph264enc=False,
+            gst_mpph265enc=False,
+            gst_rgaconvert=False,
+            has_ffmpeg_mpp_rga_decode=False,
+            has_ffmpeg_mpp_rga_transcode=False,
+            has_gstreamer_mpp_rga=False,
+        )
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeRuntimeClient(),
+            token_provider=None,
+            decode_mode='mpp-rga',
+            decode_capability_probe=lambda _ffmpeg_bin: capabilities,
+        )
+
+        _status_code, payload = service.handle_health()
+        decode_runtime = payload['decode_runtime']
+
+        self.assertEqual('degraded', decode_runtime['status'])
+        self.assertFalse(decode_runtime['ready'])
+        self.assertIn('hevc_rkmpp', decode_runtime['missing_requirements'])
+        self.assertIn('scale_rkrga', decode_runtime['missing_requirements'])
+        self.assertIn('Required ffmpeg-rockchip features are missing', decode_runtime['message'])
+
+    def test_health_marks_decode_runtime_degraded_when_probe_fails(self):
+        service = rk3588_runtime_bridge.RuntimeBridgeService(
+            runtime_client=FakeRuntimeClient(),
+            token_provider=None,
+            decode_mode='mpp-rga',
+            decode_capability_probe=lambda _ffmpeg_bin: (_ for _ in ()).throw(RuntimeError('probe failure')),
+        )
+
+        _status_code, payload = service.handle_health()
+        decode_runtime = payload['decode_runtime']
+        self.assertEqual('degraded', decode_runtime['status'])
+        self.assertFalse(decode_runtime['ready'])
+        self.assertEqual(['capability_probe_failed'], decode_runtime['missing_requirements'])
+        self.assertIn('probe failure', decode_runtime['message'])
 
     def test_normalize_decode_mode_prefers_mpp_rga_aliases(self):
         self.assertEqual('mpp-rga', rk3588_runtime_bridge.normalize_decode_mode('mpp-rga'))

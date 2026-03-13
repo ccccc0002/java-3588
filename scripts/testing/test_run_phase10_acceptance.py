@@ -31,6 +31,8 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
             '--expect-runtime-api-backend', 'java',
             '--expect-snapshot-telemetry-status', 'ok',
             '--expect-plan-telemetry-status', 'degraded',
+            '--expect-bridge-decode-runtime-status', 'ok',
+            '--expect-bridge-decode-mode', 'mpp-rga',
             '--max-plan-concurrency-pressure', '1.8',
             '--max-plan-suggested-min-dispatch-ms', '5000',
             '--min-snapshot-ready-stream-count', '1',
@@ -64,6 +66,8 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
         self.assertEqual(args.expect_runtime_api_backend, 'java')
         self.assertEqual(args.expect_snapshot_telemetry_status, 'ok')
         self.assertEqual(args.expect_plan_telemetry_status, 'degraded')
+        self.assertEqual(args.expect_bridge_decode_runtime_status, 'ok')
+        self.assertEqual(args.expect_bridge_decode_mode, 'mpp-rga')
         self.assertEqual(args.max_plan_concurrency_pressure, 1.8)
         self.assertEqual(args.max_plan_suggested_min_dispatch_ms, 5000)
         self.assertEqual(args.min_snapshot_ready_stream_count, 1)
@@ -106,6 +110,9 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
         self.assertIn('1.7', argv)
         self.assertIn('--max-plan-suggested-min-dispatch-ms', argv)
         self.assertIn('4800', argv)
+        self.assertIn('--expect-bridge-decode-runtime-status', argv)
+        self.assertIn('any', argv)
+        self.assertIn('--expect-bridge-decode-mode', argv)
         self.assertIn('--dry-run', argv)
 
     def test_main_forwards_args_to_run_linux_gates_main(self):

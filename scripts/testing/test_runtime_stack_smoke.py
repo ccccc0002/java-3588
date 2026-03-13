@@ -89,7 +89,7 @@ class RuntimeStackSmokeTests(unittest.TestCase):
                      'strategy_source': 'scheduler_feedback',
                  },
              }}) as plan_mock, \
-             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok'}) as bridge_health_mock, \
+             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={'status': 'ok', 'decode_runtime': {'status': 'ok', 'normalized_mode': 'mpp-rga'}}) as bridge_health_mock, \
              mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [{'label': 'person'}], 'alerts': []}) as infer_mock, \
              mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 1, 'alert_count': 0, 'labels': ['person']}) as validate_mock, \
              mock.patch.object(runtime_stack_smoke, 'verify_play_url', return_value={'http_status': 200, 'bytes_read': 8, 'readable': True}) as play_mock:
@@ -120,11 +120,17 @@ class RuntimeStackSmokeTests(unittest.TestCase):
         self.assertEqual(4, result['runtime_api']['plan']['throttle_hint']['concurrency_level'])
         self.assertEqual('any', result['acceptance_gates']['expected_snapshot_telemetry_status'])
         self.assertEqual('any', result['acceptance_gates']['expected_plan_telemetry_status'])
+        self.assertEqual('any', result['acceptance_gates']['expected_bridge_decode_runtime_status'])
+        self.assertEqual('', result['acceptance_gates']['expected_bridge_decode_mode'])
         self.assertEqual(1, result['acceptance_gates']['actual']['snapshot_ready_stream_count'])
         self.assertEqual(1, result['acceptance_gates']['actual']['plan_ready_stream_count'])
         self.assertEqual(1.8, result['acceptance_gates']['actual']['plan_concurrency_pressure'])
         self.assertEqual(5200, result['acceptance_gates']['actual']['plan_suggested_min_dispatch_ms'])
+        self.assertEqual('ok', result['acceptance_gates']['actual']['bridge_decode_runtime_status'])
+        self.assertEqual('mpp-rga', result['acceptance_gates']['actual']['bridge_decode_mode'])
         self.assertEqual('ok', result['bridge']['health']['status'])
+        self.assertEqual('ok', result['bridge']['health']['decode_runtime_status'])
+        self.assertEqual('mpp-rga', result['bridge']['health']['decode_mode'])
         self.assertEqual(1, result['bridge']['infer']['detection_count'])
         self.assertTrue(result['zlm']['play_check']['readable'])
         runtime_health_mock.assert_called_once()
@@ -222,6 +228,33 @@ class RuntimeStackSmokeTests(unittest.TestCase):
                     plugin_id='yolov8n',
                     source='test://frame',
                     expected_snapshot_telemetry_status='ok',
+                )
+
+    def test_run_stack_smoke_rejects_when_bridge_decode_runtime_status_mismatch(self):
+        with mock.patch.object(runtime_stack_smoke, 'get_runtime_health', return_value={'data': {'status': 'ok', 'backend': 'java'}}), \
+             mock.patch.object(runtime_stack_smoke, 'issue_runtime_token', return_value={'data': {'token': 'token-1'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_runtime_snapshot', return_value={'data': {
+                 'streams': [{'play_url': 'http://127.0.0.1:1987/live/1.live.flv'}],
+                 'stream_count': 1,
+                 'ready_stream_count': 1,
+                 'telemetry_status': 'ok',
+             }}), \
+             mock.patch.object(runtime_stack_smoke, 'get_inference_plan', return_value={'data': {'ready_stream_count': 1, 'telemetry_status': 'ok'}}), \
+             mock.patch.object(runtime_stack_smoke, 'get_bridge_health', return_value={
+                 'status': 'ok',
+                 'decode_runtime': {'status': 'degraded', 'normalized_mode': 'mpp-rga'},
+             }), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'post_infer', return_value={'backend_type': 'rk3588_rknn', 'plugin': {'plugin_id': 'yolov8n'}, 'detections': [], 'alerts': []}), \
+             mock.patch.object(runtime_stack_smoke.runtime_bridge_infer_smoke, 'validate_response', return_value={'backend_type': 'rk3588_rknn', 'plugin_id': 'yolov8n', 'detection_count': 0, 'alert_count': 0, 'labels': []}), \
+             mock.patch.object(runtime_stack_smoke, 'verify_play_url', return_value={'http_status': 200, 'bytes_read': 8, 'readable': True}):
+            with self.assertRaisesRegex(RuntimeError, 'bridge decode runtime status mismatch'):
+                runtime_stack_smoke.run_stack_smoke(
+                    runtime_api_url='http://127.0.0.1:18081',
+                    bridge_url='http://127.0.0.1:19080',
+                    bootstrap_token='edge-demo-bootstrap',
+                    plugin_id='yolov8n',
+                    source='test://frame',
+                    expected_bridge_decode_runtime_status='ok',
                 )
 
     def test_run_stack_smoke_rejects_when_plan_telemetry_status_mismatch(self):
