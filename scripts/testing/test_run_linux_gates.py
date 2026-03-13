@@ -32,6 +32,19 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--auth-header-value', 'test-access-token',
             '--output-dir', 'tmp/out',
             '--timeout-sec', '20',
+            '--include-runtime-stack-smoke',
+            '--runtime-api-url', 'http://127.0.0.1:18081',
+            '--bridge-url', 'http://127.0.0.1:19080',
+            '--bootstrap-token', 'edge-demo-bootstrap',
+            '--plugin-id', 'yolov8n',
+            '--runtime-stack-budget', '12.5',
+            '--expect-runtime-api-backend', 'java',
+            '--expect-snapshot-telemetry-status', 'ok',
+            '--expect-plan-telemetry-status', 'degraded',
+            '--max-plan-concurrency-pressure', '1.9',
+            '--max-plan-suggested-min-dispatch-ms', '5200',
+            '--min-snapshot-ready-stream-count', '1',
+            '--min-plan-ready-stream-count', '1',
             '--include-soak',
             '--soak-duration-sec', '60',
             '--soak-interval-sec', '5',
@@ -58,6 +71,19 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.auth_header_value, 'test-access-token')
         self.assertEqual(args.output_dir, 'tmp/out')
         self.assertEqual(args.timeout_sec, 20)
+        self.assertTrue(args.include_runtime_stack_smoke)
+        self.assertEqual(args.runtime_api_url, 'http://127.0.0.1:18081')
+        self.assertEqual(args.bridge_url, 'http://127.0.0.1:19080')
+        self.assertEqual(args.bootstrap_token, 'edge-demo-bootstrap')
+        self.assertEqual(args.plugin_id, 'yolov8n')
+        self.assertEqual(args.runtime_stack_budget, 12.5)
+        self.assertEqual(args.expect_runtime_api_backend, 'java')
+        self.assertEqual(args.expect_snapshot_telemetry_status, 'ok')
+        self.assertEqual(args.expect_plan_telemetry_status, 'degraded')
+        self.assertEqual(args.max_plan_concurrency_pressure, 1.9)
+        self.assertEqual(args.max_plan_suggested_min_dispatch_ms, 5200)
+        self.assertEqual(args.min_snapshot_ready_stream_count, 1)
+        self.assertEqual(args.min_plan_ready_stream_count, 1)
         self.assertTrue(args.include_soak)
         self.assertEqual(args.soak_duration_sec, 60)
         self.assertEqual(args.soak_interval_sec, 5)
@@ -68,6 +94,53 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.bridge_poll_interval, 1)
         self.assertTrue(args.fail_fast)
         self.assertTrue(args.dry_run)
+
+    def test_build_stage_definitions_includes_runtime_stack_stage_when_enabled(self):
+        args = run_linux_gates.parse_args([
+            '--base-url', 'http://127.0.0.1:8080',
+            '--include-runtime-stack-smoke',
+            '--runtime-api-url', 'http://127.0.0.1:18081',
+            '--bridge-url', 'http://127.0.0.1:19080',
+            '--bootstrap-token', 'edge-demo-bootstrap',
+            '--plugin-id', 'yolov8n',
+            '--runtime-stack-budget', '15.0',
+            '--expect-runtime-api-backend', 'java',
+            '--expect-snapshot-telemetry-status', 'ok',
+            '--expect-plan-telemetry-status', 'ok',
+            '--max-plan-concurrency-pressure', '1.8',
+            '--max-plan-suggested-min-dispatch-ms', '5000',
+            '--min-snapshot-ready-stream-count', '1',
+            '--min-plan-ready-stream-count', '1',
+        ])
+        stages = run_linux_gates.build_stage_definitions(args, pathlib.Path('tmp/out'))
+        names = [stage['name'] for stage in stages]
+        self.assertIn('runtime_stack_smoke', names)
+        runtime_stage = [stage for stage in stages if stage['name'] == 'runtime_stack_smoke'][0]
+        command = runtime_stage['command']
+        self.assertIn('--runtime-api-url', command)
+        self.assertIn('http://127.0.0.1:18081', command)
+        self.assertIn('--bridge-url', command)
+        self.assertIn('http://127.0.0.1:19080', command)
+        self.assertIn('--expect-runtime-api-backend', command)
+        self.assertIn('java', command)
+        self.assertIn('--max-plan-concurrency-pressure', command)
+        self.assertIn('1.8', command)
+        self.assertIn('--min-plan-ready-stream-count', command)
+        self.assertIn('1', command)
+        self.assertNotIn('--output-dir', command)
+
+    def test_runtime_stack_stage_does_not_append_global_control_flags(self):
+        args = run_linux_gates.parse_args([
+            '--base-url', 'http://127.0.0.1:8080',
+            '--include-runtime-stack-smoke',
+            '--dry-run',
+            '--fail-fast',
+        ])
+        stages = run_linux_gates.build_stage_definitions(args, pathlib.Path('tmp/out'))
+        runtime_stage = [stage for stage in stages if stage['name'] == 'runtime_stack_smoke'][0]
+        command = runtime_stage['command']
+        self.assertNotIn('--dry-run', command)
+        self.assertNotIn('--fail-fast', command)
 
     def test_dry_run_writes_combined_passing_summary(self):
         def fake_runner(stage_name, command, summary_path):

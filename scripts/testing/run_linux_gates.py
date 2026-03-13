@@ -16,6 +16,7 @@ DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 DEFAULT_OUTPUT_DIR = "scripts/testing/out/linux-gates"
 SCRIPT_DIR = Path(__file__).resolve().parent
 BRIDGE_CTL_PATH = SCRIPT_DIR.parent / 'rk3588' / 'runtime_bridge_ctl.py'
+RUNTIME_STACK_SMOKE_PATH = SCRIPT_DIR.parent / 'rk3588' / 'runtime_stack_smoke.py'
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,19 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--auth-header-value", default="")
     parser.add_argument("--timeout-sec", type=int, default=10)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--include-runtime-stack-smoke", action="store_true")
+    parser.add_argument("--runtime-api-url", default="http://127.0.0.1:18081")
+    parser.add_argument("--bridge-url", default="http://127.0.0.1:19080")
+    parser.add_argument("--bootstrap-token", default="edge-demo-bootstrap")
+    parser.add_argument("--plugin-id", default="yolov8n")
+    parser.add_argument("--runtime-stack-budget", type=float, default=10.0)
+    parser.add_argument("--expect-runtime-api-backend", default="")
+    parser.add_argument("--expect-snapshot-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--expect-plan-telemetry-status", default="any", choices=["any", "ok", "degraded"])
+    parser.add_argument("--max-plan-concurrency-pressure", type=float, default=0.0)
+    parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
+    parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
+    parser.add_argument("--min-plan-ready-stream-count", type=int, default=0)
     parser.add_argument("--include-soak", action="store_true")
     parser.add_argument("--soak-duration-sec", type=int, default=60)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
@@ -175,12 +189,44 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                 ],
             }
         )
+    if args.include_runtime_stack_smoke:
+        stages.append(
+            {
+                "name": "runtime_stack_smoke",
+                "script": RUNTIME_STACK_SMOKE_PATH,
+                "output_dir": root_output / "runtime-stack-smoke",
+                "append_output_dir": False,
+                "append_control_flags": False,
+                "args": [
+                    "--runtime-api-url", args.runtime_api_url,
+                    "--bridge-url", args.bridge_url,
+                    "--bootstrap-token", args.bootstrap_token,
+                    "--plugin-id", args.plugin_id,
+                    "--source", args.source,
+                    "--camera-id", str(args.camera_id),
+                    "--model-id", str(args.model_id),
+                    "--budget", str(float(args.runtime_stack_budget)),
+                    "--timeout-sec", str(args.timeout_sec),
+                    "--expect-runtime-api-backend", args.expect_runtime_api_backend,
+                    "--expect-snapshot-telemetry-status", args.expect_snapshot_telemetry_status,
+                    "--expect-plan-telemetry-status", args.expect_plan_telemetry_status,
+                    "--max-plan-concurrency-pressure", str(args.max_plan_concurrency_pressure),
+                    "--max-plan-suggested-min-dispatch-ms", str(args.max_plan_suggested_min_dispatch_ms),
+                    "--min-snapshot-ready-stream-count", str(args.min_snapshot_ready_stream_count),
+                    "--min-plan-ready-stream-count", str(args.min_plan_ready_stream_count),
+                ],
+            }
+        )
     for stage in stages:
-        stage["command"] = [python_bin, str(stage["script"]), *stage["args"], "--output-dir", str(stage["output_dir"])]
-        if args.dry_run:
-            stage["command"].append("--dry-run")
-        if args.fail_fast:
-            stage["command"].append("--fail-fast")
+        command = [python_bin, str(stage["script"]), *stage["args"]]
+        if stage.get("append_output_dir", True):
+            command.extend(["--output-dir", str(stage["output_dir"])])
+        if stage.get("append_control_flags", True):
+            if args.dry_run:
+                command.append("--dry-run")
+            if args.fail_fast:
+                command.append("--fail-fast")
+        stage["command"] = command
     return stages
 
 
@@ -235,6 +281,9 @@ def summary_from_results(
         "auth_header_name": args.auth_header_name,
         "auth_header_present": bool(args.auth_header_value),
         "include_soak": args.include_soak,
+        "include_runtime_stack_smoke": args.include_runtime_stack_smoke,
+        "runtime_api_url": args.runtime_api_url,
+        "bridge_url": args.bridge_url,
         "manage_bridge": args.manage_bridge,
         "dry_run": args.dry_run,
         "fail_fast": args.fail_fast,
