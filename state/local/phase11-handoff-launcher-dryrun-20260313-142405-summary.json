@@ -1,0 +1,129 @@
+{
+  "started_at": "2026-03-13T06:24:19.749912Z",
+  "finished_at": "2026-03-13T06:24:25.478299Z",
+  "status": "passed",
+  "phase10_exit_code": 0,
+  "phase10_output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-launcher-dryrun-20260313-142405/phase10-acceptance",
+  "alarm_preview": {
+    "enabled": false,
+    "status": "skipped",
+    "exit_code": null,
+    "output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-launcher-dryrun-20260313-142405/alarm-preview",
+    "stdout": "",
+    "stderr": ""
+  },
+  "quality_diagnostics": {
+    "enabled": false,
+    "status": "skipped",
+    "exit_code": null,
+    "output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-launcher-dryrun-20260313-142405/quality-diagnostics",
+    "stdout": "",
+    "stderr": ""
+  },
+  "dry_run": true,
+  "resource": {
+    "before": {
+      "label": "before",
+      "timestamp": "2026-03-13T06:24:19.749937Z",
+      "cpu": {
+        "loadavg_1m": 1.85,
+        "loadavg_5m": 2.12,
+        "loadavg_15m": 2.37
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 3130.4,
+        "used_mb": 4779.34
+      },
+      "top_processes": [
+        {
+          "pid": 333828,
+          "cpu_percent": 48.8,
+          "mem_percent": 1.0,
+          "rss_mb": 86.56,
+          "command": "python3"
+        },
+        {
+          "pid": 333959,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 179.25,
+          "command": "python3"
+        },
+        {
+          "pid": 333974,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 181.57,
+          "command": "python3"
+        },
+        {
+          "pid": 333945,
+          "cpu_percent": 12.2,
+          "mem_percent": 2.2,
+          "rss_mb": 181.91,
+          "command": "python3"
+        },
+        {
+          "pid": 25555,
+          "cpu_percent": 7.0,
+          "mem_percent": 1.4,
+          "rss_mb": 111.86,
+          "command": "python3"
+        }
+      ]
+    },
+    "after": {
+      "label": "after",
+      "timestamp": "2026-03-13T06:24:25.442377Z",
+      "cpu": {
+        "loadavg_1m": 1.78,
+        "loadavg_5m": 2.1,
+        "loadavg_15m": 2.36
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 3143.35,
+        "used_mb": 4766.39
+      },
+      "top_processes": [
+        {
+          "pid": 333828,
+          "cpu_percent": 48.9,
+          "mem_percent": 1.0,
+          "rss_mb": 86.56,
+          "command": "python3"
+        },
+        {
+          "pid": 333945,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 178.57,
+          "command": "python3"
+        },
+        {
+          "pid": 333959,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 177.2,
+          "command": "python3"
+        },
+        {
+          "pid": 333974,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.1,
+          "rss_mb": 173.58,
+          "command": "python3"
+        },
+        {
+          "pid": 25555,
+          "cpu_percent": 7.0,
+          "mem_percent": 1.4,
+          "rss_mb": 111.86,
+          "command": "python3"
+        }
+      ]
+    },
+    "memory_used_delta_mb": -12.95
+  }
+}
