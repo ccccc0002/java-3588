@@ -100,6 +100,7 @@ public class AccountController {
     public JsonResult save(Account account, String role) {
         Long currentId = currentAccountId();
         if (!roleAccessService.canManageAccounts(currentId)) {
+            operationLogService.record("account:save", "account:" + (account == null ? "" : account.getAccount()), false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (account == null) {
@@ -154,6 +155,7 @@ public class AccountController {
     public JsonResult delete(Long id) {
         Long currentId = currentAccountId();
         if (!roleAccessService.canManageAccounts(currentId)) {
+            operationLogService.record("account:delete", "accountId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
         }
         if (id == null) {
@@ -188,7 +190,11 @@ public class AccountController {
     }
 
     private Long currentAccountId() {
-        return StpUtil.getLoginIdAsLong();
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String roleLabel(String role) {
