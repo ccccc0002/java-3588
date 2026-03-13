@@ -169,6 +169,8 @@ def run_stack_smoke(
     expected_runtime_api_backend: str = '',
     expected_snapshot_telemetry_status: str = 'any',
     expected_plan_telemetry_status: str = 'any',
+    max_plan_concurrency_pressure: float = 0.0,
+    max_plan_suggested_min_dispatch_ms: int = 0,
 ) -> Dict[str, Any]:
     runtime_health = get_runtime_health(runtime_api_url, timeout_sec=timeout_sec)
     runtime_backend = extract_runtime_api_backend(runtime_health)
@@ -198,6 +200,18 @@ def run_stack_smoke(
         raise RuntimeError(
             f"plan telemetry status mismatch: expected={expected_plan_status} actual={plan_telemetry['telemetry']['status']}"
         )
+    if max_plan_concurrency_pressure and max_plan_concurrency_pressure > 0:
+        actual_pressure = float(plan_telemetry['throttle_hint']['concurrency_pressure'])
+        if actual_pressure > float(max_plan_concurrency_pressure):
+            raise RuntimeError(
+                f"plan concurrency pressure exceeds threshold: actual={actual_pressure} threshold={float(max_plan_concurrency_pressure)}"
+            )
+    if max_plan_suggested_min_dispatch_ms and max_plan_suggested_min_dispatch_ms > 0:
+        actual_dispatch = int(plan_telemetry['throttle_hint']['suggested_min_dispatch_ms'])
+        if actual_dispatch > int(max_plan_suggested_min_dispatch_ms):
+            raise RuntimeError(
+                f"plan min dispatch exceeds threshold: actual={actual_dispatch} threshold={int(max_plan_suggested_min_dispatch_ms)}"
+            )
     bridge_health = get_bridge_health(bridge_url, timeout_sec=timeout_sec)
 
     infer_request = runtime_bridge_infer_smoke.build_request_payload(
@@ -265,6 +279,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument('--expect-runtime-api-backend', default='')
     parser.add_argument('--expect-snapshot-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
     parser.add_argument('--expect-plan-telemetry-status', default='any', choices=['any', 'ok', 'degraded'])
+    parser.add_argument('--max-plan-concurrency-pressure', type=float, default=0.0)
+    parser.add_argument('--max-plan-suggested-min-dispatch-ms', type=int, default=0)
     return parser.parse_args(argv)
 
 
@@ -283,6 +299,8 @@ def main(argv=None) -> int:
         expected_runtime_api_backend=args.expect_runtime_api_backend.strip(),
         expected_snapshot_telemetry_status=args.expect_snapshot_telemetry_status.strip().lower(),
         expected_plan_telemetry_status=args.expect_plan_telemetry_status.strip().lower(),
+        max_plan_concurrency_pressure=args.max_plan_concurrency_pressure,
+        max_plan_suggested_min_dispatch_ms=args.max_plan_suggested_min_dispatch_ms,
     )
     print(json.dumps(result, ensure_ascii=True))
     return 0
