@@ -58,14 +58,52 @@ class RuntimeApiControllerTest {
     @Test
     void runtimeSnapshot_shouldReturnDataWhenAuthorized() {
         when(runtimeAccessTokenService.isAuthorized("Bearer token-1")).thenReturn(true);
-        when(runtimeApiService.buildRuntimeSnapshot()).thenReturn(Collections.singletonMap("device_count", 2));
+        when(runtimeApiService.buildRuntimeSnapshot()).thenReturn(Map.of(
+                "device_count", 2,
+                "throttle_hint", Map.of(
+                        "recommended_frame_stride", 2,
+                        "suggested_min_dispatch_ms", 2400
+                )
+        ));
 
         ResponseEntity<Map<String, Object>> response = runtimeApiController.runtimeSnapshot("Bearer token-1");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue((Boolean) response.getBody().get("success"));
-        assertEquals(2, ((Map<String, Object>) response.getBody().get("data")).get("device_count"));
+        Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+        assertEquals(2, data.get("device_count"));
+        Map<String, Object> throttleHint = (Map<String, Object>) data.get("throttle_hint");
+        assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(2400, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         verify(runtimeApiService).buildRuntimeSnapshot();
+    }
+
+    @Test
+    void inferencePlan_shouldReturnThrottleHintWhenAuthorized() {
+        when(runtimeAccessTokenService.isAuthorized("Bearer token-plan")).thenReturn(true);
+        when(runtimeApiService.buildInferencePlan(12.0D)).thenReturn(Map.of(
+                "budget", 12.0D,
+                "throttle_hint", Map.of(
+                        "recommended_frame_stride", 3,
+                        "suggested_min_dispatch_ms", 5200,
+                        "strategy_source", "scheduler_feedback"
+                )
+        ));
+
+        ResponseEntity<Map<String, Object>> response = runtimeApiController.inferencePlan(
+                "Bearer token-plan",
+                Collections.singletonMap("budget", 12.0D)
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue((Boolean) response.getBody().get("success"));
+        Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+        assertEquals(12.0D, ((Number) data.get("budget")).doubleValue());
+        Map<String, Object> throttleHint = (Map<String, Object>) data.get("throttle_hint");
+        assertEquals(3, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(5200, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+        assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
+        verify(runtimeApiService).buildInferencePlan(12.0D);
     }
 
     @Test
