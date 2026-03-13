@@ -333,6 +333,8 @@ public class StreamController {
         if (runtimeApiService != null) {
             try {
                 snapshot = runtimeApiService.buildRuntimeSnapshot();
+                telemetryStatus = resolveTelemetryStatus(snapshot.get("telemetry_status"));
+                telemetryError = resolveTelemetryError(snapshot.get("telemetry_error"));
             } catch (Exception ignored) {
                 snapshot = Collections.emptyMap();
                 telemetryStatus = "degraded";
@@ -503,5 +505,14 @@ public class StreamController {
             return (Map<String, Object>) value;
         }
         return Collections.emptyMap();
+    }
+
+    private String resolveTelemetryStatus(Object value) {
+        String text = value == null ? "" : String.valueOf(value).trim().toLowerCase();
+        return "degraded".equals(text) ? "degraded" : "ok";
+    }
+
+    private String resolveTelemetryError(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
     }
 }

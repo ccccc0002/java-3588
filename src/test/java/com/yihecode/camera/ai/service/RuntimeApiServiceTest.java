@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -92,6 +93,8 @@ class RuntimeApiServiceTest {
         assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
         assertEquals(2600, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
+        assertEquals("ok", snapshot.get("telemetry_status"));
+        assertEquals("", snapshot.get("telemetry_error"));
 
         List<Map<String, Object>> streams = (List<Map<String, Object>>) snapshot.get("streams");
         assertEquals(1, streams.size());
@@ -144,6 +147,8 @@ class RuntimeApiServiceTest {
         assertEquals(5200, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
         assertEquals(6.25D, ((Number) throttleHint.get("estimated_budget_per_stream")).doubleValue(), 0.0001D);
+        assertEquals("ok", plan.get("telemetry_status"));
+        assertEquals("", plan.get("telemetry_error"));
     }
     @Test
     void buildRuntimeSnapshot_shouldFallbackToCameraLookupForRequestedStreams() {
@@ -169,6 +174,46 @@ class RuntimeApiServiceTest {
         assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
         assertEquals(1000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildRuntimeSnapshot_shouldDegradeWhenSchedulerSummaryFails() {
+        when(cameraService.listActives()).thenReturn(List.of(camera(1L, "cam-1", "rtsp://cam-1")));
+        when(videoPlayService.list()).thenReturn(Collections.emptyList());
+        when(pluginRegistryService.list()).thenReturn(Collections.emptyList());
+        when(inferenceDeadLetterService.stats()).thenReturn(Collections.singletonMap("queue_size", 0));
+        when(mediaStreamUrlService.isZlmMode()).thenReturn(true);
+        stubMediaConfig();
+        doThrow(new RuntimeException("scheduler unavailable")).when(activeCameraInferenceSchedulerService).getLastSummary();
+
+        Map<String, Object> snapshot = runtimeApiService.buildRuntimeSnapshot();
+
+        assertEquals("degraded", snapshot.get("telemetry_status"));
+        assertEquals("scheduler_summary_failed", snapshot.get("telemetry_error"));
+        Map<String, Object> throttleHint = (Map<String, Object>) snapshot.get("throttle_hint");
+        assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(1000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildInferencePlan_shouldDegradeWhenSchedulerSummaryFails() {
+        when(cameraService.listActives()).thenReturn(List.of(camera(1L, "cam-1", "rtsp://cam-1")));
+        when(videoPlayService.list()).thenReturn(List.of(videoPlay(1L, 18082)));
+        when(mediaStreamUrlService.buildPlayUrl(any(Camera.class), eq(18082))).thenReturn("http://zlm.example/live/1.live.flv");
+        when(mediaStreamUrlService.buildPushRtmpUrl(1L, 18082)).thenReturn("rtmp://127.0.0.1:1935/live/1");
+        stubMediaConfig();
+        doThrow(new RuntimeException("scheduler unavailable")).when(activeCameraInferenceSchedulerService).getLastSummary();
+
+        Map<String, Object> plan = runtimeApiService.buildInferencePlan(10.0D);
+
+        assertEquals("degraded", plan.get("telemetry_status"));
+        assertEquals("scheduler_summary_failed", plan.get("telemetry_error"));
+        Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
+        assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(1000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
+    }
+
     private void stubMediaConfig() {
         when(configService.getByValTag("media_server_type")).thenReturn("zlm");
         when(configService.getByValTag("zlm_play_mode")).thenReturn("stream");

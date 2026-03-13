@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +186,33 @@ class StreamControllerTest {
         assertTrue(((Map<String, Object>) data.get("throttle_hint")).isEmpty());
         assertEquals("degraded", data.get("telemetry_status"));
         assertEquals("runtime_snapshot_failed", data.get("telemetry_error"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dashboardSummaryShouldUseTelemetryStatusFromRuntimeSnapshot() {
+        when(cameraService.getCountByRunState(-1)).thenReturn(1);
+        when(cameraService.getCountByRunState(1)).thenReturn(1);
+        when(algorithmService.toMap()).thenReturn(new HashMap<>());
+        when(modelService.listData()).thenReturn(new ArrayList<>());
+        when(reportService.getCounter(anyLong(), anyLong())).thenReturn(0);
+        when(reportService.findAlgorithmRatio(any(), any())).thenReturn(new ArrayList<>());
+        when(cameraService.toMap()).thenReturn(new HashMap<>());
+        when(reportService.findCamera(any(), any())).thenReturn(new ArrayList<>());
+        when(runtimeApiService.buildRuntimeSnapshot()).thenReturn(Map.of(
+                "scheduler", Collections.emptyMap(),
+                "throttle_hint", Collections.emptyMap(),
+                "telemetry_status", "degraded",
+                "telemetry_error", "scheduler_summary_failed"
+        ));
+
+        JsonResult result = streamController.dashboardSummary();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertNotNull(data);
+        assertEquals("degraded", data.get("telemetry_status"));
+        assertEquals("scheduler_summary_failed", data.get("telemetry_error"));
     }
 
     @Test

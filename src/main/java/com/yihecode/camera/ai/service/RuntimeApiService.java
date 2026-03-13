@@ -45,9 +45,10 @@ public class RuntimeApiService {
         int deadLetterSize = toInt(inferenceDeadLetterService.stats().get("queue_size"));
         Map<Long, Camera> cameraMap = toCameraMap(activeCameras);
         List<Map<String, Object>> streamItems = buildStreamItems(activeStreams, cameraMap);
-        Map<String, Object> scheduler = activeCameraInferenceSchedulerService == null
-                ? Collections.emptyMap()
-                : activeCameraInferenceSchedulerService.getLastSummary();
+        Map<String, Object> telemetry = resolveSchedulerTelemetry();
+        Map<String, Object> scheduler = castMap(telemetry.get("scheduler"));
+        String telemetryStatus = String.valueOf(telemetry.getOrDefault("telemetry_status", "ok"));
+        String telemetryError = String.valueOf(telemetry.getOrDefault("telemetry_error", ""));
         Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), 10.0D);
 
         Map<String, Object> data = new LinkedHashMap<>();
@@ -56,6 +57,8 @@ public class RuntimeApiService {
         data.put("media", buildMediaConfig());
         data.put("scheduler", scheduler);
         data.put("throttle_hint", throttleHint);
+        data.put("telemetry_status", telemetryStatus);
+        data.put("telemetry_error", telemetryError);
         data.put("session_count", activeStreams.size());
         data.put("stream_count", activeCameras.size());
         data.put("ready_stream_count", streamItems.size());
@@ -106,9 +109,10 @@ public class RuntimeApiService {
         }
 
         Map<String, Object> data = new LinkedHashMap<>();
-        Map<String, Object> scheduler = activeCameraInferenceSchedulerService == null
-                ? Collections.emptyMap()
-                : activeCameraInferenceSchedulerService.getLastSummary();
+        Map<String, Object> telemetry = resolveSchedulerTelemetry();
+        Map<String, Object> scheduler = castMap(telemetry.get("scheduler"));
+        String telemetryStatus = String.valueOf(telemetry.getOrDefault("telemetry_status", "ok"));
+        String telemetryError = String.valueOf(telemetry.getOrDefault("telemetry_error", ""));
         Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), normalizedBudget);
         int recommendedFrameStride = toInt(throttleHint.get("recommended_frame_stride"));
         int suggestedMinDispatchMs = toInt(throttleHint.get("suggested_min_dispatch_ms"));
@@ -132,7 +136,34 @@ public class RuntimeApiService {
         data.put("media", buildMediaConfig());
         data.put("scheduler", scheduler);
         data.put("throttle_hint", throttleHint);
+        data.put("telemetry_status", telemetryStatus);
+        data.put("telemetry_error", telemetryError);
         data.put("items", items);
+        return data;
+    }
+
+    private Map<String, Object> resolveSchedulerTelemetry() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        Map<String, Object> scheduler = Collections.emptyMap();
+        String status = "ok";
+        String error = "";
+
+        if (activeCameraInferenceSchedulerService == null) {
+            status = "degraded";
+            error = "scheduler_unavailable";
+        } else {
+            try {
+                Map<String, Object> summary = activeCameraInferenceSchedulerService.getLastSummary();
+                scheduler = summary == null ? Collections.emptyMap() : summary;
+            } catch (Exception ignored) {
+                scheduler = Collections.emptyMap();
+                status = "degraded";
+                error = "scheduler_summary_failed";
+            }
+        }
+        data.put("scheduler", scheduler);
+        data.put("telemetry_status", status);
+        data.put("telemetry_error", error);
         return data;
     }
 
@@ -292,5 +323,13 @@ public class RuntimeApiService {
 
     private String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> castMap(Object value) {
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return Collections.emptyMap();
     }
 }
