@@ -59,6 +59,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-max-iterations", type=int, default=1)
     parser.add_argument("--verify-alarm-preview", action="store_true")
     parser.add_argument("--alarm-preview-timeout-sec", type=float, default=45.0)
+    parser.add_argument("--verify-quality-diagnostics", action="store_true")
+    parser.add_argument("--quality-iterations", type=int, default=20)
+    parser.add_argument("--quality-interval-ms", type=int, default=200)
+    parser.add_argument("--quality-timeout-sec", type=float, default=30.0)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -251,6 +255,40 @@ def default_alarm_preview_runner(argv: List[str]) -> Dict[str, Any]:
     }
 
 
+def build_quality_diagnostics_argv(args: argparse.Namespace, quality_output_dir: str) -> List[str]:
+    return [
+        "--bridge-url",
+        args.bridge_url,
+        "--camera-id",
+        str(args.camera_id),
+        "--model-id",
+        str(args.model_id),
+        "--source",
+        args.source,
+        "--plugin-id",
+        args.plugin_id,
+        "--iterations",
+        str(int(args.quality_iterations)),
+        "--interval-ms",
+        str(int(args.quality_interval_ms)),
+        "--timeout-sec",
+        str(float(args.quality_timeout_sec)),
+        "--output-dir",
+        quality_output_dir,
+    ]
+
+
+def default_quality_diagnostics_runner(argv: List[str]) -> Dict[str, Any]:
+    script_path = SCRIPT_DIR / "run_inference_quality_diagnostics.py"
+    cmd = [sys.executable, str(script_path), *argv]
+    completed = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    return {
+        "exit_code": int(completed.returncode),
+        "stdout": completed.stdout or "",
+        "stderr": completed.stderr or "",
+    }
+
+
 def compact_text(value: str, max_chars: int = 2000) -> str:
     text = str(value or "").strip()
     if len(text) <= max_chars:
@@ -267,12 +305,17 @@ def build_summary(
     alarm_preview_output_dir: str,
     alarm_preview_exit_code: Optional[int],
     alarm_preview_run: Optional[Dict[str, Any]],
+    quality_output_dir: str,
+    quality_exit_code: Optional[int],
+    quality_run: Optional[Dict[str, Any]],
     before: Dict[str, Any],
     after: Dict[str, Any],
 ) -> Dict[str, Any]:
     alarm_preview_enabled = bool(args.verify_alarm_preview)
     alarm_preview_passed = (not alarm_preview_enabled) or (alarm_preview_exit_code == 0)
-    status = "passed" if phase10_exit_code == 0 and alarm_preview_passed else "failed"
+    quality_enabled = bool(args.verify_quality_diagnostics)
+    quality_passed = (not quality_enabled) or (quality_exit_code == 0)
+    status = "passed" if phase10_exit_code == 0 and alarm_preview_passed and quality_passed else "failed"
     memory_delta_mb: Optional[float] = None
     before_used = ((before.get("memory") or {}) if isinstance(before, dict) else {}).get("used_mb")
     after_used = ((after.get("memory") or {}) if isinstance(after, dict) else {}).get("used_mb")
@@ -281,6 +324,9 @@ def build_summary(
     alarm_preview_status = "skipped"
     if alarm_preview_enabled:
         alarm_preview_status = "passed" if alarm_preview_exit_code == 0 else "failed"
+    quality_status = "skipped"
+    if quality_enabled:
+        quality_status = "passed" if quality_exit_code == 0 else "failed"
     return {
         "started_at": started_at,
         "finished_at": finished_at,
@@ -294,6 +340,14 @@ def build_summary(
             "output_dir": alarm_preview_output_dir,
             "stdout": compact_text((alarm_preview_run or {}).get("stdout", "")),
             "stderr": compact_text((alarm_preview_run or {}).get("stderr", "")),
+        },
+        "quality_diagnostics": {
+            "enabled": quality_enabled,
+            "status": quality_status,
+            "exit_code": quality_exit_code,
+            "output_dir": quality_output_dir,
+            "stdout": compact_text((quality_run or {}).get("stdout", "")),
+            "stderr": compact_text((quality_run or {}).get("stderr", "")),
         },
         "dry_run": bool(args.dry_run),
         "resource": {
@@ -309,6 +363,7 @@ def main(
     phase10_runner: Optional[Callable[[Optional[Sequence[str]]], int]] = None,
     resource_collector: Optional[Callable[[str], Dict[str, Any]]] = None,
     alarm_preview_runner: Optional[Callable[[List[str]], Dict[str, Any]]] = None,
+    quality_diagnostics_runner: Optional[Callable[[List[str]], Dict[str, Any]]] = None,
 ) -> int:
     args = parse_args(argv)
     output_dir = Path(args.output_dir)
@@ -336,6 +391,18 @@ def main(
         except Exception:
             alarm_preview_exit_code = 1
 
+    quality_output_dir = str(output_dir / "quality-diagnostics")
+    quality_exit_code: Optional[int] = None
+    quality_run: Optional[Dict[str, Any]] = None
+    if phase10_exit_code == 0 and args.verify_quality_diagnostics:
+        quality_argv = build_quality_diagnostics_argv(args, quality_output_dir)
+        quality_runner = quality_diagnostics_runner or default_quality_diagnostics_runner
+        quality_run = quality_runner(quality_argv)
+        try:
+            quality_exit_code = int((quality_run or {}).get("exit_code", 1))
+        except Exception:
+            quality_exit_code = 1
+
     after = collector("after")
     finished_at = utc_now()
 
@@ -348,6 +415,9 @@ def main(
         alarm_preview_output_dir=alarm_preview_output_dir,
         alarm_preview_exit_code=alarm_preview_exit_code,
         alarm_preview_run=alarm_preview_run,
+        quality_output_dir=quality_output_dir,
+        quality_exit_code=quality_exit_code,
+        quality_run=quality_run,
         before=before,
         after=after,
     )

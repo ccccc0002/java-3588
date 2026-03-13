@@ -1,0 +1,30 @@
+{
+  "started_at": "2026-03-13T06:20:04.459467+00:00",
+  "finished_at": "2026-03-13T06:20:06.477309+00:00",
+  "bridge_url": "http://127.0.0.1:19080",
+  "camera_id": 1,
+  "model_id": 1,
+  "source": "test://frame",
+  "plugin_id": "yolov8n",
+  "expected_iterations": 10,
+  "completed_iterations": 10,
+  "successful_iterations": 10,
+  "failed_iterations": 0,
+  "total_detection_count": 50,
+  "total_alert_count": 50,
+  "invalid_bbox_count": 0,
+  "invalid_score_count": 0,
+  "empty_label_count": 0,
+  "label_histogram": {
+    "person": 40,
+    "bus": 10
+  },
+  "latency_ms": {
+    "min": 45.0,
+    "max": 84.0,
+    "avg": 58.0,
+    "p50": 52.0,
+    "p95": 81.3
+  },
+  "status": "passed"
+}

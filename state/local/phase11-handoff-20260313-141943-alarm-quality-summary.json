@@ -1,0 +1,129 @@
+{
+  "started_at": "2026-03-13T06:19:57.688962Z",
+  "finished_at": "2026-03-13T06:20:06.535160Z",
+  "status": "passed",
+  "phase10_exit_code": 0,
+  "phase10_output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-20260313-141943-alarm-quality/phase10-acceptance",
+  "alarm_preview": {
+    "enabled": true,
+    "status": "passed",
+    "exit_code": 0,
+    "output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-20260313-141943-alarm-quality/alarm-preview",
+    "stdout": "{\"status\": \"passed\", \"summary_path\": \"/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-20260313-141943-alarm-quality/alarm-preview/summary.json\", \"summary\": {\"status\": \"passed\", \"timestamp\": \"2026-03-13T06:20:04.318788+00:00\", \"base_url\": \"http://127.0.0.1:18082\", \"dispatch_url\": \"http://127.0.0.1:18082/api/inference/dispatch\", \"stream_url\": \"http://127.0.0.1:18082/report/stream?id=2032340899259797506\", \"camera_id\": 1, \"model_id\": 1, \"algorithm_id\": 1, \"plugin_id\": \"yolov8n\", \"dispatch_http_status\": 200, \"stream_http_status\": 200, \"trace_id\": \"alarm-verify-2b4dcf58a8ea4326973f92d8d1705dad\", \"report_id\": 2032340899259797506, \"alert_count\": 5, \"bbox_count\": 5, \"image_bytes\": 147904, \"overlay_metrics\": {\"decoded\": true, \"overlay_hit\": true, \"image_width\": 640, \"image_height\": 640, \"bbox_metrics\": [{\"bbox\": [211, 242, 282, 507], \"sample_count\": 2028, \"red_count\": 1620, \"red_ratio\": 0.798817, \"hit\": true}, {\"bbox\": [96, 137, 549, 450], \"sample_count\": 4608, \"red_count\": 3874, \"red_ratio\": 0.840712, \"hit\": true}, {\"bbox\": [110, 236, 225, 536], \"sample_count\": 2502, \"red_count\": 1986, \"red_ratio\": 0.793765, \"hit\": true}, {\"bbox\": [477, 226, 560, 523], \"sample_count\": 2292, \"red_count\": 1876, \"red_ratio\": 0.818499, \"hit\": true}, {\"bbox\": [80, 327, 116, 513], \"sample_count\": 1344, \"red_count\": 1137, \"red_ratio\": 0.845982, \"hit\": true}], \"total_red_count\": 10493, \"total_sample_count\": 12774, \"overall_red_ratio\": 0.821434}}}",
+    "stderr": ""
+  },
+  "quality_diagnostics": {
+    "enabled": true,
+    "status": "passed",
+    "exit_code": 0,
+    "output_dir": "/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-20260313-141943-alarm-quality/quality-diagnostics",
+    "stdout": "{\"summary_path\": \"/home/zql/ks/java-rk3588/runtime/test-out/phase11-handoff-20260313-141943-alarm-quality/quality-diagnostics/summary.json\", \"summary\": {\"started_at\": \"2026-03-13T06:20:04.459467+00:00\", \"finished_at\": \"2026-03-13T06:20:06.477309+00:00\", \"bridge_url\": \"http://127.0.0.1:19080\", \"camera_id\": 1, \"model_id\": 1, \"source\": \"test://frame\", \"plugin_id\": \"yolov8n\", \"expected_iterations\": 10, \"completed_iterations\": 10, \"successful_iterations\": 10, \"failed_iterations\": 0, \"total_detection_count\": 50, \"total_alert_count\": 50, \"invalid_bbox_count\": 0, \"invalid_score_count\": 0, \"empty_label_count\": 0, \"label_histogram\": {\"person\": 40, \"bus\": 10}, \"latency_ms\": {\"min\": 45.0, \"max\": 84.0, \"avg\": 58.0, \"p50\": 52.0, \"p95\": 81.3}, \"status\": \"passed\"}}",
+    "stderr": ""
+  },
+  "dry_run": false,
+  "resource": {
+    "before": {
+      "label": "before",
+      "timestamp": "2026-03-13T06:19:57.688981Z",
+      "cpu": {
+        "loadavg_1m": 2.4,
+        "loadavg_5m": 2.24,
+        "loadavg_15m": 2.47
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 3143.83,
+        "used_mb": 4765.91
+      },
+      "top_processes": [
+        {
+          "pid": 333828,
+          "cpu_percent": 48.8,
+          "mem_percent": 1.0,
+          "rss_mb": 86.56,
+          "command": "python3"
+        },
+        {
+          "pid": 333974,
+          "cpu_percent": 12.4,
+          "mem_percent": 2.2,
+          "rss_mb": 181.53,
+          "command": "python3"
+        },
+        {
+          "pid": 333945,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 180.75,
+          "command": "python3"
+        },
+        {
+          "pid": 333959,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 179.21,
+          "command": "python3"
+        },
+        {
+          "pid": 25555,
+          "cpu_percent": 7.0,
+          "mem_percent": 1.4,
+          "rss_mb": 111.85,
+          "command": "python3"
+        }
+      ]
+    },
+    "after": {
+      "label": "after",
+      "timestamp": "2026-03-13T06:20:06.503651Z",
+      "cpu": {
+        "loadavg_1m": 2.89,
+        "loadavg_5m": 2.35,
+        "loadavg_15m": 2.5
+      },
+      "memory": {
+        "total_mb": 7909.74,
+        "available_mb": 3145.21,
+        "used_mb": 4764.52
+      },
+      "top_processes": [
+        {
+          "pid": 333828,
+          "cpu_percent": 48.9,
+          "mem_percent": 1.0,
+          "rss_mb": 86.56,
+          "command": "python3"
+        },
+        {
+          "pid": 333974,
+          "cpu_percent": 12.4,
+          "mem_percent": 2.1,
+          "rss_mb": 173.54,
+          "command": "python3"
+        },
+        {
+          "pid": 333945,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 180.75,
+          "command": "python3"
+        },
+        {
+          "pid": 333959,
+          "cpu_percent": 12.3,
+          "mem_percent": 2.2,
+          "rss_mb": 179.21,
+          "command": "python3"
+        },
+        {
+          "pid": 25555,
+          "cpu_percent": 7.0,
+          "mem_percent": 1.4,
+          "rss_mb": 111.85,
+          "command": "python3"
+        }
+      ]
+    },
+    "memory_used_delta_mb": -1.39
+  }
+}

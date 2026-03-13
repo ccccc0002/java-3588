@@ -96,16 +96,16 @@
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-13T14:10:44+08:00",
-                                   "summary":  "Phase11 alarm preview gate synced: run_phase11_handoff now validates dispatch-\u003ereport/stream annotation stage and captures output in summary; RK3588 run passed and pushed to GitHub.",
+                                   "updated_at":  "2026-03-13T14:20:45+08:00",
+                                   "summary":  "Phase11 handoff upgraded with dual quality gates: alarm preview verification + inference quality diagnostics; RK3588 non-dry-run pipeline passed at runtime/test-out/phase11-handoff-20260313-141943-alarm-quality with both gates status=passed.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py scripts/testing/test_verify_alarm_stream_annotation.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --verify-alarm-preview --alarm-preview-timeout-sec 45 --output-dir runtime/test-out/phase11-handoff-20260313-140852-alarm-preview",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --verify-alarm-preview --alarm-preview-timeout-sec 45 --verify-quality-diagnostics --quality-iterations 10 --quality-interval-ms 150 --quality-timeout-sec 30 --output-dir runtime/test-out/phase11-handoff-20260313-141943-alarm-quality",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "f6c5dd5",
-                                                        "updated_at":  "2026-03-13T14:10:44+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "51a2890",
+                                                        "updated_at":  "2026-03-13T14:20:45+08:00"
                                                     }
                                }
                },
@@ -937,6 +937,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source test://frame --plugin-id yolov8n --iterations 30 --interval-ms 200 --timeout-sec 30 --output-dir runtime/test-out/inference-quality-20260313-141500",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "ddb9b3a"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T14:20:45+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Phase11 handoff upgraded with dual quality gates: alarm preview verification + inference quality diagnostics; RK3588 non-dry-run pipeline passed at runtime/test-out/phase11-handoff-20260313-141943-alarm-quality with both gates status=passed.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --verify-alarm-preview --alarm-preview-timeout-sec 45 --verify-quality-diagnostics --quality-iterations 10 --quality-interval-ms 150 --quality-timeout-sec 30 --output-dir runtime/test-out/phase11-handoff-20260313-141943-alarm-quality",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "51a2890"
                     }
                 ]
 }

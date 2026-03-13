@@ -41,6 +41,13 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "--verify-alarm-preview",
                 "--alarm-preview-timeout-sec",
                 "55",
+                "--verify-quality-diagnostics",
+                "--quality-iterations",
+                "12",
+                "--quality-interval-ms",
+                "150",
+                "--quality-timeout-sec",
+                "40",
                 "--output-dir",
                 "tmp/out",
                 "--dry-run",
@@ -57,6 +64,10 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertEqual(args.soak_max_iterations, 2)
         self.assertTrue(args.verify_alarm_preview)
         self.assertEqual(args.alarm_preview_timeout_sec, 55)
+        self.assertTrue(args.verify_quality_diagnostics)
+        self.assertEqual(args.quality_iterations, 12)
+        self.assertEqual(args.quality_interval_ms, 150)
+        self.assertEqual(args.quality_timeout_sec, 40.0)
         self.assertEqual(args.output_dir, "tmp/out")
         self.assertTrue(args.dry_run)
 
@@ -125,6 +136,43 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertIn("--output-dir", argv)
         self.assertIn("tmp/out/alarm-preview", argv)
 
+    def test_build_quality_diagnostics_argv_includes_expected_flags(self):
+        args = run_phase11_handoff.parse_args(
+            [
+                "--bridge-url",
+                "http://127.0.0.1:19080",
+                "--camera-id",
+                "11",
+                "--model-id",
+                "12",
+                "--source",
+                "test://frame",
+                "--plugin-id",
+                "yolov8n",
+                "--quality-iterations",
+                "15",
+                "--quality-interval-ms",
+                "120",
+                "--quality-timeout-sec",
+                "50",
+            ]
+        )
+        argv = run_phase11_handoff.build_quality_diagnostics_argv(args, "tmp/out/quality")
+        self.assertIn("--bridge-url", argv)
+        self.assertIn("http://127.0.0.1:19080", argv)
+        self.assertIn("--camera-id", argv)
+        self.assertIn("11", argv)
+        self.assertIn("--model-id", argv)
+        self.assertIn("12", argv)
+        self.assertIn("--iterations", argv)
+        self.assertIn("15", argv)
+        self.assertIn("--interval-ms", argv)
+        self.assertIn("120", argv)
+        self.assertIn("--timeout-sec", argv)
+        self.assertIn("50.0", argv)
+        self.assertIn("--output-dir", argv)
+        self.assertIn("tmp/out/quality", argv)
+
     def test_main_writes_summary_and_resource_snapshots(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             fake_snapshots = [
@@ -156,6 +204,7 @@ class RunPhase11HandoffTests(unittest.TestCase):
             self.assertEqual(summary["status"], "passed")
             self.assertEqual(summary["phase10_exit_code"], 0)
             self.assertEqual(summary["alarm_preview"]["status"], "skipped")
+            self.assertEqual(summary["quality_diagnostics"]["status"], "skipped")
             self.assertEqual(summary["resource"]["before"]["cpu"]["loadavg_1m"], 1.2)
             self.assertEqual(summary["resource"]["after"]["memory"]["used_mb"], 120.0)
 
@@ -201,6 +250,47 @@ class RunPhase11HandoffTests(unittest.TestCase):
             summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["alarm_preview"]["status"], "passed")
             self.assertEqual(summary["alarm_preview"]["exit_code"], 0)
+
+    def test_main_runs_quality_stage_when_enabled(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_snapshots = [
+                {"label": "before", "cpu": {"loadavg_1m": 1.1}, "memory": {"used_mb": 210.0}},
+                {"label": "after", "cpu": {"loadavg_1m": 1.4}, "memory": {"used_mb": 220.0}},
+            ]
+
+            def fake_collector(label):
+                return dict(fake_snapshots[0] if label == "before" else fake_snapshots[1])
+
+            quality_calls = []
+
+            def fake_quality_runner(argv):
+                quality_calls.append(list(argv))
+                return {
+                    "exit_code": 0,
+                    "stdout": '{"summary":{"successful_iterations":10}}',
+                    "stderr": "",
+                }
+
+            with mock.patch.object(run_phase11_handoff.run_phase10_acceptance, "main", return_value=0):
+                exit_code = run_phase11_handoff.main(
+                    [
+                        "--output-dir",
+                        temp_dir,
+                        "--verify-quality-diagnostics",
+                        "--dry-run",
+                    ],
+                    resource_collector=fake_collector,
+                    quality_diagnostics_runner=fake_quality_runner,
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(len(quality_calls), 1)
+            self.assertIn("--iterations", quality_calls[0])
+            self.assertIn("20", quality_calls[0])
+
+            summary = json.loads((pathlib.Path(temp_dir) / "summary.json").read_text(encoding="utf-8"))
+            self.assertEqual(summary["quality_diagnostics"]["status"], "passed")
+            self.assertEqual(summary["quality_diagnostics"]["exit_code"], 0)
 
 
 if __name__ == "__main__":
