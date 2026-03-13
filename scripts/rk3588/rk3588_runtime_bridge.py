@@ -369,6 +369,8 @@ def build_offline_plan(budget: float, message: str) -> Dict[str, Any]:
         'throttle_hint': {
             'recommended_frame_stride': 1,
             'suggested_min_dispatch_ms': 1000,
+            'concurrency_pressure': 1.0,
+            'concurrency_level': 0,
             'strategy_source': 'offline_fallback',
         },
         'items': [],
@@ -384,6 +386,11 @@ def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
     throttle_hint = plan.get('throttle_hint') if isinstance(plan.get('throttle_hint'), dict) else {}
     recommended_frame_stride = to_int(throttle_hint.get('recommended_frame_stride'))
     suggested_min_dispatch_ms = to_int(throttle_hint.get('suggested_min_dispatch_ms'))
+    strategy_source = str(throttle_hint.get('strategy_source', 'scheduler_feedback')).strip() or 'scheduler_feedback'
+    concurrency_pressure = to_float(throttle_hint.get('concurrency_pressure'), 1.0)
+    concurrency_level = to_int(throttle_hint.get('concurrency_level'))
+    if concurrency_pressure <= 0:
+        concurrency_pressure = 1.0
     summary = {
         'budget': budget,
         'stream_count': to_int(plan.get('stream_count')) or 0,
@@ -393,6 +400,9 @@ def summarize_plan(plan: Dict[str, Any], budget: float) -> Dict[str, Any]:
         'telemetry_error': telemetry_error,
         'recommended_frame_stride': recommended_frame_stride if recommended_frame_stride and recommended_frame_stride > 0 else 1,
         'suggested_min_dispatch_ms': suggested_min_dispatch_ms if suggested_min_dispatch_ms and suggested_min_dispatch_ms > 0 else 1000,
+        'strategy_source': strategy_source,
+        'concurrency_pressure': round(concurrency_pressure, 4),
+        'concurrency_level': concurrency_level if concurrency_level and concurrency_level > 0 else 0,
     }
     if isinstance(plan.get('fallback'), dict):
         summary['fallback'] = dict(plan['fallback'])
@@ -498,4 +508,3 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
-

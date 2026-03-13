@@ -27,6 +27,8 @@ class FakeRuntimeClient:
             'throttle_hint': {
                 'recommended_frame_stride': 3,
                 'suggested_min_dispatch_ms': 5200,
+                'concurrency_pressure': 1.8,
+                'concurrency_level': 4,
                 'strategy_source': 'scheduler_feedback',
             },
             'items': [{'stream_id': 'cam-1'}],
@@ -229,6 +231,9 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['plan_summary']['telemetry_error'], '')
         self.assertEqual(payload['plan_summary']['recommended_frame_stride'], 3)
         self.assertEqual(payload['plan_summary']['suggested_min_dispatch_ms'], 5200)
+        self.assertEqual(payload['plan_summary']['strategy_source'], 'scheduler_feedback')
+        self.assertEqual(payload['plan_summary']['concurrency_level'], 4)
+        self.assertEqual(payload['plan_summary']['concurrency_pressure'], 1.8)
 
     def test_infer_propagates_plugin_alerts(self):
         service = rk3588_runtime_bridge.RuntimeBridgeService(
@@ -322,6 +327,9 @@ class RuntimeBridgeServiceTests(unittest.TestCase):
         self.assertEqual(payload['plan_summary']['telemetry_error'], 'runtime_offline')
         self.assertEqual(payload['plan_summary']['recommended_frame_stride'], 1)
         self.assertEqual(payload['plan_summary']['suggested_min_dispatch_ms'], 1000)
+        self.assertEqual(payload['plan_summary']['strategy_source'], 'offline_fallback')
+        self.assertEqual(payload['plan_summary']['concurrency_level'], 0)
+        self.assertEqual(payload['plan_summary']['concurrency_pressure'], 1.0)
         self.assertEqual(payload['plugin']['plugin_id'], 'yolov8n')
 
 
