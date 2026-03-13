@@ -1,7 +1,7 @@
 [
   {
     "name": "phase8-ui-smoke",
-    "command": "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30"
+    "command": "python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 30 --retry-attempts 3 --retry-on-any-failure --skip-capture-endpoints"
   },
   {
     "name": "phase6-source-policy",

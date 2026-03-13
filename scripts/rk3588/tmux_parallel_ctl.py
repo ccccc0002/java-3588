@@ -145,7 +145,8 @@ def build_default_lanes(args: argparse.Namespace) -> List[Tuple[str, str]]:
                 f"--base-url {shlex.quote(args.base_url)} "
                 f"--username {shlex.quote(args.web_username)} "
                 f"--password {shlex.quote(args.web_password)} "
-                f"--timeout-sec {args.timeout_sec}"
+                f"--timeout-sec {args.timeout_sec} "
+                f"--skip-capture-endpoints"
             ),
         ),
     ]

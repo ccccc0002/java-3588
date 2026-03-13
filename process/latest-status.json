@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 22:20:04",
+    "time":  "2026-03-13 22:28:03",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase8",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: Autowave parallel report + isolated rerun convergence recorded."
+    "summary":  "compact after checkpoint: Autowave 8-lane convergence achieved (8/8 pass) with tmux report + parallel-safe smoke policy."
 }

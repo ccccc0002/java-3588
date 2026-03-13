@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
 from typing import Any, Dict, List, Optional, Tuple
@@ -151,6 +152,47 @@ def run_target(session: HttpSession, target: SmokeTarget, base_url: str = '') ->
     return result
 
 
+def should_retry_target(result: Dict[str, Any]) -> bool:
+    if result.get('ok'):
+        return False
+    status = int(result.get('http_status') or 0)
+    if status in {0, 408, 429, 502, 503, 504}:
+        return True
+    if result.get('transport_error'):
+        return True
+    error_text = str(result.get('error') or '').lower()
+    return any(keyword in error_text for keyword in ('timed out', 'timeout', 'temporarily unavailable'))
+
+
+def run_target_with_retries(
+    session: HttpSession,
+    target: SmokeTarget,
+    base_url: str,
+    max_attempts: int,
+    retry_interval_ms: int,
+    retry_on_any_failure: bool = False,
+) -> Dict[str, Any]:
+    attempts = max(int(max_attempts), 1)
+    interval_sec = max(int(retry_interval_ms), 0) / 1000.0
+    history: List[Dict[str, Any]] = []
+    current = run_target(session, target, base_url)
+    history.append(dict(current))
+    for _ in range(1, attempts):
+        can_retry = should_retry_target(current) or (retry_on_any_failure and not current.get('ok'))
+        if not can_retry:
+            break
+        if interval_sec > 0:
+            time.sleep(interval_sec)
+        current = run_target(session, target, base_url)
+        history.append(dict(current))
+
+    merged = dict(current)
+    merged['attempts'] = len(history)
+    if len(history) > 1:
+        merged['retry_history'] = history[:-1]
+    return merged
+
+
 def is_loopback_host(value: str) -> bool:
     host = str(value or '').strip().lower()
     return host in {'127.0.0.1', 'localhost', '0.0.0.0', '::1', '[::1]'}
@@ -180,7 +222,7 @@ def validate_stream_urls(base_url: str, result: Dict[str, Any]) -> Dict[str, Any
     return result
 
 
-def build_targets(camera_context: Dict[str, Any]) -> List[SmokeTarget]:
+def build_targets(camera_context: Dict[str, Any], include_capture_endpoints: bool = True) -> List[SmokeTarget]:
     camera_id = str(camera_context.get('camera_id') or '1')
     rtsp_url = str(camera_context.get('rtsp_url') or '')
     targets = [
@@ -218,7 +260,7 @@ def build_targets(camera_context: Dict[str, Any]) -> List[SmokeTarget]:
         SmokeTarget('POST', '/location/listTree', expect_json=True),
         SmokeTarget('POST', '/testimage/ffmpeg', {'encoder': 'h264_rkmpp', 'decoder': 'hevc_rkmpp'}, True, timeout_sec=20.0),
     ]
-    if rtsp_url:
+    if include_capture_endpoints and rtsp_url:
         targets.extend([
             SmokeTarget('POST', '/camera/takePhoto', {'rtspUrl': rtsp_url}, True, timeout_sec=25.0),
             SmokeTarget('POST', '/testimage/get', {'indexCode': camera_id}, True, timeout_sec=25.0),
@@ -232,12 +274,29 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument('--username', required=True)
     parser.add_argument('--password', required=True)
     parser.add_argument('--timeout-sec', type=float, default=15.0)
+    parser.add_argument('--retry-attempts', type=int, default=2)
+    parser.add_argument('--retry-interval-ms', type=int, default=200)
+    parser.add_argument('--retry-on-any-failure', action='store_true', default=False)
+    parser.add_argument('--skip-capture-endpoints', action='store_true', default=False)
     args = parser.parse_args(argv)
 
     session = HttpSession(args.base_url, timeout_sec=max(1.0, float(args.timeout_sec)))
     smoke_login(session, args.username, args.password)
     camera_context = collect_camera_context(session)
-    results = [run_target(session, target, args.base_url) for target in build_targets(camera_context)]
+    results = [
+        run_target_with_retries(
+            session=session,
+            target=target,
+            base_url=args.base_url,
+            max_attempts=args.retry_attempts,
+            retry_interval_ms=args.retry_interval_ms,
+            retry_on_any_failure=args.retry_on_any_failure,
+        )
+        for target in build_targets(
+            camera_context,
+            include_capture_endpoints=not args.skip_capture_endpoints,
+        )
+    ]
 
     failed = [item for item in results if not item.get('ok')]
     summary = {

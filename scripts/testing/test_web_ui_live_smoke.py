@@ -90,6 +90,80 @@ class WebUiLiveSmokeTest(unittest.TestCase):
         self.assertIn('error', result)
         self.assertIn('Invalid JSON', result['error'])
 
+    def test_run_target_with_retries_recovers_after_transport_failure(self):
+        session = FakeSession([
+            (
+                0,
+                json.dumps({'code': -1, 'msg': 'timed out'}).encode('utf-8'),
+                {'Content-Type': 'application/json', 'X-Smoke-Error': 'TimeoutError'},
+            ),
+            (200, b'<html><body>ok</body></html>', {'Content-Type': 'text/html'}),
+        ])
+        target = smoke.SmokeTarget('GET', '/stream')
+
+        result = smoke.run_target_with_retries(
+            session=session,
+            target=target,
+            base_url='http://127.0.0.1:18082',
+            max_attempts=2,
+            retry_interval_ms=0,
+        )
+
+        self.assertTrue(result['ok'])
+        self.assertEqual(2, result['attempts'])
+        self.assertIn('retry_history', result)
+        self.assertEqual(0, result['retry_history'][0]['http_status'])
+
+    def test_run_target_with_retries_does_not_retry_non_retryable_failure(self):
+        session = FakeSession([
+            (200, json.dumps({'code': 500, 'msg': 'invalid request'}).encode('utf-8'), {'Content-Type': 'application/json'}),
+        ])
+        target = smoke.SmokeTarget('POST', '/broken', expect_json=True)
+
+        result = smoke.run_target_with_retries(
+            session=session,
+            target=target,
+            base_url='http://127.0.0.1:18082',
+            max_attempts=3,
+            retry_interval_ms=0,
+        )
+
+        self.assertFalse(result['ok'])
+        self.assertEqual(1, result['attempts'])
+        self.assertEqual(1, len(session.calls))
+
+    def test_run_target_with_retries_can_force_retry_on_any_failure(self):
+        session = FakeSession([
+            (200, json.dumps({'code': 500, 'msg': 'busy'}).encode('utf-8'), {'Content-Type': 'application/json'}),
+            (200, json.dumps({'code': 0, 'msg': 'ok'}).encode('utf-8'), {'Content-Type': 'application/json'}),
+        ])
+        target = smoke.SmokeTarget('POST', '/broken', expect_json=True)
+
+        result = smoke.run_target_with_retries(
+            session=session,
+            target=target,
+            base_url='http://127.0.0.1:18082',
+            max_attempts=2,
+            retry_interval_ms=0,
+            retry_on_any_failure=True,
+        )
+
+        self.assertTrue(result['ok'])
+        self.assertEqual(2, result['attempts'])
+        self.assertEqual(2, len(session.calls))
+
+    def test_build_targets_can_skip_capture_endpoints(self):
+        camera_context = {'camera_id': 1, 'rtsp_url': 'rtsp://example/live'}
+        full_targets = smoke.build_targets(camera_context, include_capture_endpoints=True)
+        light_targets = smoke.build_targets(camera_context, include_capture_endpoints=False)
+
+        full_paths = {target.path for target in full_targets}
+        light_paths = {target.path for target in light_targets}
+        self.assertIn('/camera/takePhoto', full_paths)
+        self.assertIn('/testimage/get', full_paths)
+        self.assertNotIn('/camera/takePhoto', light_paths)
+        self.assertNotIn('/testimage/get', light_paths)
+
 
 if __name__ == '__main__':
     unittest.main()
