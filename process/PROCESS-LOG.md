@@ -1114,3 +1114,5 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | Phase4 advanced: manual ONVIF scan backend(api) + camera page scan entry + RTSP copy workflow landed with tests |
 | 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210403-PHASE2-EXEC.json |
 | 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy. |
+| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210856-PHASE2-EXEC.json |
+| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: manual ONVIF scan flow (API + camera UI dialog + result RTSP copy) synced to GitHub. |
