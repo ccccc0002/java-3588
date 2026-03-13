@@ -35,16 +35,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T14:05:24+08:00",
-                                  "summary":  "Phase6 alarm preview verification synced: RK3588 dispatch-\u003ereport/stream annotation check passed (overlay_hit=true, report_id=2032336649347715074); verifier scripts and evidence pushed to GitHub.",
+                                  "updated_at":  "2026-03-13T14:15:43+08:00",
+                                  "summary":  "Phase6 AI quality diagnostics added: RK3588 30-iteration bridge inference quality run passed (failed=0, invalid_bbox=0, invalid_score=0, latency p50=60ms/p95=85.55ms, labels person=120 bus=30); evidence saved under state/local/inference-quality-20260313-141500-*.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py \u0026\u0026 python3 scripts/testing/verify_alarm_stream_annotation.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --plugin-id yolov8n --timeout-sec 45 --output-dir runtime/test-out/alarm-stream-annotation-20260313-140255",
+                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source test://frame --plugin-id yolov8n --iterations 30 --interval-ms 200 --timeout-sec 30 --output-dir runtime/test-out/inference-quality-20260313-141500",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "d2d5606",
-                                                       "updated_at":  "2026-03-13T14:05:24+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "cac5d79",
+                                                       "updated_at":  "2026-03-13T14:15:43+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -917,6 +917,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase11_handoff.py scripts/testing/test_verify_alarm_stream_annotation.py \u0026\u0026 python3 scripts/testing/run_phase11_handoff.py --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source test://frame --timeout-sec 30 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --max-plan-concurrency-pressure 1 --max-plan-suggested-min-dispatch-ms 1500 --min-snapshot-ready-stream-count 0 --min-plan-ready-stream-count 0 --soak-duration-sec 20 --soak-interval-sec 5 --soak-max-iterations 1 --verify-alarm-preview --alarm-preview-timeout-sec 45 --output-dir runtime/test-out/phase11-handoff-20260313-140852-alarm-preview",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "f6c5dd5"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T14:15:43+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 AI quality diagnostics added: RK3588 30-iteration bridge inference quality run passed (failed=0, invalid_bbox=0, invalid_score=0, latency p50=60ms/p95=85.55ms, labels person=120 bus=30); evidence saved under state/local/inference-quality-20260313-141500-*.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_inference_quality_diagnostics.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source test://frame --plugin-id yolov8n --iterations 30 --interval-ms 200 --timeout-sec 30 --output-dir runtime/test-out/inference-quality-20260313-141500",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "cac5d79"
                     }
                 ]
 }

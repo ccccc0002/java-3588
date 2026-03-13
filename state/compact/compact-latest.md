@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 14:10:45
+- generated_at: 2026-03-13 14:15:44
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T14:15:44+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
+- 2026-03-13T14:15:44+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-13T14:10:45+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T14:09:39+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-13T14:09:39+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-13T14:05:25+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 - 2026-03-13T14:05:25+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-13T14:03:57+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
-- 2026-03-13T14:03:57+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
-- 2026-03-13T13:55:03+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-135415-PHASE2-EXEC.json |
-| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | alert image pipeline hardened: data-uri + raw image annotation fallback; rk3588 tests green. |
-| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135416-PHASE2-EXEC.json |
-| 2026-03-13 13:54:16 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 13:54:16 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: alert image pipeline hardened: data-uri + raw image annotation fallback; rk3588 tests green. |
-| 2026-03-13 13:55:01 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-135501-PHASE2-EXEC.json |
-| 2026-03-13 13:55:01 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 alert-image fix synced: InferenceReportBridgeService now parses data-uri base64 and annotates raw image_base64 using alert bbox/label before persistence; prevents raw alarm images and improves preview reliability. RK3588 tests passed (InferenceReportBridgeServiceTest + InferenceApiControllerTest). GitHub synced to c9b75af. |
 | 2026-03-13 13:55:02 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-135502-PHASE2-EXEC.json |
 | 2026-03-13 13:55:02 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Phase6 sync checkpoint: alarm annotated-image persistence fix pushed (c9b75af). |
 | 2026-03-13 13:55:03 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-135502-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-13 14:10:45 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 14:10:45 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 alarm preview gate synced: run_phase11_handoff now validates dispatch->report/stream annotation stage and captures output in summary; RK3588 run passed and pushed to GitHub. |
 | 2026-03-13 14:10:45 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-141045-PHASE2-EXEC.json |
+| 2026-03-13 14:10:45 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 14:10:45 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Phase11 sync checkpoint: alarm preview gate implementation and RK3588 evidence pushed (f6c5dd5). |
+| 2026-03-13 14:15:44 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-141543-PHASE2-EXEC.json |
+| 2026-03-13 14:15:44 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | Phase6 checkpoint: inference quality diagnostics script + RK3588 30-iteration evidence captured. |
+| 2026-03-13 14:15:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-141543-PHASE2-EXEC.json |
+| 2026-03-13 14:15:44 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 AI quality diagnostics added: RK3588 30-iteration bridge inference quality run passed (failed=0, invalid_bbox=0, invalid_score=0, latency p50=60ms/p95=85.55ms, labels person=120 bus=30); evidence saved under state/local/inference-quality-20260313-141500-*. |
+| 2026-03-13 14:15:44 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-141544-PHASE2-EXEC.json |
