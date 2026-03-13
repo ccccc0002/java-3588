@@ -1142,11 +1142,14 @@ layui.use(['jquery', 'util', 'loading', 'popup', 'echarts'], function() {
         if (isNaN(maxCooldown) || maxCooldown < 0) {
             maxCooldown = 0;
         }
-        var minDispatch = maxCooldown > 0 ? maxCooldown : (stride * 1000);
+        var hintMinDispatch = parseInt(throttleHint.suggested_min_dispatch_ms || 0, 10);
+        if (isNaN(hintMinDispatch) || hintMinDispatch <= 0) {
+            hintMinDispatch = maxCooldown > 0 ? maxCooldown : (stride * 1000);
+        }
         var source = String(throttleHint.strategy_source || 'scheduler_feedback');
         $('#scheduler-pressure').text(pressure.toFixed(2));
         $('#scheduler-stride').text(stride);
-        $('#scheduler-dispatch').text(minDispatch);
+        $('#scheduler-dispatch').text(hintMinDispatch);
         $('#scheduler-level-extra').attr('data-value', String(level)).text(window.t('scheduler.level') + ': ' + level);
         $('#scheduler-source-extra').attr('data-value', source).text(window.t('scheduler.source') + ': ' + source);
         $('#scheduler-cooldown-extra').attr('data-value', String(maxCooldown)).text(window.t('scheduler.cooldown') + ': ' + maxCooldown + ' ms');

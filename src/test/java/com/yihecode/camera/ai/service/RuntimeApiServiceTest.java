@@ -90,6 +90,7 @@ class RuntimeApiServiceTest {
         assertEquals(1.5D, ((Number) scheduler.get("concurrency_pressure")).doubleValue());
         Map<String, Object> throttleHint = (Map<String, Object>) snapshot.get("throttle_hint");
         assertEquals(2, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(2600, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
 
         List<Map<String, Object>> streams = (List<Map<String, Object>>) snapshot.get("streams");
@@ -140,6 +141,7 @@ class RuntimeApiServiceTest {
 
         Map<String, Object> throttleHint = (Map<String, Object>) plan.get("throttle_hint");
         assertEquals(3, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(5200, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttleHint.get("strategy_source"));
         assertEquals(6.25D, ((Number) throttleHint.get("estimated_budget_per_stream")).doubleValue(), 0.0001D);
     }
@@ -162,6 +164,10 @@ class RuntimeApiServiceTest {
         assertEquals(1, streams.size());
         assertEquals(1L, streams.get(0).get("camera_id"));
         assertEquals("rtsp://cam-1", streams.get(0).get("rtsp_url"));
+
+        Map<String, Object> throttleHint = (Map<String, Object>) snapshot.get("throttle_hint");
+        assertEquals(1, ((Number) throttleHint.get("recommended_frame_stride")).intValue());
+        assertEquals(1000, ((Number) throttleHint.get("suggested_min_dispatch_ms")).intValue());
     }
     private void stubMediaConfig() {
         when(configService.getByValTag("media_server_type")).thenReturn("zlm");

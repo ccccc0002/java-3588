@@ -110,6 +110,7 @@ class StreamControllerTest {
         scheduler.put("max_effective_cooldown_ms", 2400);
         Map<String, Object> throttleHint = new HashMap<>();
         throttleHint.put("recommended_frame_stride", 2);
+        throttleHint.put("suggested_min_dispatch_ms", 2400);
         throttleHint.put("concurrency_pressure", 1.6D);
         throttleHint.put("strategy_source", "scheduler_feedback");
         Map<String, Object> runtimeSnapshot = new HashMap<>();
@@ -153,6 +154,7 @@ class StreamControllerTest {
 
         Map<String, Object> throttlePayload = (Map<String, Object>) data.get("throttle_hint");
         assertEquals(2, ((Number) throttlePayload.get("recommended_frame_stride")).intValue());
+        assertEquals(2400, ((Number) throttlePayload.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttlePayload.get("strategy_source"));
     }
 

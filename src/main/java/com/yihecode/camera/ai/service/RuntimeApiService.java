@@ -111,7 +111,10 @@ public class RuntimeApiService {
                 : activeCameraInferenceSchedulerService.getLastSummary();
         Map<String, Object> throttleHint = buildThrottleHint(scheduler, activeCameras.size(), normalizedBudget);
         int recommendedFrameStride = toInt(throttleHint.get("recommended_frame_stride"));
-        int suggestedMinDispatchMs = resolveSuggestedMinDispatchMs(scheduler, throttleHint);
+        int suggestedMinDispatchMs = toInt(throttleHint.get("suggested_min_dispatch_ms"));
+        if (suggestedMinDispatchMs <= 0) {
+            suggestedMinDispatchMs = resolveSuggestedMinDispatchMs(scheduler, throttleHint);
+        }
         String suggestionSource = String.valueOf(throttleHint.getOrDefault("strategy_source", "scheduler_feedback"));
 
         for (Map<String, Object> item : items) {
@@ -151,6 +154,7 @@ public class RuntimeApiService {
         hint.put("concurrency_pressure", pressure);
         hint.put("concurrency_level", concurrencyLevel);
         hint.put("recommended_frame_stride", recommendedFrameStride);
+        hint.put("suggested_min_dispatch_ms", maxEffectiveCooldown > 0 ? maxEffectiveCooldown : recommendedFrameStride * 1000);
         hint.put("estimated_budget_per_stream", streamCount <= 0 ? budget : budget / streamCount);
         hint.put("strategy_source", "scheduler_feedback");
         return hint;
