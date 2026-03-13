@@ -80,6 +80,8 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertEqual('mpp', payload['stream_decode_backend'])
         self.assertEqual('rga', payload['stream_decode_hwaccel'])
         self.assertIn('stream_decode_ffmpeg_bin', payload)
+        self.assertIn('stream_decode_retry_count', payload)
+        self.assertIn('stream_decode_retry_backoff_ms', payload)
         self.assertTrue((ROOT / payload['default_test_image_path']).exists())
         self.assertTrue((ROOT / payload['labels_path']).exists())
         self.assertTrue((ROOT / payload['fallback_model_path']).exists())
@@ -224,7 +226,15 @@ class YoloV8nInferenceTests(unittest.TestCase):
             try:
                 captured = {}
 
-                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                def fake_read_stream_frame(
+                    source,
+                    preferred_backend='auto',
+                    stream_manager=None,
+                    codec_hint='auto',
+                    ffmpeg_bin='ffmpeg',
+                    retry_count=0,
+                    retry_backoff_ms=0,
+                ):
                     captured['preferred_backend'] = preferred_backend
                     return sample, preferred_backend
 
@@ -264,9 +274,19 @@ class YoloV8nInferenceTests(unittest.TestCase):
             try:
                 captured = {}
 
-                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                def fake_read_stream_frame(
+                    source,
+                    preferred_backend='auto',
+                    stream_manager=None,
+                    codec_hint='auto',
+                    ffmpeg_bin='ffmpeg',
+                    retry_count=0,
+                    retry_backoff_ms=0,
+                ):
                     captured['preferred_backend'] = preferred_backend
                     captured['ffmpeg_bin'] = ffmpeg_bin
+                    captured['retry_count'] = retry_count
+                    captured['retry_backoff_ms'] = retry_backoff_ms
                     return sample, preferred_backend
 
                 yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
@@ -280,6 +300,8 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(tuple(image_bgr.shape[:2]), (6, 10))
             self.assertEqual('mpp', captured['preferred_backend'])
             self.assertEqual(str(ffmpeg_bin.resolve()), captured['ffmpeg_bin'])
+            self.assertEqual(1, captured['retry_count'])
+            self.assertEqual(200, captured['retry_backoff_ms'])
             self.assertEqual(str(ffmpeg_bin.resolve()), meta['decoder_ffmpeg_bin'])
 
     def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
@@ -305,7 +327,10 @@ class YoloV8nInferenceTests(unittest.TestCase):
                     return sample
 
                 yolov8n_inference.decode_impl.read_stream_frame_opencv = fail_opencv
-                yolov8n_inference.decode_impl.read_stream_frame_mpp = lambda source, codec_hint='auto', ffmpeg_bin='ffmpeg': (_ for _ in ()).throw(RuntimeError('mpp failed'))
+                yolov8n_inference.decode_impl.read_stream_frame_mpp = (
+                    lambda source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0:
+                    (_ for _ in ()).throw(RuntimeError('mpp failed'))
+                )
                 yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = ok_ffmpeg
                 image_bgr, meta = yolov8n_inference.load_frame_bgr({'frame': {'source': 'rtsp://demo/stream'}}, context)
             finally:
@@ -352,7 +377,15 @@ class YoloV8nInferenceTests(unittest.TestCase):
             sample = yolov8n_inference.np.zeros((4, 5, 3), dtype=yolov8n_inference.np.uint8)
             original_read_stream_frame = yolov8n_inference.decode_impl.read_stream_frame
             try:
-                def fake_read_stream_frame(source, preferred_backend='auto', stream_manager=None, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+                def fake_read_stream_frame(
+                    source,
+                    preferred_backend='auto',
+                    stream_manager=None,
+                    codec_hint='auto',
+                    ffmpeg_bin='ffmpeg',
+                    retry_count=0,
+                    retry_backoff_ms=0,
+                ):
                     return sample, 'opencv'
 
                 yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
@@ -377,7 +410,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 captured['ensure_ffmpeg_bin'] = ffmpeg_bin
                 return None
 
-            def fake_read_stream_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+            def fake_read_stream_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0):
                 captured['mpp_ffmpeg_bin'] = ffmpeg_bin
                 return sample
 
@@ -398,6 +431,44 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertEqual((6, 10, 3), tuple(frame.shape))
         self.assertEqual('/resolved/ffmpeg-rockchip', captured['ensure_ffmpeg_bin'])
         self.assertEqual('/resolved/ffmpeg-rockchip', captured['mpp_ffmpeg_bin'])
+
+    def test_read_stream_frame_mpp_retries_rtsp_setup_500_then_succeeds(self):
+        sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)
+        ok, encoded = yolov8n_inference.decode_impl.cv2.imencode('.jpg', sample)
+        self.assertTrue(ok)
+        encoded_payload = encoded.tobytes()
+        attempts = {'count': 0}
+        original_run = yolov8n_inference.decode_impl.subprocess.run
+        try:
+            def fake_run(command, stdout=None, stderr=None, timeout=None, check=None):
+                attempts['count'] += 1
+
+                class Completed:
+                    returncode = 0
+                    stdout = b''
+                    stderr = b''
+
+                result = Completed()
+                if attempts['count'] == 1:
+                    result.returncode = 8
+                    result.stderr = b'method SETUP failed: 500 Internal Server Error'
+                    return result
+                result.stdout = encoded_payload
+                return result
+
+            yolov8n_inference.decode_impl.subprocess.run = fake_run
+            frame = yolov8n_inference.decode_impl.read_stream_frame_mpp(
+                'rtsp://demo/stream',
+                codec_hint='h264',
+                ffmpeg_bin='ffmpeg',
+                retry_count=1,
+                retry_backoff_ms=0,
+            )
+        finally:
+            yolov8n_inference.decode_impl.subprocess.run = original_run
+
+        self.assertEqual(2, attempts['count'])
+        self.assertEqual((6, 10, 3), tuple(frame.shape))
 
     def test_stream_session_manager_reuses_capture_for_same_source(self):
         created = []

@@ -28,5 +28,7 @@
   "stream_decode_backend": "mpp",
   "stream_decode_hwaccel": "rga",
   "stream_decode_ffmpeg_bin": "../../../../runtime/toolchains/ffmpeg-rockchip/bin/ffmpeg",
-  "stream_decode_codec": "auto"
+  "stream_decode_codec": "auto",
+  "stream_decode_retry_count": 1,
+  "stream_decode_retry_backoff_ms": 200
 }
