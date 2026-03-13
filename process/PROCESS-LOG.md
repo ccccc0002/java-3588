@@ -628,3 +628,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 08:53:58 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
 | 2026-03-13 08:53:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 08:53:59 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
+| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-090531-PHASE2-EXEC.json |
+| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced. |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731. |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
+| 2026-03-13 09:05:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 09:05:44 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731. |

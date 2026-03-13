@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 08:53:59
+- generated_at: 2026-03-13 09:05:43
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T09:05:43+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=session_compacted
+- 2026-03-13T09:05:31+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
 - 2026-03-13T08:53:58+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-13T08:53:47+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T08:49:55+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 - 2026-03-13T08:49:55+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
 - 2026-03-13T08:49:45+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 - 2026-03-13T08:47:14+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-13T08:47:04+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-13T08:44:37+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-12 20:07:41 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-200740-PHASE2-EXEC.json |
-| 2026-03-12 20:07:41 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 camera audit hardening: save/delete/switchRunning/switchRtspType/updateRtsp permission-denied branches now emit operation logs; CameraController deny-path tests expanded; RK3588 targeted regression passed; milestone synced. |
-| 2026-03-12 20:08:04 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-200804-PHASE2-EXEC.json |
-| 2026-03-12 20:08:04 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | camera controller deny audit completed; edge regression 53/53 passed; synced commit 33a7d69 |
-| 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260312-200804-PHASE2-EXEC.json |
-| 2026-03-12 20:08:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-12 20:08:05 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: camera controller deny audit completed; edge regression 53/53 passed; synced commit 33a7d69 |
 | 2026-03-12 20:14:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260312-201426-PHASE2-EXEC.json |
 | 2026-03-12 20:14:26 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 location audit hardening: location save/delete permission-denied branches now emit operation logs; deny-path tests updated; RK3588 targeted regression passed; milestone synced. |
 | 2026-03-12 20:14:43 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260312-201442-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
 | 2026-03-13 08:53:57 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
 | 2026-03-13 08:53:58 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-085357-PHASE2-EXEC.json |
+| 2026-03-13 08:53:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 08:53:59 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | compact after checkpoint: account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918 |
+| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-090531-PHASE2-EXEC.json |
+| 2026-03-13 09:05:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced. |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731. |
+| 2026-03-13 09:05:43 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-090543-PHASE2-EXEC.json |

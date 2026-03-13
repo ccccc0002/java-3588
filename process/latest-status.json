@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 08:53:59",
+    "time":  "2026-03-13 09:05:44",
     "task_id":  "PHASE2-EXEC",
-    "stage":  "Phase8",
+    "stage":  "Phase9",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: account controller deny audit completed; edge regression 71/71 passed; synced commit adb2918"
+    "summary":  "compact after checkpoint: Latency-aware cooldown baseline implemented in ActiveCameraInferenceSchedulerService (declared inference_time + observed latency EWMA + latency factor config); edge test on RK3588 passed (ActiveCameraInferenceSchedulerServiceTest 6/6); pushed b84b731."
 }

@@ -58,9 +58,18 @@
                                                    }
                               },
                    "Phase9":  {
-                                  "status":  "pending",
-                                  "updated_at":  "",
-                                  "summary":  ""
+                                  "status":  "in_progress",
+                                  "updated_at":  "2026-03-13T09:05:31+08:00",
+                                  "summary":  "Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "b84b731",
+                                                       "updated_at":  "2026-03-13T09:05:31+08:00"
+                                                   }
                               },
                    "Phase10":  {
                                    "status":  "pending",
@@ -401,6 +410,16 @@
                         "edge_test_command":  "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest,ConfigControllerTest,StreamControllerTest,WareHouseControllerTest,CameraControllerTest,ReportControllerTest,ReportPeriodControllerTest,SmsPhoneControllerTest,LocationControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "adb2918"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T09:05:31+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 latency-aware scheduler cooldown landed: dynamic cooldown now honors algorithm declared inference_time + observed latency EWMA; strict-stub test noise cleaned; RK3588 edge test passed and milestone synced.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ActiveCameraInferenceSchedulerServiceTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b84b731"
                     }
                 ]
 }
