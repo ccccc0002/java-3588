@@ -1097,3 +1097,7 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 20:37:44 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203743-PHASE2-EXEC.json |
 | 2026-03-13 20:37:44 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 20:37:44 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | post-sync parallel lanes checkpoint compact (phase7/8/9 + phase6 passed) |
+| 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-204227-PHASE2-EXEC.json |
+| 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Phase8 deploy verification done on RK3588: packaged latest jar, restarted 18082 app, web_ui_live_smoke passed 35/35 with updated login title; branding APIs/UI and controller tests already green. |
+| 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-204227-PHASE2-EXEC.json |
+| 2026-03-13 20:42:28 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 branding milestone deployed and verified on RK3588 (mvn tests + app restart + web_ui_live_smoke 35/35). |

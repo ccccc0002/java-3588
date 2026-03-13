@@ -63,16 +63,16 @@
                               },
                    "Phase8":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T20:34:39+08:00",
-                                  "summary":  "Phase8 branding milestone verified: title/logo/login-background configurable with RBAC+audit; RK3588 tests passed and GitHub synced.",
+                                  "updated_at":  "2026-03-13T20:42:27+08:00",
+                                  "summary":  "Phase8 branding milestone deployed and verified on RK3588 (mvn tests + app restart + web_ui_live_smoke 35/35).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python scripts/testing/web_ui_live_smoke.py --base-url http://192.168.1.104:18082 --username admin --password admin123 --timeout-sec 30",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "c0e523f",
-                                                       "updated_at":  "2026-03-13T20:34:39+08:00"
+                                                       "github_sync_ref":  "52a87ff",
+                                                       "updated_at":  "2026-03-13T20:42:27+08:00"
                                                    }
                               },
                    "Phase9":  {
@@ -1096,6 +1096,16 @@
                         "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "c0e523f"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T20:42:27+08:00",
+                        "phase_id":  "Phase8",
+                        "status":  "in_progress",
+                        "summary":  "Phase8 branding milestone deployed and verified on RK3588 (mvn tests + app restart + web_ui_live_smoke 35/35).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=ConfigControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python scripts/testing/web_ui_live_smoke.py --base-url http://192.168.1.104:18082 --username admin --password admin123 --timeout-sec 30",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "52a87ff"
                     }
                 ]
 }
