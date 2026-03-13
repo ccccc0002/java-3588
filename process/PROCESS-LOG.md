@@ -1116,3 +1116,17 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy. |
 | 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210856-PHASE2-EXEC.json |
 | 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: manual ONVIF scan flow (API + camera UI dialog + result RTSP copy) synced to GitHub. |
+| 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213142-PHASE2-EXEC.json |
+| 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 validated in tmux backlog on RK3588: Index/Login/Stream targeted tests passed; camera area tree one-click expand/collapse UI delivered. |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213159-PHASE2-EXEC.json |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5 validated in tmux backlog on RK3588: model testing suite passed after headless stabilization (ModelTestResultServiceTest + package/model capture tests). |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213159-PHASE2-EXEC.json |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 diagnostics stabilized on RK3588: initial backlog run failed due runtime stack not ready; retry after stack start passed 10/10 on live RTSP with valid bbox/score. |
+| 2026-03-13 21:32:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-213211-PHASE2-EXEC.json |
+| 2026-03-13 21:32:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | tmux phase2-backlog(7 lanes) converged on RK3588: phase7/8/9/5/3/4 pass in first run; phase6 retried after runtime_stack start and passed (10/10). GitHub synced at 1edc631. |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213211-PHASE2-EXEC.json |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: tmux phase2-backlog(7 lanes) converged on RK3588: phase7/8/9/5/3/4 pass in first run; phase6 retried after runtime_stack start and passed (10/10). GitHub synced at 1edc631. |
+| 2026-03-13 21:32:21 | PHASE2-EXEC | phase2-backlog | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213220-PHASE2-EXEC.json |
+| 2026-03-13 21:32:21 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 21:32:21 | PHASE2-EXEC | phase2-backlog | session_compacted | codex-agent | post-backlog compact after 7-lane convergence and phase6 retry pass |

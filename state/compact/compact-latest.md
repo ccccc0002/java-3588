@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-13 20:53:01
+- generated_at: 2026-03-13 21:32:21
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,39 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-13T21:32:21+08:00 | task=PHASE2-EXEC | stage=phase2-backlog | event=session_compacted
+- 2026-03-13T21:32:12+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
+- 2026-03-13T21:32:00+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
+- 2026-03-13T21:31:43+08:00 | task=PHASE2-EXEC | stage=Phase3 | event=phase_started
+- 2026-03-13T21:08:56+08:00 | task=PHASE2-EXEC | stage=Phase4 | event=phase_started
+- 2026-03-13T21:04:03+08:00 | task=PHASE2-EXEC | stage=Phase4 | event=phase_started
+- 2026-03-13T20:53:58+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
 - 2026-03-13T20:53:01+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=session_compacted
-- 2026-03-13T20:52:31+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
-- 2026-03-13T20:42:28+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-13T20:37:43+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-13T20:37:33+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_checkpoint
-- 2026-03-13T20:34:51+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=session_compacted
-- 2026-03-13T20:34:40+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
-- 2026-03-13T20:33:04+08:00 | task=PHASE2-EXEC | stage=Phase8 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-13 20:13:13 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 20:13:13 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | policy constraint checkpoint compact |
-| 2026-03-13 20:14:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-201454-PHASE2-EXEC.json |
-| 2026-03-13 20:14:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | continuous-parallel cycle rerun passed on RK3588: phase7 lane BUILD SUCCESS (Config/Camera/WareHouse tests) |
-| 2026-03-13 20:14:55 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-201455-PHASE2-EXEC.json |
-| 2026-03-13 20:14:55 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | continuous-parallel cycle rerun passed on RK3588: phase8 lane BUILD SUCCESS (Account/Model/Algorithm tests) |
-| 2026-03-13 20:14:57 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-201456-PHASE2-EXEC.json |
-| 2026-03-13 20:14:57 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | continuous-parallel cycle rerun passed on RK3588: phase9 lane BUILD SUCCESS (scheduler tests) |
-| 2026-03-13 20:14:58 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-201457-PHASE2-EXEC.json |
-| 2026-03-13 20:14:58 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | continuous-parallel cycle rerun passed on RK3588: phase6 lane live RTSP quality diagnostics passed 10/10 |
-| 2026-03-13 20:15:09 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-201508-PHASE2-EXEC.json |
-| 2026-03-13 20:15:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 20:15:09 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | continuous parallel cycle checkpoint compact |
-| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-203239-PHASE2-EXEC.json |
-| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203239-PHASE2-EXEC.json |
-| 2026-03-13 20:32:39 | PHASE2-EXEC | Phase8 | phase_checkpoint | codex-agent | Phase8 branding closure: added /config/branding info/save APIs with RBAC guard and operation logging, config UI branding page, dynamic title/logo/login-background rendering on index/login, plus controller tests; RK3588 targeted maven tests passed (ConfigControllerTest, IndexControllerTest, LoginControllerTest). GitHub sync: 74a96e6. |
-| 2026-03-13 20:32:51 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203250-PHASE2-EXEC.json |
-| 2026-03-13 20:32:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-13 20:32:51 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | branding milestone compact: github synced 74a96e6, RK3588 tests green |
-| 2026-03-13 20:33:04 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-203304-PHASE2-EXEC.json |
-| 2026-03-13 20:33:04 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 branding milestone delivered: configurable title/logo/login background with backend APIs, RBAC+audit, config UI, and RK3588 targeted tests passed; synced to GitHub 74a96e6. |
-| 2026-03-13 20:34:40 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-203439-PHASE2-EXEC.json |
 | 2026-03-13 20:34:40 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8 branding milestone verified: title/logo/login-background configurable with RBAC+audit; RK3588 tests passed and GitHub synced. |
 | 2026-03-13 20:34:51 | PHASE2-EXEC | Phase8 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-203451-PHASE2-EXEC.json |
 | 2026-03-13 20:34:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +39,25 @@
 | 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-205231-PHASE2-EXEC.json |
 | 2026-03-13 20:52:31 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 advanced: scheduler dispatch now supports configurable worker pool for RK3588 multi-core utilization; config UI/API wired; targeted tests passed on edge. |
 | 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-205300-PHASE2-EXEC.json |
+| 2026-03-13 20:53:01 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 20:53:01 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | phase9 worker-pool scheduler checkpoint compact |
+| 2026-03-13 20:53:58 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-205358-PHASE2-EXEC.json |
+| 2026-03-13 20:53:58 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 advanced: scheduler worker-pool tuning synced to GitHub (configurable infer_scheduler_max_workers, default 3 for RK3588). |
+| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-210403-PHASE2-EXEC.json |
+| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_checkpoint | codex-agent | Phase4 advanced: manual ONVIF scan backend(api) + camera page scan entry + RTSP copy workflow landed with tests |
+| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210403-PHASE2-EXEC.json |
+| 2026-03-13 21:04:03 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: camera module now supports manual ONVIF subnet scan entry (/camera/onvif/scan) and UI scan dialog with result list/copy. |
+| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-210856-PHASE2-EXEC.json |
+| 2026-03-13 21:08:56 | PHASE2-EXEC | Phase4 | phase_started | codex-agent | Phase4 advanced: manual ONVIF scan flow (API + camera UI dialog + result RTSP copy) synced to GitHub. |
+| 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213142-PHASE2-EXEC.json |
+| 2026-03-13 21:31:43 | PHASE2-EXEC | Phase3 | phase_started | codex-agent | Phase3 validated in tmux backlog on RK3588: Index/Login/Stream targeted tests passed; camera area tree one-click expand/collapse UI delivered. |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213159-PHASE2-EXEC.json |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase5 | phase_started | codex-agent | Phase5 validated in tmux backlog on RK3588: model testing suite passed after headless stabilization (ModelTestResultServiceTest + package/model capture tests). |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-213159-PHASE2-EXEC.json |
+| 2026-03-13 21:32:00 | PHASE2-EXEC | Phase6 | phase_started | codex-agent | Phase6 diagnostics stabilized on RK3588: initial backlog run failed due runtime stack not ready; retry after stack start passed 10/10 on live RTSP with valid bbox/score. |
+| 2026-03-13 21:32:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-213211-PHASE2-EXEC.json |
+| 2026-03-13 21:32:11 | PHASE2-EXEC | Phase6 | phase_checkpoint | codex-agent | tmux phase2-backlog(7 lanes) converged on RK3588: phase7/8/9/5/3/4 pass in first run; phase6 retried after runtime_stack start and passed (10/10). GitHub synced at 1edc631. |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213211-PHASE2-EXEC.json |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 21:32:12 | PHASE2-EXEC | Phase6 | session_compacted | codex-agent | compact after checkpoint: tmux phase2-backlog(7 lanes) converged on RK3588: phase7/8/9/5/3/4 pass in first run; phase6 retried after runtime_stack start and passed (10/10). GitHub synced at 1edc631. |
+| 2026-03-13 21:32:21 | PHASE2-EXEC | phase2-backlog | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-213220-PHASE2-EXEC.json |

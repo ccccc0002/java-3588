@@ -20,8 +20,17 @@
                               },
                    "Phase3":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-11T15:55:19+08:00",
-                                  "summary":  "Phase3 in progress: theme/lang switch stabilized after cleanup, target tests pass"
+                                  "updated_at":  "2026-03-13T21:31:42+08:00",
+                                  "summary":  "Phase3 validated in tmux backlog on RK3588: Index/Login/Stream targeted tests passed; camera area tree one-click expand/collapse UI delivered.",
+                                  "quality_gate":  {
+                                                       "edge_test_required":  true,
+                                                       "edge_test_status":  "passed",
+                                                       "edge_test_command":  "mvn -Dtest=IndexControllerTest,LoginControllerTest,StreamControllerTest test",
+                                                       "github_sync_required_on_milestone":  true,
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "1edc631",
+                                                       "updated_at":  "2026-03-13T21:31:42+08:00"
+                                                   }
                               },
                    "Phase4":  {
                                   "status":  "in_progress",
@@ -44,16 +53,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T19:26:34+08:00",
-                                  "summary":  "tmux backlog lane extended Phase6 validation: live RTSP quality diagnostics passed (10/10, invalid bbox/score = 0)",
+                                  "updated_at":  "2026-03-13T21:31:59+08:00",
+                                  "summary":  "Phase6 diagnostics stabilized on RK3588: initial backlog run failed due runtime stack not ready; retry after stack start passed 10/10 on live RTSP with valid bbox/score.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality",
+                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality-retry",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "08d014f",
-                                                       "updated_at":  "2026-03-13T19:26:34+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "1edc631",
+                                                       "updated_at":  "2026-03-13T21:31:59+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -1155,6 +1164,26 @@
                         "edge_test_command":  "mvn -Dtest=CameraControllerTest,OnvifDiscoveryServiceTest test",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "832d422"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T21:31:42+08:00",
+                        "phase_id":  "Phase3",
+                        "status":  "in_progress",
+                        "summary":  "Phase3 validated in tmux backlog on RK3588: Index/Login/Stream targeted tests passed; camera area tree one-click expand/collapse UI delivered.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=IndexControllerTest,LoginControllerTest,StreamControllerTest test",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1edc631"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T21:31:59+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 diagnostics stabilized on RK3588: initial backlog run failed due runtime stack not ready; retry after stack start passed 10/10 on live RTSP with valid bbox/score.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 10 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase2-backlog-quality-retry",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1edc631"
                     }
                 ]
 }
