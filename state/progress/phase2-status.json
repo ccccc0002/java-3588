@@ -150,16 +150,16 @@
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-13T22:47:22+08:00",
-                                   "summary":  "Phase11 handoff dry-run reconfirmed on RK3588 in acceptance lane (2/2 pass).",
+                                   "updated_at":  "2026-03-14T06:55:28+08:00",
+                                   "summary":  "Phase11 handoff upgraded with strict decode gates by default (decode_runtime_status=ok, mode=mpp-rga) and validated on RK3588 with non-dry run handoff pass.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun",
+                                                        "edge_test_command":  "",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "aa60e57",
-                                                        "updated_at":  "2026-03-13T22:47:22+08:00"
+                                                        "github_sync_ref":  "80caff3",
+                                                        "updated_at":  "2026-03-14T06:55:28+08:00"
                                                     }
                                }
                },
@@ -1601,6 +1601,16 @@
                         "edge_test_command":  "",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "27b2a26"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T06:55:28+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Phase11 handoff upgraded with strict decode gates by default (decode_runtime_status=ok, mode=mpp-rga) and validated on RK3588 with non-dry run handoff pass.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "80caff3"
                     }
                 ]
 }
