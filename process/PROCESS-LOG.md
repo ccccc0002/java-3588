@@ -1364,3 +1364,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-073030-PHASE2-EXEC.json |
 | 2026-03-14 07:30:30 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Commit 087d208 pushed: bbox sanitize/filter; RK invalid_bbox_count=0; nextwave-r3 8/8 + backlog-r4 11/11 pass. |
+| 2026-03-14 07:34:18 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-073417-PHASE2-EXEC.json |
+| 2026-03-14 07:34:18 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:34:18 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 gate tooling enhanced: inference quality diagnostics now supports threshold gates (invalid_bbox/invalid_score/empty_label) with exit-code enforcement; validated on RK3588 using max-invalid-bbox-count=0. |
+| 2026-03-14 07:34:28 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-073427-PHASE2-EXEC.json |
+| 2026-03-14 07:34:28 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Commit f7a7794 pushed: quality gate thresholds + RK validation with bbox gate=0 passed. |
+| 2026-03-14 07:34:28 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-073428-PHASE2-EXEC.json |
+| 2026-03-14 07:34:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:34:28 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Commit f7a7794 pushed: quality gate thresholds + RK validation with bbox gate=0 passed. |
