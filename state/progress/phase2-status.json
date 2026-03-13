@@ -73,16 +73,16 @@
                               },
                    "Phase10":  {
                                    "status":  "in_progress",
-                                   "updated_at":  "2026-03-13T13:16:12+08:00",
-                                   "summary":  "Phase10 execution UX improved: added RK3588 launcher script Run-Phase10-Acceptance.sh to invoke preset acceptance gate flow directly on board; dry-run execution validated on RK3588 and completed with passed summary; GitHub synced to 0c80590.",
+                                   "updated_at":  "2026-03-13T13:20:13+08:00",
+                                   "summary":  "Phase10 gate traceability hardened: run_linux_gates now parses runtime_stack_smoke stdout JSON when stage summary file is absent, preserving structured acceptance payload in stage summary; tests expanded and RK3588 regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 10/10); GitHub synced to 12d95e4.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "./scripts/rk3588/Run-Phase10-Acceptance.sh --dry-run --output-dir runtime/test-out/phase10-acceptance-smoke",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "0c80590",
-                                                        "updated_at":  "2026-03-13T13:16:12+08:00"
+                                                        "github_sync_ref":  "12d95e4",
+                                                        "updated_at":  "2026-03-13T13:20:13+08:00"
                                                     }
                                },
                    "Phase11":  {
@@ -769,6 +769,16 @@
                         "edge_test_command":  "./scripts/rk3588/Run-Phase10-Acceptance.sh --dry-run --output-dir runtime/test-out/phase10-acceptance-smoke",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "0c80590"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T13:20:13+08:00",
+                        "phase_id":  "Phase10",
+                        "status":  "in_progress",
+                        "summary":  "Phase10 gate traceability hardened: run_linux_gates now parses runtime_stack_smoke stdout JSON when stage summary file is absent, preserving structured acceptance payload in stage summary; tests expanded and RK3588 regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 10/10); GitHub synced to 12d95e4.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "12d95e4"
                     }
                 ]
 }

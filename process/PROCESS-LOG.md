@@ -885,3 +885,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 13:16:27 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-131627-PHASE2-EXEC.json |
 | 2026-03-13 13:16:27 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 13:16:27 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 0c80590: added RK3588 entrypoint Run-Phase10-Acceptance.sh for one-command phase10 acceptance execution; board dry-run validated with passed summary. |
+| 2026-03-13 13:20:13 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-132013-PHASE2-EXEC.json |
+| 2026-03-13 13:20:13 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 gate traceability hardened: run_linux_gates now parses runtime_stack_smoke stdout JSON when stage summary file is absent, preserving structured acceptance payload in stage summary; tests expanded and RK3588 regressions passed (test_run_linux_gates + test_run_phase10_acceptance, 10/10); GitHub synced to 12d95e4. |
+| 2026-03-13 13:20:28 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:20:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-132028-PHASE2-EXEC.json |
+| 2026-03-13 13:20:28 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | GitHub sync complete at 12d95e4: linux gate runner now captures runtime_stack_smoke stdout JSON as structured stage summary fallback, improving acceptance evidence traceability; RK3588 regressions passed (10/10). |
+| 2026-03-13 13:20:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-132028-PHASE2-EXEC.json |
+| 2026-03-13 13:20:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 13:20:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 12d95e4: linux gate runner now captures runtime_stack_smoke stdout JSON as structured stage summary fallback, improving acceptance evidence traceability; RK3588 regressions passed (10/10). |
