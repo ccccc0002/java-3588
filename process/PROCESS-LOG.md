@@ -1357,3 +1357,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-072107-PHASE2-EXEC.json |
 | 2026-03-14 07:21:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Commit bb57cd5 pushed: MPP decode RTSP retry/backoff + tests; RK backlog-r3 11/11 pass. |
+| 2026-03-14 07:30:19 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-073018-PHASE2-EXEC.json |
+| 2026-03-14 07:30:19 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 quality hardening: yolov8n postprocess now normalizes boxes and filters invalid bbox outputs before alerts/OSD; RK3588 quality diagnostics reached invalid_bbox_count=0 and backlog/nextwave lanes remained all-pass. |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-073029-PHASE2-EXEC.json |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Commit 087d208 pushed: bbox sanitize/filter; RK invalid_bbox_count=0; nextwave-r3 8/8 + backlog-r4 11/11 pass. |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-073030-PHASE2-EXEC.json |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Commit 087d208 pushed: bbox sanitize/filter; RK invalid_bbox_count=0; nextwave-r3 8/8 + backlog-r4 11/11 pass. |

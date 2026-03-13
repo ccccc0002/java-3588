@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 07:21:07
+- generated_at: 2026-03-14 07:30:30
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T07:30:30+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=session_compacted
+- 2026-03-14T07:30:30+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_checkpoint
+- 2026-03-14T07:30:19+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
 - 2026-03-14T07:21:07+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=session_compacted
 - 2026-03-14T07:20:57+08:00 | task=PHASE2-EXEC | stage=Phase9 | event=phase_started
 - 2026-03-14T07:10:39+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=session_compacted
 - 2026-03-14T07:10:28+08:00 | task=PHASE2-EXEC | stage=Phase6 | event=phase_started
 - 2026-03-14T06:58:38+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-14T06:58:38+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
-- 2026-03-14T06:55:29+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-14T06:55:28+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 
 ## Recent Process Log Tail
 
-| 2026-03-14 06:48:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-064828-PHASE2-EXEC.json |
-| 2026-03-14 06:48:29 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 06:48:29 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: post-sync checkpoint after RK3588 strict acceptance pass on commit 27b2a26 |
-| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-065216-PHASE2-EXEC.json |
-| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase8 | phase_started | codex-agent | Phase8/9 nextwave regression lanes converged on RK3588: UI smoke + source policy + RTSP quality + API regression all passed in tmux parallel run. |
-| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |
-| 2026-03-14 06:52:17 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 API regression reconfirmed on RK3588 in parallel nextwave lane (108 tests, 0 failures). |
 | 2026-03-14 06:52:17 | PHASE2-EXEC | phase2-nextwave | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |
 | 2026-03-14 06:52:17 | PHASE2-EXEC | phase2-nextwave | phase_checkpoint | codex-agent | tmux parallel nextwave + acceptance lanes passed (4/4 + 2/2) on RK3588 |
 | 2026-03-14 06:52:18 | PHASE2-EXEC | phase2-nextwave | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-065217-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-072107-PHASE2-EXEC.json |
 | 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Commit bb57cd5 pushed: MPP decode RTSP retry/backoff + tests; RK backlog-r3 11/11 pass. |
 | 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-072107-PHASE2-EXEC.json |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 07:21:07 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | compact after checkpoint: Commit bb57cd5 pushed: MPP decode RTSP retry/backoff + tests; RK backlog-r3 11/11 pass. |
+| 2026-03-14 07:30:19 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-073018-PHASE2-EXEC.json |
+| 2026-03-14 07:30:19 | PHASE2-EXEC | Phase9 | phase_started | codex-agent | Phase9 quality hardening: yolov8n postprocess now normalizes boxes and filters invalid bbox outputs before alerts/OSD; RK3588 quality diagnostics reached invalid_bbox_count=0 and backlog/nextwave lanes remained all-pass. |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-073029-PHASE2-EXEC.json |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | phase_checkpoint | codex-agent | Commit 087d208 pushed: bbox sanitize/filter; RK invalid_bbox_count=0; nextwave-r3 8/8 + backlog-r4 11/11 pass. |
+| 2026-03-14 07:30:30 | PHASE2-EXEC | Phase9 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-073030-PHASE2-EXEC.json |

@@ -122,16 +122,16 @@
                               },
                    "Phase9":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T07:20:57+08:00",
-                                  "summary":  "Phase9 reliability uplift: yolov8n MPP+RGA decode now retries transient RTSP SETUP/5xx failures with backoff; concurrent quality diagnostics and tmux backlog lanes converged to all-pass on RK3588.",
+                                  "updated_at":  "2026-03-14T07:30:18+08:00",
+                                  "summary":  "Phase9 quality hardening: yolov8n postprocess now normalizes boxes and filters invalid bbox outputs before alerts/OSD; RK3588 quality diagnostics reached invalid_bbox_count=0 and backlog/nextwave lanes remained all-pass.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_yolov8n_plugin.py \u0026\u0026 (two concurrent run_inference_quality_diagnostics x10) \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r3",
+                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_yolov8n_plugin.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --iterations 10 (invalid_bbox_count=0) \u0026\u0026 tmux_parallel_ctl report phase2-nextwave-r3/phase2-backlog-r4",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "bb57cd5",
-                                                       "updated_at":  "2026-03-14T07:20:57+08:00"
+                                                       "github_sync_ref":  "087d208",
+                                                       "updated_at":  "2026-03-14T07:30:18+08:00"
                                                    }
                               },
                    "Phase10":  {
@@ -1641,6 +1641,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_yolov8n_plugin.py \u0026\u0026 (two concurrent run_inference_quality_diagnostics x10) \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r3",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "bb57cd5"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T07:30:18+08:00",
+                        "phase_id":  "Phase9",
+                        "status":  "in_progress",
+                        "summary":  "Phase9 quality hardening: yolov8n postprocess now normalizes boxes and filters invalid bbox outputs before alerts/OSD; RK3588 quality diagnostics reached invalid_bbox_count=0 and backlog/nextwave lanes remained all-pass.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_yolov8n_plugin.py \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --iterations 10 (invalid_bbox_count=0) \u0026\u0026 tmux_parallel_ctl report phase2-nextwave-r3/phase2-backlog-r4",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "087d208"
                     }
                 ]
 }
