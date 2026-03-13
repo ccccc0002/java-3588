@@ -35,16 +35,16 @@
                               },
                    "Phase6":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-13T16:15:48+08:00",
-                                  "summary":  "Phase6 source-policy guard added: new validate_dispatch_source_policy script verifies valid dispatch resolves RTSP source and invalid-camera dead-letter does not carry synthetic test://frame fallback. Guards passed on RK3588 and synced to GitHub (8551886).",
+                                  "updated_at":  "2026-03-13T16:17:44+08:00",
+                                  "summary":  "Phase6 live RTSP quality check passed on RK3588: 20/20 successful iterations on camera stream source, invalid_bbox=0, invalid_score=0, latency p50=1427.5ms / p95=1518.7ms, total_alert_count=49; evidence saved to runtime/test-out/inference-quality-rtsp-20260313-1618/summary.json.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_validate_dispatch_source_policy.py \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out",
+                                                       "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 20 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/inference-quality-rtsp-20260313-1618",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "8551886",
-                                                       "updated_at":  "2026-03-13T16:15:48+08:00"
+                                                       "github_sync_status":  "pending",
+                                                       "github_sync_ref":  "32d79f1",
+                                                       "updated_at":  "2026-03-13T16:17:44+08:00"
                                                    }
                               },
                    "Phase7":  {
@@ -997,6 +997,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_validate_dispatch_source_policy.py \u0026\u0026 python3 scripts/testing/validate_dispatch_source_policy.py --base-url http://127.0.0.1:18082 --camera-id 1 --model-id 1 --algorithm-id 1 --invalid-camera-id 999999 --timeout-sec 45 --output-dir runtime/test-out",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "8551886"
+                    },
+                    {
+                        "timestamp":  "2026-03-13T16:17:44+08:00",
+                        "phase_id":  "Phase6",
+                        "status":  "in_progress",
+                        "summary":  "Phase6 live RTSP quality check passed on RK3588: 20/20 successful iterations on camera stream source, invalid_bbox=0, invalid_score=0, latency p50=1427.5ms / p95=1518.7ms, total_alert_count=49; evidence saved to runtime/test-out/inference-quality-rtsp-20260313-1618/summary.json.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --plugin-id yolov8n --iterations 20 --interval-ms 250 --timeout-sec 45 --output-dir runtime/test-out/inference-quality-rtsp-20260313-1618",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  "32d79f1"
                     }
                 ]
 }

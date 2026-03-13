@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 16:15:49",
+    "time":  "2026-03-13 16:17:44",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase6",
     "event":  "phase_started",
     "actor":  "codex-agent",
-    "summary":  "Phase6 source-policy guard added: new validate_dispatch_source_policy script verifies valid dispatch resolves RTSP source and invalid-camera dead-letter does not carry synthetic test://frame fallback. Guards passed on RK3588 and synced to GitHub (8551886)."
+    "summary":  "Phase6 live RTSP quality check passed on RK3588: 20/20 successful iterations on camera stream source, invalid_bbox=0, invalid_score=0, latency p50=1427.5ms / p95=1518.7ms, total_alert_count=49; evidence saved to runtime/test-out/inference-quality-rtsp-20260313-1618/summary.json."
 }
