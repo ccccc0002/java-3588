@@ -31,6 +31,9 @@
     <button class="pear-btn pear-btn-danger pear-btn-md" lay-event="scheduler" style="margin-left: 8px;">
         Scheduler
     </button>
+    <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="branding" style="margin-left: 8px;">
+        Branding
+    </button>
 </script>
 
 <script type="text/html" id="table-actions">
@@ -107,6 +110,12 @@
                     return;
                 }
                 window.openScheduler();
+            } else if (obj.event === 'branding') {
+                if (!permissions.can_write_system) {
+                    popup.failure('permission denied');
+                    return;
+                }
+                window.openBranding();
             } else if (obj.event === 'refresh') {
                 window.refreshTable();
             }
@@ -162,6 +171,16 @@
             });
         };
 
+        window.openBranding = function() {
+            layer.open({
+                type: 2,
+                title: 'Branding',
+                shade: 0.1,
+                area: ['72%', '82%'],
+                content: '/config/branding'
+            });
+        };
+
         window.refreshTable = function() {
             table.reload('table');
         };
@@ -187,7 +206,7 @@
             if (permissions.can_write_system) {
                 return;
             }
-            $('button[lay-event=add],button[lay-event=license],button[lay-event=network],button[lay-event=scheduler]')
+            $('button[lay-event=add],button[lay-event=license],button[lay-event=network],button[lay-event=scheduler],button[lay-event=branding]')
                 .prop('disabled', true)
                 .addClass('layui-btn-disabled');
         }

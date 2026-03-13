@@ -5,12 +5,14 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.yihecode.camera.ai.entity.Account;
 import com.yihecode.camera.ai.service.AccountService;
+import com.yihecode.camera.ai.service.ConfigService;
 import com.yihecode.camera.ai.service.OperationLogService;
 import com.yihecode.camera.ai.service.RoleAccessService;
 import com.yihecode.camera.ai.utils.JsonResult;
 import com.yihecode.camera.ai.utils.JsonResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -18,8 +20,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class LoginController {
 
+    private static final String TAG_BRAND_TITLE = "brand_title";
+    private static final String TAG_LOGIN_BACKGROUND_URL = "login_background_url";
+    private static final String DEFAULT_BRAND_TITLE = "AI视频监控管理系统";
+    private static final String DEFAULT_LOGIN_BACKGROUND_URL = "/static/admin/images/background.svg";
+
     @Autowired
     private AccountService accountService;
+
+    @Autowired
+    private ConfigService configService;
 
     @Autowired
     private RoleAccessService roleAccessService;
@@ -28,7 +38,9 @@ public class LoginController {
     private OperationLogService operationLogService;
 
     @GetMapping({"/login"})
-    public String login() {
+    public String login(ModelMap modelMap) {
+        modelMap.addAttribute("brandTitle", getConfigOrDefault(TAG_BRAND_TITLE, DEFAULT_BRAND_TITLE));
+        modelMap.addAttribute("loginBackgroundUrl", getConfigOrDefault(TAG_LOGIN_BACKGROUND_URL, DEFAULT_LOGIN_BACKGROUND_URL));
         return "login";
     }
 
@@ -66,5 +78,13 @@ public class LoginController {
         StpUtil.getSession(true).logout();
         return "redirect:/login";
     }
-}
 
+    private String getConfigOrDefault(String tag, String defaultValue) {
+        String value = configService.getByValTag(tag);
+        if (value == null) {
+            return defaultValue;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? defaultValue : normalized;
+    }
+}

@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class IndexController {
 
+    private static final String TAG_BRAND_TITLE = "brand_title";
+    private static final String TAG_BRAND_LOGO_URL = "brand_logo_url";
+    private static final String DEFAULT_BRAND_TITLE = "AI视频监控管理";
+    private static final String DEFAULT_BRAND_LOGO_URL = "/static/admin/images/logo.png";
+
     @Autowired
     private ConfigService configService;
 
@@ -37,6 +42,8 @@ public class IndexController {
         String role = roleAccessService.getRoleByAccountId(accountId);
         modelMap.addAttribute("accountName", accountName);
         modelMap.addAttribute("accountRole", role);
+        modelMap.addAttribute("brandTitle", getConfigOrDefault(TAG_BRAND_TITLE, DEFAULT_BRAND_TITLE));
+        modelMap.addAttribute("brandLogoUrl", getConfigOrDefault(TAG_BRAND_LOGO_URL, DEFAULT_BRAND_LOGO_URL));
 
         return "index";
     }
@@ -45,5 +52,13 @@ public class IndexController {
     public String blank() {
         return "blank";
     }
-}
 
+    private String getConfigOrDefault(String tag, String defaultValue) {
+        String value = configService.getByValTag(tag);
+        if (value == null) {
+            return defaultValue;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? defaultValue : normalized;
+    }
+}

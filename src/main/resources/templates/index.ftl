@@ -83,10 +83,19 @@
 				var popup = layui.popup;
 				var toast = layui.toast;
 
-				admin.setConfigType("yml");
-				admin.setConfigPath("/static/config/pear.config.yml?v=1.22");
-				
-				admin.render();
+					admin.setConfigType("yml");
+					admin.setConfigPath("/static/config/pear.config.yml?v=1.22");
+					
+					admin.render();
+					var dynamicBrandTitle = '${(brandTitle!"")?js_string}';
+					var dynamicBrandLogoUrl = '${(brandLogoUrl!"")?js_string}';
+					if (dynamicBrandTitle) {
+						document.title = dynamicBrandTitle;
+						$('.layui-logo .title').text(dynamicBrandTitle);
+					}
+					if (dynamicBrandLogoUrl) {
+						$('.layui-logo .logo').attr('src', dynamicBrandLogoUrl);
+					}
 				
 				// 登出逻辑 
 				// admin.logout(function(){

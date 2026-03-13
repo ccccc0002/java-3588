@@ -52,6 +52,9 @@ public class ConfigController {
     private static final String TAG_INFER_SCHEDULER_COOLDOWN_MS = "infer_scheduler_cooldown_ms";
     private static final String TAG_INFER_SCHEDULER_LATENCY_FACTOR = "infer_scheduler_latency_factor";
     private static final String TAG_INFER_SCHEDULER_CONCURRENCY_BASELINE = "infer_scheduler_concurrency_baseline";
+    private static final String TAG_BRAND_TITLE = "brand_title";
+    private static final String TAG_BRAND_LOGO_URL = "brand_logo_url";
+    private static final String TAG_LOGIN_BACKGROUND_URL = "login_background_url";
 
     @Autowired
     private ConfigService configService;
@@ -98,6 +101,11 @@ public class ConfigController {
     @GetMapping({"/scheduler"})
     public String schedulerPage() {
         return "config/scheduler";
+    }
+
+    @GetMapping({"/branding"})
+    public String brandingPage() {
+        return "config/branding";
     }
 
     @PostMapping({"/detail"})
@@ -389,6 +397,48 @@ public class ConfigController {
         data.put("cooldown_ms", finalCooldownMs);
         data.put("latency_factor", finalLatencyFactor);
         data.put("concurrency_baseline", finalConcurrencyBaseline);
+        return JsonResultUtils.success(data);
+    }
+
+    @RequestMapping(value = "/branding/info", method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public JsonResult brandingInfo() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("brand_title", defaultString(configService.getByValTag(TAG_BRAND_TITLE)));
+        data.put("brand_logo_url", defaultString(configService.getByValTag(TAG_BRAND_LOGO_URL)));
+        data.put("login_background_url", defaultString(configService.getByValTag(TAG_LOGIN_BACKGROUND_URL)));
+        return JsonResultUtils.success(data);
+    }
+
+    @PostMapping("/branding/save")
+    @ResponseBody
+    public JsonResult saveBranding(String brandTitle, String brand_title, String brandLogoUrl, String brand_logo_url,
+                                   String loginBackgroundUrl, String login_background_url) {
+        if (!roleAccessService.canWriteSystem(currentAccountId())) {
+            operationLogService.record("branding:save", "branding", false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+
+        String finalBrandTitle = StrUtil.isBlank(brandTitle) ? brand_title : brandTitle;
+        String finalBrandLogoUrl = StrUtil.isBlank(brandLogoUrl) ? brand_logo_url : brandLogoUrl;
+        String finalLoginBackgroundUrl = StrUtil.isBlank(loginBackgroundUrl) ? login_background_url : loginBackgroundUrl;
+
+        upsertConfig(TAG_BRAND_TITLE, "Brand Title", defaultString(finalBrandTitle));
+        upsertConfig(TAG_BRAND_LOGO_URL, "Brand Logo Url", defaultString(finalBrandLogoUrl));
+        upsertConfig(TAG_LOGIN_BACKGROUND_URL, "Login Background Url", defaultString(finalLoginBackgroundUrl));
+
+        operationLogService.record(
+                "branding:save",
+                "branding",
+                true,
+                "branding config saved",
+                "title=" + defaultString(finalBrandTitle)
+        );
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("brand_title", defaultString(finalBrandTitle));
+        data.put("brand_logo_url", defaultString(finalBrandLogoUrl));
+        data.put("login_background_url", defaultString(finalLoginBackgroundUrl));
         return JsonResultUtils.success(data);
     }
 

@@ -278,4 +278,51 @@ class ConfigControllerTest {
         assertEquals("permission denied", result.getMsg());
         verify(operationLogService).record(eq("scheduler:save"), eq("scheduler"), eq(false), eq("permission denied"), eq(""));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void brandingInfoShouldReturnSavedBrandValues() {
+        when(configService.getByValTag("brand_title")).thenReturn("Edge Vision");
+        when(configService.getByValTag("brand_logo_url")).thenReturn("/image/stream?fileName=logo.png");
+        when(configService.getByValTag("login_background_url")).thenReturn("/image/stream?fileName=bg.png");
+
+        JsonResult result = configController.brandingInfo();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("Edge Vision", data.get("brand_title"));
+        assertEquals("/image/stream?fileName=logo.png", data.get("brand_logo_url"));
+        assertEquals("/image/stream?fileName=bg.png", data.get("login_background_url"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void saveBrandingShouldPersistTags() {
+        JsonResult result = configController.saveBranding("Edge Vision", null, "/image/stream?fileName=logo.png", null,
+                "/image/stream?fileName=bg.png", null);
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertEquals("Edge Vision", data.get("brand_title"));
+        assertEquals("/image/stream?fileName=logo.png", data.get("brand_logo_url"));
+        assertEquals("/image/stream?fileName=bg.png", data.get("login_background_url"));
+
+        ArgumentCaptor<Config> captor = ArgumentCaptor.forClass(Config.class);
+        verify(configService, atLeast(3)).saveOrUpdate(captor.capture(), any());
+        List<Config> saved = captor.getAllValues();
+        assertTrue(saved.stream().anyMatch(c -> "brand_title".equals(c.getTag()) && "Edge Vision".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "brand_logo_url".equals(c.getTag()) && "/image/stream?fileName=logo.png".equals(c.getVal())));
+        assertTrue(saved.stream().anyMatch(c -> "login_background_url".equals(c.getTag()) && "/image/stream?fileName=bg.png".equals(c.getVal())));
+    }
+
+    @Test
+    void saveBrandingShouldDenyWhenNoPermission() {
+        when(roleAccessService.canWriteSystem(any())).thenReturn(false);
+
+        JsonResult result = configController.saveBranding("Edge Vision", null, "/logo.png", null, "/bg.png", null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(operationLogService).record(eq("branding:save"), eq("branding"), eq(false), eq("permission denied"), eq(""));
+    }
 }
