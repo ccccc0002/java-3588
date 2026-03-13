@@ -712,3 +712,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-100843-PHASE2-EXEC.json |
 | 2026-03-13 10:08:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-13 10:08:43 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path. |
+| 2026-03-13 10:11:28 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | checkpoint saved: checkpoint-20260313-101128-PHASE2-EXEC.json |
+| 2026-03-13 10:11:29 | PHASE2-EXEC | Phase10 | phase_started | codex-agent | Phase10 dashboard resilience hardening: dashboardSummary now degrades gracefully when runtime snapshot throws, returning overview/charts with empty scheduler telemetry maps; added fallback unit test and RK3588 targeted tests passed (23/23). |
+| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
+| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | phase_checkpoint | codex-agent | dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |
+| 2026-03-13 10:11:38 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260313-101138-PHASE2-EXEC.json |
+| 2026-03-13 10:11:39 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-13 10:11:39 | PHASE2-EXEC | Phase10 | session_compacted | codex-agent | compact after checkpoint: dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green. |

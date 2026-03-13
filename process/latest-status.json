@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-13 10:08:43",
+    "time":  "2026-03-13 10:11:39",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase10",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: GitHub sync complete at 65ac12b: runtime throttle hint contains suggested_min_dispatch_ms and dashboard consumes same value path."
+    "summary":  "compact after checkpoint: dashboardSummary fallback path added to tolerate runtime snapshot failure; StreamControllerTest covers degrade scenario; RK3588 targeted tests green."
 }
