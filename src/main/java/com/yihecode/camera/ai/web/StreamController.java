@@ -327,9 +327,14 @@ public class StreamController {
         payload.put("trend", trend);
         payload.put("pie", pie);
         payload.put("ranking", ranking);
-        Map<String, Object> snapshot = runtimeApiService == null
-                ? Collections.emptyMap()
-                : runtimeApiService.buildRuntimeSnapshot();
+        Map<String, Object> snapshot = Collections.emptyMap();
+        if (runtimeApiService != null) {
+            try {
+                snapshot = runtimeApiService.buildRuntimeSnapshot();
+            } catch (Exception ignored) {
+                snapshot = Collections.emptyMap();
+            }
+        }
         payload.put("scheduler", resolveMap(snapshot.get("scheduler")));
         payload.put("throttle_hint", resolveMap(snapshot.get("throttle_hint")));
         payload.put("today", DateUtil.today());

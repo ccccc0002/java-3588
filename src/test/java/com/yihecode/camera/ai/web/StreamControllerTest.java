@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -156,6 +157,30 @@ class StreamControllerTest {
         assertEquals(2, ((Number) throttlePayload.get("recommended_frame_stride")).intValue());
         assertEquals(2400, ((Number) throttlePayload.get("suggested_min_dispatch_ms")).intValue());
         assertEquals("scheduler_feedback", throttlePayload.get("strategy_source"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void dashboardSummaryShouldFallbackWhenRuntimeSnapshotFails() {
+        when(cameraService.getCountByRunState(-1)).thenReturn(1);
+        when(cameraService.getCountByRunState(1)).thenReturn(1);
+        when(algorithmService.toMap()).thenReturn(new HashMap<>());
+        when(modelService.listData()).thenReturn(new ArrayList<>());
+        when(reportService.getCounter(anyLong(), anyLong())).thenReturn(0);
+        when(reportService.findAlgorithmRatio(any(), any())).thenReturn(new ArrayList<>());
+        when(cameraService.toMap()).thenReturn(new HashMap<>());
+        when(reportService.findCamera(any(), any())).thenReturn(new ArrayList<>());
+        doThrow(new RuntimeException("runtime unavailable")).when(runtimeApiService).buildRuntimeSnapshot();
+
+        JsonResult result = streamController.dashboardSummary();
+
+        assertEquals(0, result.getCode());
+        Map<String, Object> data = (Map<String, Object>) result.getData();
+        assertNotNull(data);
+        assertTrue(data.get("scheduler") instanceof Map);
+        assertTrue(data.get("throttle_hint") instanceof Map);
+        assertTrue(((Map<String, Object>) data.get("scheduler")).isEmpty());
+        assertTrue(((Map<String, Object>) data.get("throttle_hint")).isEmpty());
     }
 
     @Test
