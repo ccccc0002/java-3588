@@ -234,6 +234,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
                     ffmpeg_bin='ffmpeg',
                     retry_count=0,
                     retry_backoff_ms=0,
+                    timeout_sec=20.0,
                 ):
                     captured['preferred_backend'] = preferred_backend
                     return sample, preferred_backend
@@ -282,11 +283,13 @@ class YoloV8nInferenceTests(unittest.TestCase):
                     ffmpeg_bin='ffmpeg',
                     retry_count=0,
                     retry_backoff_ms=0,
+                    timeout_sec=20.0,
                 ):
                     captured['preferred_backend'] = preferred_backend
                     captured['ffmpeg_bin'] = ffmpeg_bin
                     captured['retry_count'] = retry_count
                     captured['retry_backoff_ms'] = retry_backoff_ms
+                    captured['timeout_sec'] = timeout_sec
                     return sample, preferred_backend
 
                 yolov8n_inference.decode_impl.read_stream_frame = fake_read_stream_frame
@@ -302,7 +305,9 @@ class YoloV8nInferenceTests(unittest.TestCase):
             self.assertEqual(str(ffmpeg_bin.resolve()), captured['ffmpeg_bin'])
             self.assertEqual(1, captured['retry_count'])
             self.assertEqual(200, captured['retry_backoff_ms'])
+            self.assertEqual(20.0, captured['timeout_sec'])
             self.assertEqual(str(ffmpeg_bin.resolve()), meta['decoder_ffmpeg_bin'])
+            self.assertEqual(20.0, meta['decoder_timeout_sec'])
 
     def test_load_frame_bgr_falls_back_to_ffmpeg_for_stream_source(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -323,12 +328,12 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 def fail_opencv(source, stream_manager=None):
                     raise RuntimeError('opencv stream open failed')
 
-                def ok_ffmpeg(source, ffmpeg_bin='ffmpeg'):
+                def ok_ffmpeg(source, ffmpeg_bin='ffmpeg', timeout_sec=20.0):
                     return sample
 
                 yolov8n_inference.decode_impl.read_stream_frame_opencv = fail_opencv
                 yolov8n_inference.decode_impl.read_stream_frame_mpp = (
-                    lambda source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0:
+                    lambda source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0, timeout_sec=20.0:
                     (_ for _ in ()).throw(RuntimeError('mpp failed'))
                 )
                 yolov8n_inference.decode_impl.read_stream_frame_ffmpeg = ok_ffmpeg
@@ -385,6 +390,7 @@ class YoloV8nInferenceTests(unittest.TestCase):
                     ffmpeg_bin='ffmpeg',
                     retry_count=0,
                     retry_backoff_ms=0,
+                    timeout_sec=20.0,
                 ):
                     return sample, 'opencv'
 
@@ -410,8 +416,9 @@ class YoloV8nInferenceTests(unittest.TestCase):
                 captured['ensure_ffmpeg_bin'] = ffmpeg_bin
                 return None
 
-            def fake_read_stream_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0):
+            def fake_read_stream_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0, timeout_sec=20.0):
                 captured['mpp_ffmpeg_bin'] = ffmpeg_bin
+                captured['timeout_sec'] = timeout_sec
                 return sample
 
             yolov8n_inference.decode_impl.ensure_mpp_decode_support = fake_ensure
@@ -431,6 +438,36 @@ class YoloV8nInferenceTests(unittest.TestCase):
         self.assertEqual((6, 10, 3), tuple(frame.shape))
         self.assertEqual('/resolved/ffmpeg-rockchip', captured['ensure_ffmpeg_bin'])
         self.assertEqual('/resolved/ffmpeg-rockchip', captured['mpp_ffmpeg_bin'])
+        self.assertEqual(20.0, captured['timeout_sec'])
+
+    def test_build_mpp_ffmpeg_command_omits_forced_decoder_when_codec_is_auto(self):
+        command = yolov8n_inference.decode_impl.build_mpp_ffmpeg_command(
+            'rtsp://demo/h265/stream',
+            codec_hint='auto',
+            ffmpeg_bin='ffmpeg',
+        )
+        self.assertNotIn('-c:v', command)
+
+    def test_build_mpp_ffmpeg_command_keeps_explicit_h265_decoder(self):
+        command = yolov8n_inference.decode_impl.build_mpp_ffmpeg_command(
+            'rtsp://demo/h265/stream',
+            codec_hint='h265',
+            ffmpeg_bin='ffmpeg',
+        )
+        decoder_index = command.index('-c:v') + 1
+        self.assertEqual('hevc_rkmpp', command[decoder_index])
+
+    def test_resolve_decode_options_defaults_stream_codec_to_auto(self):
+        context = FakeContext(
+            root_dir=pathlib.Path('.').resolve(),
+            config={'stream_decode_backend': 'mpp'},
+            model_path=pathlib.Path('scripts/rk3588/plugins/yolov8n/model/yolov8.placeholder.rknn').resolve(),
+        )
+        options = yolov8n_inference.decode_impl.resolve_decode_options(
+            {'frame': {'source': 'rtsp://admin:pwd@127.0.0.1:554/h265/ch1/main/av_stream'}},
+            context,
+        )
+        self.assertEqual('auto', options['codec'])
 
     def test_read_stream_frame_mpp_retries_rtsp_setup_500_then_succeeds(self):
         sample = yolov8n_inference.np.zeros((6, 10, 3), dtype=yolov8n_inference.np.uint8)

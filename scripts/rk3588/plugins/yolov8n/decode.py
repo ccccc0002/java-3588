@@ -150,6 +150,7 @@ def load_frame_bgr(request_payload, package_context, runtime_state=None):
                 ffmpeg_bin=ffmpeg_bin,
                 retry_count=decode_options['retry_count'],
                 retry_backoff_ms=decode_options['retry_backoff_ms'],
+                timeout_sec=decode_options['timeout_sec'],
             )
             return image, build_decode_meta('video_file', str(resolved), backend, decode_options)
         return read_image_bgr(resolved), build_decode_meta('file_url', str(resolved), 'image', decode_options)
@@ -164,6 +165,7 @@ def load_frame_bgr(request_payload, package_context, runtime_state=None):
             ffmpeg_bin=ffmpeg_bin,
             retry_count=decode_options['retry_count'],
             retry_backoff_ms=decode_options['retry_backoff_ms'],
+            timeout_sec=decode_options['timeout_sec'],
         )
         return image, build_decode_meta('stream', source, backend, decode_options)
     resolved = resolve_source_path(package_context, source)
@@ -176,6 +178,7 @@ def load_frame_bgr(request_payload, package_context, runtime_state=None):
             ffmpeg_bin=ffmpeg_bin,
             retry_count=decode_options['retry_count'],
             retry_backoff_ms=decode_options['retry_backoff_ms'],
+            timeout_sec=decode_options['timeout_sec'],
         )
         return image, build_decode_meta('video_file', str(resolved), backend, decode_options)
     return read_image_bgr(resolved), build_decode_meta('filesystem', str(resolved), 'image', decode_options)
@@ -192,7 +195,10 @@ def build_decode_meta(source_kind, resolved_source, backend, decode_options):
         'decoder_ffmpeg_bin': decode_options['ffmpeg_bin'],
         'decoder_retry_count': decode_options['retry_count'],
         'decoder_retry_backoff_ms': decode_options['retry_backoff_ms'],
+        'decoder_timeout_sec': decode_options['timeout_sec'],
     }
+
+
 def resolve_decode_options(request_payload, package_context):
     config = package_context.config if hasattr(package_context, 'config') and isinstance(package_context.config, dict) else {}
     payload = request_payload if isinstance(request_payload, dict) else {}
@@ -219,7 +225,7 @@ def resolve_decode_options(request_payload, package_context):
             decode_hints.get('codec'),
             decode_block.get('codec'),
             config.get('stream_decode_codec'),
-            infer_stream_codec(source),
+            default_codec_hint_for_source(source),
             'auto',
         )
     )
@@ -249,6 +255,14 @@ def resolve_decode_options(request_payload, package_context):
             '200',
         )
     )
+    timeout_sec = resolve_decode_timeout_sec(
+        first_non_blank(
+            decode_hints.get('timeout_sec'),
+            decode_block.get('timeout_sec'),
+            config.get('stream_decode_timeout_sec'),
+            '20',
+        )
+    )
     return {
         'backend': backend,
         'hwaccel': hwaccel,
@@ -256,6 +270,7 @@ def resolve_decode_options(request_payload, package_context):
         'ffmpeg_bin': ffmpeg_bin,
         'retry_count': retry_count,
         'retry_backoff_ms': retry_backoff_ms,
+        'timeout_sec': timeout_sec,
     }
 
 def get_stream_manager(runtime_state):
@@ -299,6 +314,7 @@ def read_stream_frame(
     ffmpeg_bin='ffmpeg',
     retry_count=0,
     retry_backoff_ms=0,
+    timeout_sec=20.0,
 ):
     backend = str(preferred_backend or 'auto').strip().lower()
     ffmpeg_bin = resolve_ffmpeg_binary(ffmpeg_bin)
@@ -313,9 +329,10 @@ def read_stream_frame(
             ffmpeg_bin=ffmpeg_bin,
             retry_count=retry_count,
             retry_backoff_ms=retry_backoff_ms,
+            timeout_sec=timeout_sec,
         ), 'mpp'
     if backend == 'ffmpeg':
-        return read_stream_frame_ffmpeg(source, ffmpeg_bin=ffmpeg_bin), 'ffmpeg'
+        return read_stream_frame_ffmpeg(source, ffmpeg_bin=ffmpeg_bin, timeout_sec=timeout_sec), 'ffmpeg'
 
     last_error = None
     for name, fn in (
@@ -327,10 +344,11 @@ def read_stream_frame(
                 ffmpeg_bin=ffmpeg_bin,
                 retry_count=retry_count,
                 retry_backoff_ms=retry_backoff_ms,
+                timeout_sec=timeout_sec,
             ),
         ),
         ('opencv', lambda current_source: read_stream_frame_opencv(current_source, stream_manager=stream_manager)),
-        ('ffmpeg', lambda current_source: read_stream_frame_ffmpeg(current_source, ffmpeg_bin=ffmpeg_bin)),
+        ('ffmpeg', lambda current_source: read_stream_frame_ffmpeg(current_source, ffmpeg_bin=ffmpeg_bin, timeout_sec=timeout_sec)),
     ):
         if name == 'mpp' and not can_use_mpp_decode(ffmpeg_bin=ffmpeg_bin):
             last_error = RuntimeError('MPP+RGA decode backend is unavailable')
@@ -359,17 +377,19 @@ def read_stream_frame_opencv(source, stream_manager=None):
 
 
 def build_mpp_ffmpeg_command(source, codec_hint='auto', ffmpeg_bin='ffmpeg'):
+    decoder = resolve_mpp_decoder(codec_hint, source)
     command = [
         ffmpeg_bin,
         '-loglevel', 'error',
     ]
     if str(source).startswith('rtsp://'):
         command.extend(['-rtsp_transport', 'tcp'])
+    if decoder:
+        command.extend(['-c:v', decoder])
     command.extend([
         '-hwaccel', 'rkmpp',
         '-hwaccel_output_format', 'drm_prime',
         '-afbc', 'rga',
-        '-c:v', resolve_mpp_decoder(codec_hint, source),
         '-i', source,
         '-vf', 'scale_rkrga=w=iw:h=ih:format=nv12,hwdownload,format=nv12',
         '-frames:v', '1',
@@ -379,15 +399,21 @@ def build_mpp_ffmpeg_command(source, codec_hint='auto', ffmpeg_bin='ffmpeg'):
     ])
     return command
 
-
-def read_stream_frame_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0):
+def read_stream_frame_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_count=0, retry_backoff_ms=0, timeout_sec=20.0):
     command = build_mpp_ffmpeg_command(source, codec_hint=codec_hint, ffmpeg_bin=ffmpeg_bin)
     retries = max(0, int(retry_count or 0))
     retry_delay_sec = max(0.0, float(retry_backoff_ms or 0.0) / 1000.0)
+    timeout_value = resolve_decode_timeout_sec(timeout_sec)
     last_error = None
 
     for attempt in range(retries + 1):
-        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20, check=False)
+        completed = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout_value,
+            check=False,
+        )
         stderr = completed.stderr.decode('utf-8', errors='replace').strip()
 
         if completed.returncode == 0 and completed.stdout:
@@ -409,12 +435,18 @@ def read_stream_frame_mpp(source, codec_hint='auto', ffmpeg_bin='ffmpeg', retry_
     raise RuntimeError(f'mpp ffmpeg failed for stream source: {source}')
 
 
-def read_stream_frame_ffmpeg(source, ffmpeg_bin='ffmpeg'):
+def read_stream_frame_ffmpeg(source, ffmpeg_bin='ffmpeg', timeout_sec=20.0):
     command = [ffmpeg_bin, '-loglevel', 'error']
     if str(source).startswith('rtsp://'):
         command.extend(['-rtsp_transport', 'tcp'])
     command.extend(['-i', source, '-frames:v', '1', '-f', 'image2pipe', '-vcodec', 'mjpeg', '-'])
-    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20, check=False)
+    completed = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=resolve_decode_timeout_sec(timeout_sec),
+        check=False,
+    )
     if completed.returncode != 0 or not completed.stdout:
         stderr = completed.stderr.decode('utf-8', errors='replace').strip()
         raise RuntimeError(f'ffmpeg failed for stream source: {source}; code={completed.returncode}; stderr={stderr}')
@@ -514,6 +546,14 @@ def resolve_decode_retry_backoff_ms(value, default=200):
         parsed = int(default)
     return max(0, min(parsed, 5000))
 
+
+def resolve_decode_timeout_sec(value, default=20.0):
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        parsed = float(default)
+    return max(2.0, min(parsed, 120.0))
+
 def normalize_codec_hint(value):
     text = str(value or '').strip().lower()
     if text in {'h265', 'hevc', '265'}:
@@ -530,6 +570,12 @@ def infer_stream_codec(source):
     if 'h264' in text or 'avc' in text:
         return 'h264'
     return 'auto'
+
+
+def default_codec_hint_for_source(source):
+    if is_stream_source(source):
+        return 'auto'
+    return infer_stream_codec(source)
 
 
 def should_retry_mpp_failure(source, returncode, stderr, undecodable_frame=False):
@@ -557,7 +603,9 @@ def should_retry_mpp_failure(source, returncode, stderr, undecodable_frame=False
 def resolve_mpp_decoder(codec_hint, source=''):
     codec = normalize_codec_hint(codec_hint)
     if codec == 'auto':
-        codec = infer_stream_codec(source)
+        codec = normalize_codec_hint(default_codec_hint_for_source(source))
     if codec == 'h265':
         return 'hevc_rkmpp'
-    return 'h264_rkmpp'
+    if codec == 'h264':
+        return 'h264_rkmpp'
+    return ''

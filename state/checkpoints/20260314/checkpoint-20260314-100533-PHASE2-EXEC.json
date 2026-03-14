@@ -1,0 +1,19 @@
+{
+    "timestamp":  "2026-03-14T10:05:33+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase11",
+    "event":  "phase_started",
+    "summary":  "Fixed H.265 decode false forcing bug in yolov8n decode plugin (RTSP source now defaults codec=auto, no forced -c:v, configurable decode timeout). RK3588 validation passed: test_yolov8n_plugin + H.265 quality probe (3/3) + Phase12 H.265 closeout real run passed.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M scripts/rk3588/plugins/yolov8n/decode.py",
+                       " M scripts/testing/test_yolov8n_plugin.py",
+                       " M state/progress/phase2-status.json",
+                       "?? runtime/"
+                   ]
+}

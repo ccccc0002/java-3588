@@ -1479,3 +1479,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 09:53:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-095333-PHASE2-EXEC.json |
 | 2026-03-14 09:53:34 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 09:53:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Added Phase12 H.265 closeout automation and reproduced RK3588 H.265 infer timeout regression (I5002) with H.264 control pass. |
+| 2026-03-14 10:05:33 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-100533-PHASE2-EXEC.json |
+| 2026-03-14 10:05:33 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | Fixed H.265 decode false forcing bug in yolov8n decode plugin (RTSP source now defaults codec=auto, no forced -c:v, configurable decode timeout). RK3588 validation passed: test_yolov8n_plugin + H.265 quality probe (3/3) + Phase12 H.265 closeout real run passed. |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-100542-PHASE2-EXEC.json |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-100543-PHASE2-EXEC.json |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |

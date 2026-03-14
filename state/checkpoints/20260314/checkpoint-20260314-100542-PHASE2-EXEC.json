@@ -1,0 +1,22 @@
+{
+    "timestamp":  "2026-03-14T10:05:43+08:00",
+    "task_id":  "PHASE2-EXEC",
+    "stage":  "Phase11",
+    "event":  "phase_checkpoint",
+    "summary":  "H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline.",
+    "root":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "pwd":  "D:\\yihecode-server-master\\yihecode-server-master",
+    "machine":  "ZQL-CH",
+    "user":  "陈豪",
+    "is_git_repo":  true,
+    "git_branch":  "main",
+    "git_status":  [
+                       " M process/PROCESS-LOG.md",
+                       " M process/latest-status.json",
+                       " M scripts/rk3588/plugins/yolov8n/decode.py",
+                       " M scripts/testing/test_yolov8n_plugin.py",
+                       " M state/progress/phase2-status.json",
+                       "?? runtime/",
+                       "?? state/checkpoints/20260314/checkpoint-20260314-100533-PHASE2-EXEC.json"
+                   ]
+}
