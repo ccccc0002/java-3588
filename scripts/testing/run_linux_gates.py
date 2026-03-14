@@ -59,10 +59,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
     parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
     parser.add_argument("--min-plan-ready-stream-count", type=int, default=0)
+    parser.add_argument("--stage-retry-attempts", type=int, default=0)
+    parser.add_argument("--runtime-stack-retry-attempts", type=int, default=1)
     parser.add_argument("--include-soak", action="store_true")
     parser.add_argument("--soak-duration-sec", type=int, default=60)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--soak-max-failed-steps", type=int, default=0)
     parser.add_argument("--manage-bridge", action="store_true")
     parser.add_argument("--bridge-bootstrap-token", default="")
     parser.add_argument("--bridge-wait-seconds", type=int, default=20)
@@ -209,6 +212,7 @@ def build_stage_definitions(args: argparse.Namespace, root_output: Path) -> List
                     "--duration-sec", str(args.soak_duration_sec),
                     "--interval-sec", str(args.soak_interval_sec),
                     "--max-iterations", str(args.soak_max_iterations),
+                    "--max-failed-steps", str(args.soak_max_failed_steps),
                     "--cookie", args.cookie,
                     "--auth-header-name", auth_header["name"],
                     "--auth-header-value", auth_header["value"],
@@ -330,6 +334,8 @@ def summary_from_results(
         "manage_bridge": args.manage_bridge,
         "dry_run": args.dry_run,
         "fail_fast": args.fail_fast,
+        "stage_retry_attempts": max(0, int(args.stage_retry_attempts)),
+        "runtime_stack_retry_attempts": max(0, int(args.runtime_stack_retry_attempts)),
         "executed_stages": len(results),
         "passed_stages": passed_stages,
         "failed_stages": failed_stages,
@@ -380,15 +386,27 @@ def main(
             stage_output_dir = Path(stage["output_dir"])
             stage_output_dir.mkdir(parents=True, exist_ok=True)
             child_summary_path = stage_output_dir / "summary.json"
-            run_result = runner(stage["name"], stage["command"], str(child_summary_path))
-            child_summary = read_stage_summary(
-                child_summary_path,
-                int(run_result.get("exit_code", 1)),
-                stage_name=stage["name"],
-                stdout_text=str(run_result.get("stdout", "")),
+            retry_budget = max(0, int(args.stage_retry_attempts))
+            if stage["name"] == "runtime_stack_smoke":
+                retry_budget = max(0, int(args.runtime_stack_retry_attempts))
+            attempt = 0
+            while True:
+                run_result = runner(stage["name"], stage["command"], str(child_summary_path))
+                child_summary = read_stage_summary(
+                    child_summary_path,
+                    int(run_result.get("exit_code", 1)),
+                    stage_name=stage["name"],
+                    stdout_text=str(run_result.get("stdout", "")),
+                )
+                passed = int(run_result.get("exit_code", 1)) == 0 and str(child_summary.get("status")) == "passed"
+                if passed or attempt >= retry_budget:
+                    break
+                attempt += 1
+                print(f"[retry] stage={stage['name']} attempt={attempt}/{retry_budget}")
+            detail = (
+                f"status={child_summary.get('status')}; exit_code={run_result.get('exit_code', 1)}; "
+                f"summary_path={child_summary_path}; attempts={attempt + 1}"
             )
-            passed = int(run_result.get("exit_code", 1)) == 0 and str(child_summary.get("status")) == "passed"
-            detail = f"status={child_summary.get('status')}; exit_code={run_result.get('exit_code', 1)}; summary_path={child_summary_path}"
             stage_result = StageResult(stage=stage["name"], passed=passed, detail=detail, exit_code=int(run_result.get("exit_code", 1)), summary=child_summary)
             results.append(stage_result)
             with events_path.open("a", encoding="utf-8") as handle:

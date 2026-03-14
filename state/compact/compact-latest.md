@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 10:05:43
+- generated_at: 2026-03-14 10:31:24
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T10:31:24+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T10:31:24+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T10:05:43+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T10:05:43+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T10:05:33+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-14T09:53:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T09:53:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-14T09:31:58+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-14T09:31:58+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
-- 2026-03-14T09:31:41+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 
 ## Recent Process Log Tail
 
-| 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
-| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
-| 2026-03-14 09:19:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
-| 2026-03-14 09:26:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-092623-PHASE2-EXEC.json |
-| 2026-03-14 09:26:24 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 09:26:24 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 dry-run acceptance defaults fixed: phase10/phase11 runners now default to 18082, eliminating false failures from 8080 fallback; RK3588 phase2-acceptance-r5 converged 2/2. |
-| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
 | 2026-03-14 09:26:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +53,11 @@
 | 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-100542-PHASE2-EXEC.json |
 | 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |
 | 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-100543-PHASE2-EXEC.json |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |
+| 2026-03-14 10:31:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-103123-PHASE2-EXEC.json |
+| 2026-03-14 10:31:23 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:31:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | H.265 closeout stability hardening landed: runtime-stack retry + soak tolerated-failure gates added; RK3588 validation passed (33 unittest cases) and tmux session phase2-h265-closeout-r5 converged 3/3 passed. |
+| 2026-03-14 10:31:24 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-103123-PHASE2-EXEC.json |
+| 2026-03-14 10:31:24 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | H.265 closeout stability hardening landed: runtime-stack retry + soak tolerated-failure gates added; RK3588 validation passed (33 unittest cases) and tmux session phase2-h265-closeout-r5 converged 3/3 passed. |
+| 2026-03-14 10:31:24 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-103124-PHASE2-EXEC.json |

@@ -1,0 +1,6 @@
+[
+  {
+    "name": "phase4-rerun",
+    "command": "mvn -Dtest=CameraControllerTest,OnvifDiscoveryServiceTest test"
+  }
+]

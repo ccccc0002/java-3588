@@ -59,6 +59,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=120)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--soak-max-failed-steps", type=int, default=0)
     parser.add_argument("--max-memory-used-delta-mb", type=float, default=0.0)
     parser.add_argument("--max-loadavg-1m", type=float, default=0.0)
     parser.add_argument("--verify-alarm-preview", action="store_true")
@@ -213,6 +214,8 @@ def build_phase10_argv(args: argparse.Namespace, phase10_output_dir: str) -> Lis
         str(int(args.soak_interval_sec)),
         "--soak-max-iterations",
         str(int(args.soak_max_iterations)),
+        "--soak-max-failed-steps",
+        str(int(args.soak_max_failed_steps)),
     ]
     if args.cookie:
         argv.extend(["--cookie", args.cookie])

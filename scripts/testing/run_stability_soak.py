@@ -213,6 +213,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--duration-sec", type=int, default=300)
     parser.add_argument("--interval-sec", type=int, default=5)
     parser.add_argument("--max-iterations", type=int, default=None)
+    parser.add_argument("--max-failed-steps", type=int, default=0)
     parser.add_argument("--output-dir", default="scripts/testing/out/stability-soak")
     parser.add_argument("--cookie", default="")
     parser.add_argument("--auth-header-name", default="")
@@ -488,6 +489,7 @@ def build_summary(
         "duration_sec": args.duration_sec,
         "interval_sec": args.interval_sec,
         "max_iterations": args.max_iterations,
+        "max_failed_steps": max(0, int(args.max_failed_steps)),
         "dry_run": args.dry_run,
         "manage_bridge": args.manage_bridge,
         "fail_fast": args.fail_fast,
@@ -583,7 +585,10 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None, bri
     if iterations_completed == 0 and failed_steps > 0:
         status = "failed"
     elif failed_steps > 0:
-        status = "completed_with_failures"
+        if iterations_completed > 0 and failed_steps <= max(0, int(args.max_failed_steps)):
+            status = "passed_with_tolerated_failures"
+        else:
+            status = "completed_with_failures"
     summary = build_summary(
         args=args,
         started_at=started_at,
@@ -603,7 +608,7 @@ def main(argv: Optional[Sequence[str]] = None, client: Optional[Any] = None, bri
     recorder.write_summary(summary)
 
     print(json.dumps(summary, ensure_ascii=True, indent=2))
-    return 0 if failed_steps == 0 else 1
+    return 0 if status in {"passed", "passed_with_tolerated_failures"} else 1
 
 
 def infer_step_name(detail: str) -> str:

@@ -42,6 +42,8 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "6",
                 "--soak-max-iterations",
                 "2",
+                "--soak-max-failed-steps",
+                "1",
                 "--max-memory-used-delta-mb",
                 "128",
                 "--max-loadavg-1m",
@@ -70,6 +72,7 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertEqual(args.soak_duration_sec, 120)
         self.assertEqual(args.soak_interval_sec, 6)
         self.assertEqual(args.soak_max_iterations, 2)
+        self.assertEqual(args.soak_max_failed_steps, 1)
         self.assertEqual(args.max_memory_used_delta_mb, 128.0)
         self.assertEqual(args.max_loadavg_1m, 3.5)
         self.assertTrue(args.verify_alarm_preview)

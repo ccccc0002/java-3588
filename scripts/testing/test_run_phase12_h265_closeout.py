@@ -28,6 +28,7 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
         self.assertEqual(args.expect_bridge_decode_mode, "mpp-rga")
         self.assertEqual(args.soak_duration_sec, 900)
         self.assertEqual(args.soak_max_iterations, 0)
+        self.assertEqual(args.soak_max_failed_steps, 1)
         self.assertEqual(args.quality_iterations, 30)
         self.assertFalse(args.skip_quality_diagnostics)
 
@@ -38,6 +39,8 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
                 "rtsp://demo/h265/stream",
                 "--soak-max-iterations",
                 "0",
+                "--soak-max-failed-steps",
+                "2",
                 "--quality-iterations",
                 "18",
                 "--quality-interval-ms",
@@ -59,6 +62,8 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
         self.assertIn("18", argv)
         self.assertIn("--soak-max-iterations", argv)
         self.assertIn("1", argv)
+        self.assertIn("--soak-max-failed-steps", argv)
+        self.assertIn("2", argv)
         self.assertIn("--max-memory-used-delta-mb", argv)
         self.assertIn("256.0", argv)
         self.assertIn("--max-loadavg-1m", argv)

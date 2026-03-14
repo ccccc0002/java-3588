@@ -39,6 +39,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--max-plan-suggested-min-dispatch-ms", type=int, default=0)
     parser.add_argument("--min-snapshot-ready-stream-count", type=int, default=0)
     parser.add_argument("--min-plan-ready-stream-count", type=int, default=0)
+    parser.add_argument("--runtime-stack-retry-attempts", type=int, default=1)
     parser.add_argument("--cookie", default="")
     parser.add_argument("--auth-header-name", default="")
     parser.add_argument("--auth-header-value", default="")
@@ -51,6 +52,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=60)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=1)
+    parser.add_argument("--soak-max-failed-steps", type=int, default=0)
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
@@ -80,6 +82,7 @@ def build_linux_gate_argv(args: argparse.Namespace) -> List[str]:
         "--max-plan-suggested-min-dispatch-ms", str(args.max_plan_suggested_min_dispatch_ms),
         "--min-snapshot-ready-stream-count", str(args.min_snapshot_ready_stream_count),
         "--min-plan-ready-stream-count", str(args.min_plan_ready_stream_count),
+        "--runtime-stack-retry-attempts", str(args.runtime_stack_retry_attempts),
     ]
     if args.cookie:
         argv.extend(["--cookie", args.cookie])
@@ -98,6 +101,7 @@ def build_linux_gate_argv(args: argparse.Namespace) -> List[str]:
         argv.extend(["--soak-duration-sec", str(args.soak_duration_sec)])
         argv.extend(["--soak-interval-sec", str(args.soak_interval_sec)])
         argv.extend(["--soak-max-iterations", str(args.soak_max_iterations)])
+        argv.extend(["--soak-max-failed-steps", str(args.soak_max_failed_steps)])
     if args.fail_fast:
         argv.append("--fail-fast")
     if args.dry_run:

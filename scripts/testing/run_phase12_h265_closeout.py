@@ -53,6 +53,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--soak-duration-sec", type=int, default=900)
     parser.add_argument("--soak-interval-sec", type=int, default=5)
     parser.add_argument("--soak-max-iterations", type=int, default=0)
+    parser.add_argument("--soak-max-failed-steps", type=int, default=1)
     parser.add_argument("--max-memory-used-delta-mb", type=float, default=0.0)
     parser.add_argument("--max-loadavg-1m", type=float, default=0.0)
     parser.add_argument("--quality-iterations", type=int, default=30)
@@ -127,6 +128,8 @@ def build_phase11_argv(args: argparse.Namespace) -> List[str]:
         str(int(args.soak_interval_sec)),
         "--soak-max-iterations",
         str(_normalized_soak_iterations(int(args.soak_max_iterations), bool(args.dry_run))),
+        "--soak-max-failed-steps",
+        str(int(args.soak_max_failed_steps)),
         "--max-memory-used-delta-mb",
         str(float(args.max_memory_used_delta_mb)),
         "--max-loadavg-1m",

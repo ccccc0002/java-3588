@@ -47,10 +47,13 @@ class RunLinuxGatesTests(unittest.TestCase):
             '--max-plan-suggested-min-dispatch-ms', '5200',
             '--min-snapshot-ready-stream-count', '1',
             '--min-plan-ready-stream-count', '1',
+            '--stage-retry-attempts', '2',
+            '--runtime-stack-retry-attempts', '3',
             '--include-soak',
             '--soak-duration-sec', '60',
             '--soak-interval-sec', '5',
             '--soak-max-iterations', '2',
+            '--soak-max-failed-steps', '1',
             '--manage-bridge',
             '--bridge-bootstrap-token', 'edge-demo-bootstrap',
             '--bridge-wait-seconds', '15',
@@ -88,10 +91,13 @@ class RunLinuxGatesTests(unittest.TestCase):
         self.assertEqual(args.max_plan_suggested_min_dispatch_ms, 5200)
         self.assertEqual(args.min_snapshot_ready_stream_count, 1)
         self.assertEqual(args.min_plan_ready_stream_count, 1)
+        self.assertEqual(args.stage_retry_attempts, 2)
+        self.assertEqual(args.runtime_stack_retry_attempts, 3)
         self.assertTrue(args.include_soak)
         self.assertEqual(args.soak_duration_sec, 60)
         self.assertEqual(args.soak_interval_sec, 5)
         self.assertEqual(args.soak_max_iterations, 2)
+        self.assertEqual(args.soak_max_failed_steps, 1)
         self.assertTrue(args.manage_bridge)
         self.assertEqual(args.bridge_bootstrap_token, 'edge-demo-bootstrap')
         self.assertEqual(args.bridge_wait_seconds, 15)
@@ -303,6 +309,36 @@ class RunLinuxGatesTests(unittest.TestCase):
             self.assertTrue(summary['auth_header_present'])
             self.assertNotIn('cookie', summary)
             self.assertNotIn('auth_header_value', summary)
+
+    def test_runtime_stack_smoke_retries_once_and_passes(self):
+        attempts = {'runtime_stack_smoke': 0}
+
+        def fake_runner(stage_name, command, summary_path):
+            pathlib.Path(summary_path).parent.mkdir(parents=True, exist_ok=True)
+            if stage_name == 'runtime_stack_smoke':
+                attempts['runtime_stack_smoke'] += 1
+                if attempts['runtime_stack_smoke'] == 1:
+                    pathlib.Path(summary_path).write_text(json.dumps({'status': 'failed'}), encoding='utf-8')
+                    return {'exit_code': 1, 'stdout': '', 'stderr': 'first failure'}
+                pathlib.Path(summary_path).write_text(json.dumps({'status': 'passed'}), encoding='utf-8')
+                return {'exit_code': 0, 'stdout': '{"runtime_api":{"health":{"backend":"java"}}}', 'stderr': ''}
+            pathlib.Path(summary_path).write_text(json.dumps({'status': 'passed'}), encoding='utf-8')
+            return {'exit_code': 0, 'stdout': stage_name, 'stderr': ''}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            exit_code = run_linux_gates.main([
+                '--base-url', 'http://127.0.0.1:8080',
+                '--output-dir', temp_dir,
+                '--include-runtime-stack-smoke',
+                '--runtime-stack-retry-attempts', '1',
+                '--dry-run',
+            ], command_runner=fake_runner)
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(attempts['runtime_stack_smoke'], 2)
+            summary = json.loads((pathlib.Path(temp_dir) / 'summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(summary['status'], 'passed')
+            self.assertEqual(summary['failed_stages'], 0)
 
 
 if __name__ == '__main__':

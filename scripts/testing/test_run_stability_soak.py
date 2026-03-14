@@ -25,6 +25,7 @@ class SoakRunnerTests(unittest.TestCase):
             '--duration-sec', '30',
             '--interval-sec', '2',
             '--max-iterations', '3',
+            '--max-failed-steps', '2',
             '--output-dir', 'tmp/out',
             '--cookie', 'satoken=test-cookie',
             '--auth-header-name', 'access-token',
@@ -40,6 +41,7 @@ class SoakRunnerTests(unittest.TestCase):
         self.assertEqual(args.duration_sec, 30)
         self.assertEqual(args.interval_sec, 2)
         self.assertEqual(args.max_iterations, 3)
+        self.assertEqual(args.max_failed_steps, 2)
         self.assertEqual(args.output_dir, 'tmp/out')
         self.assertEqual(args.cookie, 'satoken=test-cookie')
         self.assertEqual(args.auth_header_name, 'access-token')
@@ -136,6 +138,64 @@ class SoakRunnerTests(unittest.TestCase):
             self.assertEqual(summary['status'], 'failed')
             self.assertEqual(summary['failed_steps'], 1)
             self.assertEqual(summary['iterations_completed'], 0)
+
+    def test_tolerates_failed_steps_within_limit(self):
+        class FlakyClient:
+            def __init__(self):
+                self.dispatch_calls = 0
+
+            def post_json(self, path, payload):
+                if path == '/api/inference/dispatch':
+                    self.dispatch_calls += 1
+                    if self.dispatch_calls == 1:
+                        raise RuntimeError('dispatch transient')
+                    return {
+                        'code': 0,
+                        'data': {
+                            'trace_id': payload.get('trace_id'),
+                            'backend_type': 'rk3588',
+                            'result': {'trace_id': payload.get('trace_id')},
+                            'report': {'trace_id': payload.get('trace_id'), 'status': 'accepted'},
+                            'idempotent': {'trace_id': payload.get('trace_id'), 'status': 'accepted'},
+                        },
+                        '_http_status': 200,
+                    }
+                if path == '/api/inference/dead-letter/replay/batch':
+                    return {
+                        'code': 1,
+                        'data': {'trace_id': 'replay-1', 'error_code': run_stability_soak.STRICT_RESUME_ERROR},
+                        '_http_status': 200,
+                    }
+                return {'code': 0, 'data': {'trace_id': 'post-trace'}, '_http_status': 200}
+
+            def post_form(self, path, payload):
+                if path == '/stream/start':
+                    return {
+                        'code': 0,
+                        'data': {'trace_id': 'stream-start', 'playUrl': 'http://example/live.flv'},
+                        '_http_status': 200,
+                    }
+                return {
+                    'code': 0,
+                    'data': {'trace_id': 'stream-stop'},
+                    '_http_status': 200,
+                }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            exit_code = run_stability_soak.main([
+                '--base-url', 'http://127.0.0.1:8080',
+                '--duration-sec', '5',
+                '--interval-sec', '0',
+                '--max-iterations', '2',
+                '--max-failed-steps', '1',
+                '--output-dir', temp_dir,
+            ], client=FlakyClient())
+
+            self.assertEqual(exit_code, 0)
+            summary = json.loads((pathlib.Path(temp_dir) / 'summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(summary['status'], 'passed_with_tolerated_failures')
+            self.assertEqual(summary['failed_steps'], 1)
+            self.assertEqual(summary['iterations_completed'], 1)
 
 
 if __name__ == '__main__':

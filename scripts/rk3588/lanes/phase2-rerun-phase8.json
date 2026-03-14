@@ -1,0 +1,6 @@
+[
+  {
+    "name": "phase8-rerun",
+    "command": "mvn -Dtest=AccountControllerTest,ModelControllerTest,AlgorithmControllerTest,AlgorithmPackageLifecycleControllerTest test"
+  }
+]
