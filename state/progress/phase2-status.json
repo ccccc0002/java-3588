@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T09:02:53+08:00",
-                                  "summary":  "HTTP push target module enhanced: auth_file and retry_count supported end-to-end (config/save/manual push/runtime auto push), push_targets page rewritten to readable Chinese UI, and RK3588 regressions passed including phase2-backlog-r9 7/7.",
+                                  "updated_at":  "2026-03-14T09:12:21+08:00",
+                                  "summary":  "Phase7 smoke coverage expanded: /report/push-targets added to web_ui_live_smoke targets and validated on RK3588 (34/34 pass).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ReportPushTargetServiceTest,ReportControllerTest,ReportApiControllerTest,PushControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r9 --tail-lines 10",
+                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "ade1ec8",
-                                                       "updated_at":  "2026-03-14T09:02:53+08:00"
+                                                       "github_sync_ref":  "c817468",
+                                                       "updated_at":  "2026-03-14T09:12:21+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1781,6 +1781,16 @@
                         "edge_test_command":  "mvn -Dtest=ReportPushTargetServiceTest,ReportControllerTest,ReportApiControllerTest,PushControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r9 --tail-lines 10",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "ade1ec8"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T09:12:21+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Phase7 smoke coverage expanded: /report/push-targets added to web_ui_live_smoke targets and validated on RK3588 (34/34 pass).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "c817468"
                     }
                 ]
 }
