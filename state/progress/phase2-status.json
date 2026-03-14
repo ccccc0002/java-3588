@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T09:12:21+08:00",
-                                  "summary":  "Phase7 smoke coverage expanded: /report/push-targets added to web_ui_live_smoke targets and validated on RK3588 (34/34 pass).",
+                                  "updated_at":  "2026-03-14T09:19:44+08:00",
+                                  "summary":  "java_app_ctl stop reliability improved: fallback port-based PID cleanup added to avoid stale 18082 process conflicts; local+RK3588 tests and restart smoke passed.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                                                       "edge_test_command":  "python -m unittest scripts/testing/test_java_app_ctl.py \u0026\u0026 python3 -m unittest scripts/testing/test_java_app_ctl.py (RK3588) \u0026\u0026 python3 scripts/rk3588/java_app_ctl.py restart --wait-seconds 25 --stop-wait-seconds 12 \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "c817468",
-                                                       "updated_at":  "2026-03-14T09:12:21+08:00"
+                                                       "github_sync_ref":  "0fd9240",
+                                                       "updated_at":  "2026-03-14T09:19:44+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1791,6 +1791,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_web_ui_live_smoke.py \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "c817468"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T09:19:44+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "java_app_ctl stop reliability improved: fallback port-based PID cleanup added to avoid stale 18082 process conflicts; local+RK3588 tests and restart smoke passed.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python -m unittest scripts/testing/test_java_app_ctl.py \u0026\u0026 python3 -m unittest scripts/testing/test_java_app_ctl.py (RK3588) \u0026\u0026 python3 scripts/rk3588/java_app_ctl.py restart --wait-seconds 25 --stop-wait-seconds 12 \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "0fd9240"
                     }
                 ]
 }

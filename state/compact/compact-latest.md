@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 09:12:32
+- generated_at: 2026-03-14 09:19:55
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T09:19:55+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
+- 2026-03-14T09:19:44+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 - 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
 - 2026-03-14T09:12:21+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-14T09:03:05+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 - 2026-03-14T09:03:05+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
 - 2026-03-14T09:02:53+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
-- 2026-03-14T08:49:20+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
-- 2026-03-14T08:49:20+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-14 08:09:35 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Alert push phone module hardened and synced: /push/channel alias + smsphone UI rewrite + menu route update validated on RK3588 (unit + web smoke). |
-| 2026-03-14 08:15:30 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-081530-PHASE2-EXEC.json |
-| 2026-03-14 08:15:31 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Alert push menu split delivered (HTTP Target + SMS Phone), /push/channel route live, and RK3588 regressions converged: phase2-nextwave-r8 4/4 + phase2-backlog-r9 7/7. |
-| 2026-03-14 08:19:27 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-081927-PHASE2-EXEC.json |
-| 2026-03-14 08:19:27 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Alert push submodule advanced: added dedicated /report/push-targets page (CRUD for HTTP targets), menu now routes HTTP Target directly, and SMS Phone remains /push/channel. |
-| 2026-03-14 08:25:11 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-082511-PHASE2-EXEC.json |
-| 2026-03-14 08:25:11 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Alert push now has three submenu entries: HTTP Target (/report/push-targets), SMS Phone (/push/channel), Phone Push (/push/voice). Phone push config page+controller+RBAC gate shipped. |
 | 2026-03-14 08:39:09 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-083909-PHASE2-EXEC.json |
 | 2026-03-14 08:39:09 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | SMS push upgraded to configurable mode: added /push/sms-config page+save/detail APIs, wired ReportApiController sms send to config tags (sms_api_url/sms_api_key/sms_tpl_id), and added sms config entry from SMS Phone page. |
 | 2026-03-14 08:39:22 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-083921-PHASE2-EXEC.json |
@@ -61,3 +54,10 @@
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-091231-PHASE2-EXEC.json |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: smoke includes /report/push-targets and commit c817468 pushed |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091232-PHASE2-EXEC.json |
+| 2026-03-14 09:12:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: smoke includes /report/push-targets and commit c817468 pushed |
+| 2026-03-14 09:19:44 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-091944-PHASE2-EXEC.json |
+| 2026-03-14 09:19:44 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | java_app_ctl stop reliability improved: fallback port-based PID cleanup added to avoid stale 18082 process conflicts; local+RK3588 tests and restart smoke passed. |
+| 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
+| 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |

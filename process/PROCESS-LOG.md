@@ -1441,3 +1441,10 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091232-PHASE2-EXEC.json |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: smoke includes /report/push-targets and commit c817468 pushed |
+| 2026-03-14 09:19:44 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-091944-PHASE2-EXEC.json |
+| 2026-03-14 09:19:44 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | java_app_ctl stop reliability improved: fallback port-based PID cleanup added to avoid stale 18082 process conflicts; local+RK3588 tests and restart smoke passed. |
+| 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
+| 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
