@@ -176,4 +176,41 @@ class ReportApiControllerTest {
         verify(reportPushService, times(1))
                 .request(eq("http://localhost:9100/voice"), any(), eq(false), eq("voice.jpg"), eq("voice-token"));
     }
+
+    @Test
+    void report_shouldDispatchHttpPushWithRetryAndAuthFileWhenConfigured() {
+        Camera camera = new Camera();
+        camera.setId(51L);
+        camera.setName("cam-51");
+        when(cameraService.getById(51L)).thenReturn(camera);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(61L);
+        algorithm.setName("algo-61");
+        when(algorithmService.getById(61L)).thenReturn(algorithm);
+
+        when(reportPeriodService.listData(51L, 61L)).thenReturn(new ArrayList<>());
+        when(reportService.save(any(Report.class))).thenAnswer(invocation -> {
+            Report report = invocation.getArgument(0);
+            report.setId(501L);
+            return true;
+        });
+        when(configService.getByValTag("webUrl")).thenReturn("http://127.0.0.1:8080");
+
+        Map<String, Object> retryTarget = new HashMap<>();
+        retryTarget.put("url", "http://localhost:9051/push");
+        retryTarget.put("include_image", false);
+        retryTarget.put("bearer_token", "");
+        retryTarget.put("auth_file", "/opt/auth/push.token");
+        retryTarget.put("retry_count", 3);
+        when(reportPushTargetService.listEnabledTargets()).thenReturn(List.of(retryTarget));
+
+        JsonResult result = reportApiController.report(51L, 61L, "retry.jpg", "[]", null);
+
+        assertEquals(0, result.getCode());
+        verify(reportPushService, times(1))
+                .request(eq("http://localhost:9051/push"), any(), eq(false), eq("retry.jpg"), eq(null), eq("/opt/auth/push.token"), eq(3));
+        verify(reportPushService, never())
+                .request(eq("http://localhost:9051/push"), any(), anyBoolean(), eq("retry.jpg"), anyString());
+    }
 }

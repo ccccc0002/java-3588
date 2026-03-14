@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>HTTP推送目标管理</title>
+    <title>HTTP 推送目标管理</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
 </head>
 <body class="pear-container">
@@ -22,10 +22,12 @@
                 </div>
                 <table class="layui-table" lay-size="sm">
                     <colgroup>
-                        <col width="160">
+                        <col width="140">
                         <col>
                         <col width="90">
-                        <col width="120">
+                        <col width="110">
+                        <col width="90">
+                        <col width="160">
                         <col width="180">
                     </colgroup>
                     <thead>
@@ -33,13 +35,15 @@
                         <th>名称</th>
                         <th>URL</th>
                         <th>启用</th>
-                        <th>携带图片</th>
+                        <th>附带图片</th>
+                        <th>重试</th>
+                        <th>鉴权文件</th>
                         <th>操作</th>
                     </tr>
                     </thead>
                     <tbody id="pushTargetsBody">
                     <tr>
-                        <td colspan="5" style="text-align: center; color: #999;">加载中...</td>
+                        <td colspan="7" style="text-align: center; color: #999;">加载中...</td>
                     </tr>
                     </tbody>
                 </table>
@@ -78,6 +82,17 @@
             return value === 'true' || value === '1' || value === 1 || value === 'yes';
         }
 
+        function normalizeRetryCount(value) {
+            let parsed = parseInt(value, 10);
+            if (isNaN(parsed) || parsed <= 0) {
+                return 1;
+            }
+            if (parsed > 10) {
+                return 10;
+            }
+            return parsed;
+        }
+
         function applyPermissionState() {
             if (canManagePushTargets) {
                 $('#addPushTargetBtn').removeClass('layui-btn-disabled').prop('disabled', false);
@@ -91,12 +106,14 @@
         function renderRows() {
             let body = $('#pushTargetsBody');
             if (!currentTargets || currentTargets.length === 0) {
-                body.html('<tr><td colspan="5" style="text-align:center; color:#999;">暂无推送目标</td></tr>');
+                body.html('<tr><td colspan="7" style="text-align:center; color:#999;">暂无推送目标</td></tr>');
                 return;
             }
             let rows = currentTargets.map(function(item) {
                 let enabledText = normalizeBool(item.enabled, true) ? '是' : '否';
                 let includeImageText = normalizeBool(item.include_image, false) ? '是' : '否';
+                let retryCount = normalizeRetryCount(item.retry_count);
+                let authFile = item.auth_file || '-';
                 let actions = '-';
                 if (canManagePushTargets) {
                     actions = ''
@@ -109,6 +126,8 @@
                     + '<td><code>' + escapeHtml(item.url || '') + '</code></td>'
                     + '<td>' + enabledText + '</td>'
                     + '<td>' + includeImageText + '</td>'
+                    + '<td>' + retryCount + '</td>'
+                    + '<td><code>' + escapeHtml(authFile) + '</code></td>'
                     + '<td>' + actions + '</td>'
                     + '</tr>';
             }).join('');
@@ -133,7 +152,9 @@
                 url: '',
                 bearer_token: '',
                 enabled: true,
-                include_image: false
+                include_image: false,
+                auth_file: '',
+                retry_count: 1
             }, target || {});
 
             let content = ''
@@ -142,7 +163,7 @@
                 + '    <div class="layui-form-item">'
                 + '      <label class="layui-form-label">名称</label>'
                 + '      <div class="layui-input-block">'
-                + '        <input type="text" id="push-target-name" class="layui-input" placeholder="例如：安全平台A">'
+                + '        <input type="text" id="push-target-name" class="layui-input" placeholder="例如：安防平台A">'
                 + '      </div>'
                 + '    </div>'
                 + '    <div class="layui-form-item">'
@@ -154,13 +175,25 @@
                 + '    <div class="layui-form-item">'
                 + '      <label class="layui-form-label">Bearer</label>'
                 + '      <div class="layui-input-block">'
-                + '        <input type="text" id="push-target-bearer" class="layui-input" placeholder="可选">'
+                + '        <input type="text" id="push-target-bearer" class="layui-input" placeholder="可选：直接填写 token">'
+                + '      </div>'
+                + '    </div>'
+                + '    <div class="layui-form-item">'
+                + '      <label class="layui-form-label">鉴权文件</label>'
+                + '      <div class="layui-input-block">'
+                + '        <input type="text" id="push-target-auth-file" class="layui-input" placeholder="可选：token 文件绝对路径">'
+                + '      </div>'
+                + '    </div>'
+                + '    <div class="layui-form-item">'
+                + '      <label class="layui-form-label">重试次数</label>'
+                + '      <div class="layui-input-block">'
+                + '        <input type="number" id="push-target-retry-count" class="layui-input" min="1" max="10" step="1" value="1">'
                 + '      </div>'
                 + '    </div>'
                 + '    <div class="layui-form-item">'
                 + '      <div class="layui-input-block">'
                 + '        <input type="checkbox" id="push-target-enabled" title="启用">'
-                + '        <input type="checkbox" id="push-target-include-image" title="携带图片Base64">'
+                + '        <input type="checkbox" id="push-target-include-image" title="附带图片 Base64">'
                 + '      </div>'
                 + '    </div>'
                 + '  </div>'
@@ -169,7 +202,7 @@
             layer.open({
                 type: 1,
                 title: current.id ? '编辑推送目标' : '新增推送目标',
-                area: ['560px', '360px'],
+                area: ['620px', '520px'],
                 content: content,
                 btn: ['保存', '取消'],
                 success: function(layero) {
@@ -177,6 +210,8 @@
                     root.find('#push-target-name').val(current.name || '');
                     root.find('#push-target-url').val(current.url || '');
                     root.find('#push-target-bearer').val(current.bearer_token || '');
+                    root.find('#push-target-auth-file').val(current.auth_file || '');
+                    root.find('#push-target-retry-count').val(normalizeRetryCount(current.retry_count));
                     root.find('#push-target-enabled').prop('checked', normalizeBool(current.enabled, true));
                     root.find('#push-target-include-image').prop('checked', normalizeBool(current.include_image, false));
                     form.render('checkbox');
@@ -188,11 +223,13 @@
                         name: $.trim(root.find('#push-target-name').val() || ''),
                         url: $.trim(root.find('#push-target-url').val() || ''),
                         bearerToken: $.trim(root.find('#push-target-bearer').val() || ''),
+                        authFile: $.trim(root.find('#push-target-auth-file').val() || ''),
+                        retryCount: normalizeRetryCount(root.find('#push-target-retry-count').val()),
                         enabled: root.find('#push-target-enabled').prop('checked'),
                         includeImage: root.find('#push-target-include-image').prop('checked')
                     };
                     if (!payload.url) {
-                        popup.failure('推送URL不能为空');
+                        popup.failure('推送 URL 不能为空');
                         return;
                     }
                     let loading = layer.load(2);

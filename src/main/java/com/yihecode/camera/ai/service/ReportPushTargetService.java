@@ -44,7 +44,9 @@ public class ReportPushTargetService {
                 legacyUrl,
                 true,
                 "",
-                defaultIncludeImage
+                defaultIncludeImage,
+                "",
+                1
         ));
         return fallback;
     }
@@ -66,11 +68,24 @@ public class ReportPushTargetService {
                                                 String bearerToken,
                                                 Boolean enabled,
                                                 Boolean includeImage) {
+        return saveTarget(id, name, url, bearerToken, enabled, includeImage, null, null);
+    }
+
+    public List<Map<String, Object>> saveTarget(String id,
+                                                String name,
+                                                String url,
+                                                String bearerToken,
+                                                Boolean enabled,
+                                                Boolean includeImage,
+                                                String authFile,
+                                                Integer retryCount) {
         String normalizedUrl = trim(url);
         if (StrUtil.isBlank(normalizedUrl)) {
             throw new IllegalArgumentException("target url is required");
         }
         List<Map<String, Object>> all = listAllTargets();
+        String normalizedAuthFile = trim(authFile);
+        int normalizedRetryCount = toPositiveInt(retryCount, 1);
 
         String targetId = trim(id);
         if (StrUtil.isBlank(targetId)) {
@@ -91,6 +106,12 @@ public class ReportPushTargetService {
             if (includeImage != null) {
                 target.put("include_image", includeImage);
             }
+            if (authFile != null) {
+                target.put("auth_file", normalizedAuthFile == null ? "" : normalizedAuthFile);
+            }
+            if (retryCount != null) {
+                target.put("retry_count", normalizedRetryCount);
+            }
             updated = true;
             break;
         }
@@ -101,7 +122,9 @@ public class ReportPushTargetService {
                     normalizedUrl,
                     enabled == null || enabled,
                     trim(bearerToken),
-                    includeImage != null && includeImage
+                    includeImage != null && includeImage,
+                    normalizedAuthFile,
+                    normalizedRetryCount
             ));
         }
 
@@ -179,7 +202,9 @@ public class ReportPushTargetService {
             boolean enabled = toBoolean(item.get("enabled"), true);
             String bearerToken = trim(item.get("bearer_token"));
             boolean includeImage = toBoolean(item.get("include_image"), defaultIncludeImage);
-            data.add(buildTarget(id, name, url, enabled, bearerToken, includeImage));
+            String authFile = trim(item.get("auth_file"));
+            int retryCount = toPositiveInt(item.get("retry_count"), 1);
+            data.add(buildTarget(id, name, url, enabled, bearerToken, includeImage, authFile, retryCount));
         }
         return data;
     }
@@ -189,7 +214,9 @@ public class ReportPushTargetService {
                                             String url,
                                             boolean enabled,
                                             String bearerToken,
-                                            boolean includeImage) {
+                                            boolean includeImage,
+                                            String authFile,
+                                            int retryCount) {
         Map<String, Object> target = new LinkedHashMap<>();
         target.put("id", id);
         target.put("name", name);
@@ -197,6 +224,8 @@ public class ReportPushTargetService {
         target.put("enabled", enabled);
         target.put("bearer_token", StrUtil.blankToDefault(bearerToken, ""));
         target.put("include_image", includeImage);
+        target.put("auth_file", StrUtil.blankToDefault(authFile, ""));
+        target.put("retry_count", retryCount <= 0 ? 1 : retryCount);
         return target;
     }
 
@@ -220,5 +249,17 @@ public class ReportPushTargetService {
             return defaultValue;
         }
         return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
+
+    private int toPositiveInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(String.valueOf(value).trim());
+            return parsed <= 0 ? defaultValue : parsed;
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 }

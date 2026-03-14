@@ -18,7 +18,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,11 +40,57 @@ public class ReportPushService {
         requestSync(url, params, toBase64, fileName, bearerToken);
     }
 
+    @Async
+    public void request(String url,
+                        JSONObject params,
+                        boolean toBase64,
+                        String fileName,
+                        String bearerToken,
+                        String authFilePath,
+                        Integer retryCount) {
+        requestSyncWithRetry(url, params, toBase64, fileName, bearerToken, authFilePath, retryCount);
+    }
+
     public Map<String, Object> requestSync(String url,
                                            JSONObject params,
                                            boolean toBase64,
                                            String fileName,
                                            String bearerToken) {
+        return requestSyncWithRetry(url, params, toBase64, fileName, bearerToken, null, 1);
+    }
+
+    public Map<String, Object> requestSyncWithRetry(String url,
+                                                    JSONObject params,
+                                                    boolean toBase64,
+                                                    String fileName,
+                                                    String bearerToken,
+                                                    String authFilePath,
+                                                    Integer retryCount) {
+        int attempts = toPositiveInt(retryCount, 1);
+        String resolvedToken = resolveBearerToken(bearerToken, authFilePath);
+        Map<String, Object> lastResult = new HashMap<>();
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            lastResult = requestSyncInternal(url, params, toBase64, fileName, resolvedToken);
+            boolean success = toBoolean(lastResult.get("success"));
+            if (success) {
+                if (attempt > 1) {
+                    lastResult.put("retry_attempt", attempt);
+                }
+                return lastResult;
+            }
+            if (attempt < attempts) {
+                sleepBackoff(attempt);
+            }
+        }
+        lastResult.put("retry_attempt", attempts);
+        return lastResult;
+    }
+
+    private Map<String, Object> requestSyncInternal(String url,
+                                                    JSONObject params,
+                                                    boolean toBase64,
+                                                    String fileName,
+                                                    String bearerToken) {
         Map<String, Object> result = new HashMap<>();
         result.put("url", url);
         result.put("success", false);
@@ -131,5 +179,72 @@ public class ReportPushService {
         }
 
         return result;
+    }
+
+    private String resolveBearerToken(String bearerToken, String authFilePath) {
+        String inlineToken = trimToNull(bearerToken);
+        if (inlineToken != null) {
+            return inlineToken;
+        }
+        String filePath = trimToNull(authFilePath);
+        if (filePath == null) {
+            return null;
+        }
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile() || !file.canRead()) {
+            return null;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
+            String line = reader.readLine();
+            if (line == null) {
+                return null;
+            }
+            String token = line.trim();
+            if (token.isEmpty()) {
+                return null;
+            }
+            if (token.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                token = token.substring(7).trim();
+            }
+            return token.isEmpty() ? null : token;
+        } catch (Exception e) {
+            log.warn("load bearer token from file failed path={}, ex={}", filePath, e.getMessage());
+            return null;
+        }
+    }
+
+    private int toPositiveInt(Integer value, int defaultValue) {
+        if (value == null || value <= 0) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private boolean toBoolean(Object value) {
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value == null) {
+            return false;
+        }
+        String text = String.valueOf(value).trim();
+        return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String text = value.trim();
+        return text.isEmpty() ? null : text;
+    }
+
+    private void sleepBackoff(int attempt) {
+        long delayMs = Math.min(2000L, 250L * (long) attempt);
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

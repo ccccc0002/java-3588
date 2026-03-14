@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
@@ -294,7 +295,11 @@ class ReportControllerTest {
                 "tk",
                 true,
                 null,
-                false
+                false,
+                null,
+                null,
+                null,
+                null
         );
 
         assertEquals(0, result.getCode());
@@ -315,11 +320,87 @@ class ReportControllerTest {
                 "tk",
                 true,
                 null,
-                false
+                false,
+                null,
+                null,
+                null,
+                null
         );
 
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void savePushTarget_shouldSupportAuthFileAndRetryCount() {
+        when(reportPushTargetService.saveTarget(eq("a2"), eq("name2"), eq("http://push2"), eq("tk2"), eq(true), eq(true), eq("/opt/auth/token.txt"), eq(3)))
+                .thenReturn(List.of(Map.of("id", "a2", "retry_count", 3)));
+
+        JsonResult result = reportController.savePushTarget(
+                "a2",
+                "name2",
+                "http://push2",
+                "tk2",
+                null,
+                true,
+                true,
+                null,
+                "/opt/auth/token.txt",
+                null,
+                3,
+                null
+        );
+
+        assertEquals(0, result.getCode());
+        List<Map<String, Object>> data = (List<Map<String, Object>>) result.getData();
+        assertEquals(1, data.size());
+        verify(reportPushTargetService, times(1)).saveTarget(eq("a2"), eq("name2"), eq("http://push2"), eq("tk2"), eq(true), eq(true), eq("/opt/auth/token.txt"), eq(3));
+    }
+
+    @Test
+    void pushData_shouldUseRetryAndAuthFileWhenConfigured() {
+        Report report = new Report();
+        report.setId(9L);
+        report.setCameraId(10L);
+        report.setAlgorithmId(20L);
+        report.setFileName("alarm.jpg");
+        report.setParams("[]");
+        when(reportService.getById(9L)).thenReturn(report);
+
+        Camera camera = new Camera();
+        camera.setId(10L);
+        camera.setName("cam-1");
+        when(cameraService.getById(10L)).thenReturn(camera);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(20L);
+        algorithm.setName("algo-1");
+        when(algorithmService.getById(20L)).thenReturn(algorithm);
+
+        Map<String, Object> target = new HashMap<>();
+        target.put("id", "rt1");
+        target.put("name", "Retry-Target");
+        target.put("url", "http://localhost:9010/push");
+        target.put("include_image", false);
+        target.put("bearer_token", "");
+        target.put("auth_file", "/opt/auth/push.token");
+        target.put("retry_count", 3);
+        when(reportPushTargetService.listEnabledTargets()).thenReturn(List.of(target));
+        when(configService.getByValTag("webUrl")).thenReturn("http://127.0.0.1:8080");
+
+        Map<String, Object> ok = new HashMap<>();
+        ok.put("success", true);
+        ok.put("status", 200);
+        when(reportPushService.requestSyncWithRetry(eq("http://localhost:9010/push"), any(), eq(false), eq("alarm.jpg"), eq(null), eq("/opt/auth/push.token"), eq(3)))
+                .thenReturn(ok);
+
+        JsonResult result = reportController.pushData(9L);
+
+        assertEquals(0, result.getCode());
+        verify(reportPushService, times(1))
+                .requestSyncWithRetry(eq("http://localhost:9010/push"), any(), eq(false), eq("alarm.jpg"), eq(null), eq("/opt/auth/push.token"), eq(3));
+        verify(reportPushService, never()).requestSync(eq("http://localhost:9010/push"), any(), anyBoolean(), any(), any());
     }
 
     @Test

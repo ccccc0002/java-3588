@@ -118,4 +118,35 @@ class ReportPushTargetServiceTest {
         assertFalse(String.valueOf(retained.get(0).get("url")).contains("http://a"));
         assertTrue(String.valueOf(retained.get(0).get("url")).contains("http://b"));
     }
+
+    @Test
+    void saveTarget_shouldPersistAuthFileAndRetryCount() {
+        AtomicReference<String> targetStore = new AtomicReference<>("[]");
+        when(configService.getByValTag("reportPushTargets")).thenAnswer(invocation -> targetStore.get());
+        when(configService.getByValTag("reportPushImage")).thenReturn("false");
+        when(configService.getByValTag("reportPushUrl")).thenReturn(null);
+        when(configService.getOne(any(), eq(false))).thenReturn(null);
+        when(configService.saveOrUpdate(any(Config.class))).thenAnswer(invocation -> {
+            Config config = invocation.getArgument(0);
+            if ("reportPushTargets".equals(config.getTag())) {
+                targetStore.set(config.getVal());
+            }
+            return true;
+        });
+
+        List<Map<String, Object>> created = reportPushTargetService.saveTarget(
+                null,
+                "Target-Retry",
+                "http://localhost:9010/push",
+                "",
+                true,
+                false,
+                "/opt/auth/push.token",
+                3
+        );
+
+        assertEquals(1, created.size());
+        assertEquals("/opt/auth/push.token", created.get(0).get("auth_file"));
+        assertEquals(3, created.get(0).get("retry_count"));
+    }
 }

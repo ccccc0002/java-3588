@@ -686,13 +686,28 @@ public class ReportController {
                 }
                 boolean includeImage = toBool(target.get("include_image"), false);
                 String bearerToken = trimText(target.get("bearer_token"));
-                Map<String, Object> pushResult = reportPushService.requestSync(
-                        targetUrl,
-                        reportMap,
-                        includeImage,
-                        report.getFileName(),
-                        bearerToken
-                );
+                String authFile = trimText(target.get("auth_file"));
+                int retryCount = toPositiveInt(target.get("retry_count"), 1);
+                Map<String, Object> pushResult;
+                if (StrUtil.isNotBlank(authFile) || retryCount > 1) {
+                    pushResult = reportPushService.requestSyncWithRetry(
+                            targetUrl,
+                            reportMap,
+                            includeImage,
+                            report.getFileName(),
+                            bearerToken,
+                            authFile,
+                            retryCount
+                    );
+                } else {
+                    pushResult = reportPushService.requestSync(
+                            targetUrl,
+                            reportMap,
+                            includeImage,
+                            report.getFileName(),
+                            bearerToken
+                    );
+                }
                 pushResult.put("target_id", trimText(target.get("id")));
                 pushResult.put("target_name", trimText(target.get("name")));
                 results.add(pushResult);
@@ -740,7 +755,11 @@ public class ReportController {
                                      @RequestParam(value = "bearer_token", required = false) String bearerTokenSnake,
                                      Boolean enabled,
                                      @RequestParam(value = "includeImage", required = false) Boolean includeImage,
-                                     @RequestParam(value = "include_image", required = false) Boolean includeImageSnake) {
+                                     @RequestParam(value = "include_image", required = false) Boolean includeImageSnake,
+                                     @RequestParam(value = "authFile", required = false) String authFile,
+                                     @RequestParam(value = "auth_file", required = false) String authFileSnake,
+                                     @RequestParam(value = "retryCount", required = false) Integer retryCount,
+                                     @RequestParam(value = "retry_count", required = false) Integer retryCountSnake) {
         if (!roleAccessService.canManagePushTargets(currentAccountId())) {
             operationLogService.record("report:push_target_save", "targetId=" + id, false, "permission denied", "");
             return JsonResultUtils.fail("permission denied");
@@ -748,7 +767,14 @@ public class ReportController {
         try {
             String token = StrUtil.isNotBlank(bearerToken) ? bearerToken : bearerTokenSnake;
             Boolean include = includeImage != null ? includeImage : includeImageSnake;
-            Object result = reportPushTargetService.saveTarget(id, name, url, token, enabled, include);
+            String authFileVal = StrUtil.isNotBlank(authFile) ? authFile : authFileSnake;
+            Integer retry = retryCount != null ? retryCount : retryCountSnake;
+            Object result;
+            if (StrUtil.isNotBlank(authFileVal) || retry != null) {
+                result = reportPushTargetService.saveTarget(id, name, url, token, enabled, include, authFileVal, retry);
+            } else {
+                result = reportPushTargetService.saveTarget(id, name, url, token, enabled, include);
+            }
             operationLogService.record("report:push_target_save", "targetId=" + id, true, "push target saved", "name=" + name);
             return JsonResultUtils.success(result);
         } catch (Exception e) {
@@ -802,6 +828,18 @@ public class ReportController {
             return defaultValue;
         }
         return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
+
+    private int toPositiveInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(String.valueOf(value).trim());
+            return parsed <= 0 ? defaultValue : parsed;
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
     @GetMapping("/test")
     @ResponseBody
@@ -929,4 +967,3 @@ public class ReportController {
         return PageResultUtils.success(pageResult.getTotal(), dataList);
     }
 }
-

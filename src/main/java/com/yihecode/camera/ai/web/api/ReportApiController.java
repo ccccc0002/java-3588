@@ -236,7 +236,13 @@ public class ReportApiController {
                             }
                             boolean includeImage = toBool(target.get("include_image"), false);
                             String bearerToken = trimText(target.get("bearer_token"));
-                            reportPushService.request(targetUrl, reportMap, includeImage, fileName, bearerToken);
+                            String authFile = trimText(target.get("auth_file"));
+                            int retryCount = toPositiveInt(target.get("retry_count"), 1);
+                            if (StrUtil.isNotBlank(authFile) || retryCount > 1) {
+                                reportPushService.request(targetUrl, reportMap, includeImage, fileName, bearerToken, authFile, retryCount);
+                            } else {
+                                reportPushService.request(targetUrl, reportMap, includeImage, fileName, bearerToken);
+                            }
                         }
                     } catch (Exception e) {
                         log.warn("push report to http targets failed, reportId={}, ex={}", report.getId(), e.getMessage());
@@ -323,6 +329,18 @@ public class ReportApiController {
             return defaultValue;
         }
         return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
+
+    private int toPositiveInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        try {
+            int parsed = Integer.parseInt(String.valueOf(value).trim());
+            return parsed <= 0 ? defaultValue : parsed;
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 }
 
