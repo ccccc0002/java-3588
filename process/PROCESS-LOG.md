@@ -1576,3 +1576,14 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 11:27:03 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-112703-PHASE2-EXEC.json |
 | 2026-03-14 11:27:03 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 11:27:03 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Extended nextwave matrix converged on RK3588: phase3-nextwave-r1 passed 4/4 (full UI smoke with capture endpoints + H264/H265 acceptance retries + resource-gated handoff). |
+| 2026-03-14 11:32:57 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-113257-PHASE2-EXEC.json |
+| 2026-03-14 11:32:57 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 11:32:57 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Added tmux prune lifecycle control with deterministic session sort, validated on RK3588 (phase3-nextwave-r2 4/4 pass). |
+| 2026-03-14 11:32:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-113258-PHASE2-EXEC.json |
+| 2026-03-14 11:32:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | tmux prune enhancement merged and edge-validated; nextwave matrix regression still green. |
+| 2026-03-14 11:32:59 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-113258-PHASE2-EXEC.json |
+| 2026-03-14 11:32:59 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 11:32:59 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: tmux prune enhancement merged and edge-validated; nextwave matrix regression still green. |
+| 2026-03-14 11:33:00 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-113300-PHASE2-EXEC.json |
+| 2026-03-14 11:33:00 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 11:33:00 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | post-push compact after tmux prune enhancement |
