@@ -150,16 +150,16 @@
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T10:32:42+08:00",
-                                   "summary":  "H.265 closeout stability hardening synced: runtime-stack retry + soak tolerated-failure gates validated on RK3588; tmux session phase2-h265-closeout-r5 converged 3/3 and pushed at 8590c3b.",
+                                   "updated_at":  "2026-03-14T10:34:47+08:00",
+                                   "summary":  "Post-hardening regression sweep passed on RK3588: phase2-nextwave-r13 4/4 and phase2-backlog-r13 7/7 all green after H.265 closeout fixes (phase2-h265-closeout-r5 3/3).",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_stability_soak.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_phase11_handoff.py scripts/testing/test_run_phase12_h265_closeout.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-h265-closeout-r5",
+                                                        "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-h265-closeout-r5 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-nextwave-r13 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r13",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "8590c3b",
-                                                        "updated_at":  "2026-03-14T10:32:42+08:00"
+                                                        "github_sync_ref":  "b070917",
+                                                        "updated_at":  "2026-03-14T10:34:47+08:00"
                                                     }
                                }
                },
@@ -1871,6 +1871,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_run_stability_soak.py scripts/testing/test_run_linux_gates.py scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_phase11_handoff.py scripts/testing/test_run_phase12_h265_closeout.py \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-h265-closeout-r5",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "8590c3b"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T10:34:47+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Post-hardening regression sweep passed on RK3588: phase2-nextwave-r13 4/4 and phase2-backlog-r13 7/7 all green after H.265 closeout fixes (phase2-h265-closeout-r5 3/3).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-h265-closeout-r5 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-nextwave-r13 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r13",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b070917"
                     }
                 ]
 }
