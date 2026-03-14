@@ -1595,3 +1595,6 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 11:34:31 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-113431-PHASE2-EXEC.json |
 | 2026-03-14 11:34:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 11:34:32 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Post-prune parallel regression pass on RK3588 (phase3-nextwave-r3). |
+| 2026-03-14 11:36:37 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-113637-PHASE2-EXEC.json |
+| 2026-03-14 11:36:37 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 11:36:37 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | post-r3 regression compact |
