@@ -149,17 +149,17 @@
                                                     }
                                },
                    "Phase11":  {
-                                   "status":  "completed",
-                                   "updated_at":  "2026-03-14T09:31:40+08:00",
-                                   "summary":  "Post-fix parallel convergence verified on RK3588: phase2-nextwave-r11 4/4 and phase2-backlog-r11 7/7 passed after java-stop/phase11-base-url/smoke-compaction updates.",
+                                   "status":  "in_progress",
+                                   "updated_at":  "2026-03-14T09:53:22+08:00",
+                                   "summary":  "Phase12 H.265 closeout automation added (runner + lane + tests). RK3588 dry-run passed; real H.265 quality probe currently fails with ffmpeg hevc_rkmpp timeout (I5002) while H.264 probe passes.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
-                                                        "edge_test_status":  "passed",
-                                                        "edge_test_command":  "tmux_parallel_ctl report --session phase2-nextwave-r11 \u0026\u0026 tmux_parallel_ctl report --session phase2-backlog-r11",
+                                                        "edge_test_status":  "failed",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase12_h265_closeout.py \u0026\u0026 bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --dry-run \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --source rtsp://.../h265/... (failed) vs h264 (passed)",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "b16fc56",
-                                                        "updated_at":  "2026-03-14T09:31:40+08:00"
+                                                        "github_sync_status":  "pending",
+                                                        "github_sync_ref":  "",
+                                                        "updated_at":  "2026-03-14T09:53:22+08:00"
                                                     }
                                }
                },
@@ -1831,6 +1831,16 @@
                         "edge_test_command":  "tmux_parallel_ctl report --session phase2-nextwave-r11 \u0026\u0026 tmux_parallel_ctl report --session phase2-backlog-r11",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "b16fc56"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T09:53:22+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "in_progress",
+                        "summary":  "Phase12 H.265 closeout automation added (runner + lane + tests). RK3588 dry-run passed; real H.265 quality probe currently fails with ffmpeg hevc_rkmpp timeout (I5002) while H.264 probe passes.",
+                        "edge_test_status":  "failed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase12_h265_closeout.py \u0026\u0026 bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --dry-run \u0026\u0026 python3 scripts/testing/run_inference_quality_diagnostics.py --source rtsp://.../h265/... (failed) vs h264 (passed)",
+                        "github_sync_status":  "pending",
+                        "github_sync_ref":  ""
                     }
                 ]
 }

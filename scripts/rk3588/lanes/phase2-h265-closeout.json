@@ -1,0 +1,14 @@
+[
+  {
+    "name": "phase12-h265-closeout",
+    "command": "bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --source rtsp://admin:Admin123@192.168.1.245:554/h265/ch1/main/av_stream --timeout-sec 45 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga --max-plan-concurrency-pressure 2 --max-plan-suggested-min-dispatch-ms 3200 --soak-duration-sec 300 --soak-interval-sec 5 --soak-max-iterations 12 --quality-iterations 12 --quality-interval-ms 250 --quality-timeout-sec 45 --output-dir runtime/test-out/parallel/phase12-h265-closeout"
+  },
+  {
+    "name": "phase6-quality-h265",
+    "command": "python3 scripts/testing/run_inference_quality_diagnostics.py --bridge-url http://127.0.0.1:19080 --camera-id 1 --model-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h265/ch1/main/av_stream --plugin-id yolov8n --iterations 12 --interval-ms 250 --retry-attempts 3 --retry-interval-ms 200 --max-invalid-bbox-count 0 --max-failed-iterations 1 --timeout-sec 45 --output-dir runtime/test-out/parallel/phase12-h265-quality"
+  },
+  {
+    "name": "phase10-acceptance-h265",
+    "command": "bash scripts/rk3588/Run-Phase10-Acceptance.sh --base-url http://127.0.0.1:18082 --runtime-api-url http://127.0.0.1:18081 --bridge-url http://127.0.0.1:19080 --bootstrap-token edge-demo-bootstrap --plugin-id yolov8n --camera-id 1 --model-id 1 --algorithm-id 1 --source rtsp://admin:Admin123@192.168.1.245:554/h265/ch1/main/av_stream --timeout-sec 45 --runtime-stack-budget 12 --expect-snapshot-telemetry-status ok --expect-plan-telemetry-status ok --expect-bridge-decode-runtime-status ok --expect-bridge-decode-mode mpp-rga --max-plan-concurrency-pressure 2 --max-plan-suggested-min-dispatch-ms 3200 --soak-duration-sec 120 --soak-interval-sec 5 --soak-max-iterations 4 --include-soak --output-dir runtime/test-out/parallel/phase10-acceptance-h265"
+  }
+]

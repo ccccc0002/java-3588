@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 09:31:58
+- generated_at: 2026-03-14 09:53:34
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,24 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T09:53:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T09:53:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_started
 - 2026-03-14T09:31:58+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T09:31:58+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T09:31:41+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T09:29:51+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T09:29:51+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T09:29:40+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
-- 2026-03-14T09:26:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-14T09:26:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 
 ## Recent Process Log Tail
 
-| 2026-03-14 09:03:05 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Commit ade1ec8 synced: HTTP push auth-file + retry support with RK3588 regression/lane pass. |
-| 2026-03-14 09:03:05 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-090305-PHASE2-EXEC.json |
-| 2026-03-14 09:03:05 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 09:03:05 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: Commit ade1ec8 synced: HTTP push auth-file + retry support with RK3588 regression/lane pass. |
-| 2026-03-14 09:12:21 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-091221-PHASE2-EXEC.json |
-| 2026-03-14 09:12:21 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 smoke coverage expanded: /report/push-targets added to web_ui_live_smoke targets and validated on RK3588 (34/34 pass). |
-| 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-091231-PHASE2-EXEC.json |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: smoke includes /report/push-targets and commit c817468 pushed |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091232-PHASE2-EXEC.json |
 | 2026-03-14 09:12:32 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
@@ -61,3 +54,10 @@
 | 2026-03-14 09:31:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-093157-PHASE2-EXEC.json |
 | 2026-03-14 09:31:58 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: r11 nextwave/backlog convergence all-pass |
 | 2026-03-14 09:31:58 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-093158-PHASE2-EXEC.json |
+| 2026-03-14 09:31:58 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:31:58 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: checkpoint: r11 nextwave/backlog convergence all-pass |
+| 2026-03-14 09:53:23 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-095322-PHASE2-EXEC.json |
+| 2026-03-14 09:53:23 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | Phase12 H.265 closeout automation added (runner + lane + tests). RK3588 dry-run passed; real H.265 quality probe currently fails with ffmpeg hevc_rkmpp timeout (I5002) while H.264 probe passes. |
+| 2026-03-14 09:53:33 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-095333-PHASE2-EXEC.json |
+| 2026-03-14 09:53:33 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Added Phase12 H.265 closeout automation and reproduced RK3588 H.265 infer timeout regression (I5002) with H.264 control pass. |
+| 2026-03-14 09:53:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-095333-PHASE2-EXEC.json |
