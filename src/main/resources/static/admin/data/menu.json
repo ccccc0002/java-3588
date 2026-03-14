@@ -64,11 +64,28 @@
       },
       {
         "id": 118,
-        "title": "Alert Push Phone",
+        "title": "Alert Push",
         "icon": "layui-icon layui-icon-console",
-        "type": 1,
-        "openType": "_iframe",
-        "href": "/push/channel"
+        "type": 0,
+        "href": "",
+        "children": [
+          {
+            "id": 1181,
+            "title": "HTTP Target",
+            "icon": "layui-icon layui-icon-console",
+            "type": 1,
+            "openType": "_iframe",
+            "href": "/report"
+          },
+          {
+            "id": 1182,
+            "title": "SMS Phone",
+            "icon": "layui-icon layui-icon-console",
+            "type": 1,
+            "openType": "_iframe",
+            "href": "/push/channel"
+          }
+        ]
       },
       {
         "id": 18,
