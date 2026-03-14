@@ -128,6 +128,80 @@ class VerifyAlarmStreamAnnotationTests(unittest.TestCase):
         self.assertEqual(summary["bbox_count"], 1)
         self.assertTrue(summary["overlay_metrics"]["overlay_hit"])
 
+    def test_verify_alarm_stream_annotation_skips_when_no_alert_persisted(self):
+        dispatch_payload = {
+            "code": 0,
+            "data": {
+                "trace_id": "trace-no-alert",
+                "result": {
+                    "alerts": [],
+                    "detections": [],
+                },
+                "report": {
+                    "status": "skipped",
+                    "reason": "empty alerts",
+                },
+            },
+        }
+
+        def fake_open(req, timeout=30):
+            url = req.full_url
+            if url.endswith("/api/inference/dispatch"):
+                return FakeHttpResponse(200, json.dumps(dispatch_payload).encode("utf-8"))
+            raise AssertionError(f"unexpected url: {url}")
+
+        summary = verify_alarm_stream_annotation.verify_alarm_stream_annotation(
+            base_url="http://127.0.0.1:18082",
+            camera_id=1,
+            model_id=1,
+            algorithm_id=1,
+            source="test://frame",
+            plugin_id="yolov8n",
+            timeout_sec=30.0,
+            http_open=fake_open,
+        )
+
+        self.assertEqual(summary["status"], "skipped_no_alert")
+        self.assertEqual(summary["report_id"], None)
+        self.assertEqual(summary["alert_count"], 0)
+        self.assertEqual(summary["bbox_count"], 0)
+        self.assertEqual(summary["stream_url"], "")
+
+    def test_verify_alarm_stream_annotation_require_alert_fails_on_empty_alert(self):
+        dispatch_payload = {
+            "code": 0,
+            "data": {
+                "trace_id": "trace-no-alert-strict",
+                "result": {
+                    "alerts": [],
+                    "detections": [],
+                },
+                "report": {
+                    "status": "skipped",
+                    "reason": "empty alerts",
+                },
+            },
+        }
+
+        def fake_open(req, timeout=30):
+            url = req.full_url
+            if url.endswith("/api/inference/dispatch"):
+                return FakeHttpResponse(200, json.dumps(dispatch_payload).encode("utf-8"))
+            raise AssertionError(f"unexpected url: {url}")
+
+        with self.assertRaises(RuntimeError):
+            verify_alarm_stream_annotation.verify_alarm_stream_annotation(
+                base_url="http://127.0.0.1:18082",
+                camera_id=1,
+                model_id=1,
+                algorithm_id=1,
+                source="test://frame",
+                plugin_id="yolov8n",
+                timeout_sec=30.0,
+                require_alert=True,
+                http_open=fake_open,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

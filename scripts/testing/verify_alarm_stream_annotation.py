@@ -131,6 +131,16 @@ def to_bbox_ints(items: List[Dict[str, Any]]) -> List[List[int]]:
     return bboxes
 
 
+def is_empty_alert_report(report_data: Dict[str, Any]) -> bool:
+    if not isinstance(report_data, dict):
+        return False
+    status = str(report_data.get("status", "")).strip().lower()
+    reason = str(report_data.get("reason", "")).strip().lower()
+    if status != "skipped":
+        return False
+    return "empty alert" in reason or reason in {"no alerts", "no alert", "alerts filtered"}
+
+
 def evaluate_red_overlay(
     image_bytes: bytes,
     bboxes: List[List[int]],
@@ -218,6 +228,7 @@ def verify_alarm_stream_annotation(
     source: str,
     plugin_id: str,
     timeout_sec: float,
+    require_alert: bool = False,
     http_open: Optional[Callable[..., Any]] = None,
 ) -> Dict[str, Any]:
     dispatch_url = base_url.rstrip("/") + "/api/inference/dispatch"
@@ -232,13 +243,55 @@ def verify_alarm_stream_annotation(
     dispatch_data = unwrap_dispatch_payload(dispatch_response)
 
     report_data = dispatch_data.get("report") if isinstance(dispatch_data.get("report"), dict) else {}
-    report_id = report_data.get("report_id")
-    if report_id in (None, "", 0):
-        raise RuntimeError(f"dispatch did not persist report_id: report={report_data}")
-
     alert_items = extract_alert_items(dispatch_data)
     bboxes = to_bbox_ints(alert_items)
+    report_id = report_data.get("report_id")
+    if report_id in (None, "", 0):
+        if not require_alert and is_empty_alert_report(report_data):
+            return {
+                "status": "skipped_no_alert",
+                "timestamp": utc_now(),
+                "base_url": base_url,
+                "dispatch_url": dispatch_url,
+                "stream_url": "",
+                "camera_id": int(camera_id),
+                "model_id": int(model_id),
+                "algorithm_id": int(algorithm_id),
+                "plugin_id": str(plugin_id).strip(),
+                "dispatch_http_status": int(dispatch_http_status),
+                "stream_http_status": None,
+                "trace_id": str(dispatch_data.get("trace_id", "")),
+                "report_id": None,
+                "alert_count": len(alert_items),
+                "bbox_count": len(bboxes),
+                "image_bytes": 0,
+                "skip_reason": str(report_data.get("reason", "")).strip() or "empty alerts",
+                "overlay_metrics": {"decoded": False, "overlay_hit": False, "reason": "skipped_no_alert"},
+            }
+        raise RuntimeError(f"dispatch did not persist report_id: report={report_data}")
+
     if not bboxes:
+        if not require_alert and is_empty_alert_report(report_data):
+            return {
+                "status": "skipped_no_alert",
+                "timestamp": utc_now(),
+                "base_url": base_url,
+                "dispatch_url": dispatch_url,
+                "stream_url": "",
+                "camera_id": int(camera_id),
+                "model_id": int(model_id),
+                "algorithm_id": int(algorithm_id),
+                "plugin_id": str(plugin_id).strip(),
+                "dispatch_http_status": int(dispatch_http_status),
+                "stream_http_status": None,
+                "trace_id": str(dispatch_data.get("trace_id", "")),
+                "report_id": report_id,
+                "alert_count": len(alert_items),
+                "bbox_count": 0,
+                "image_bytes": 0,
+                "skip_reason": str(report_data.get("reason", "")).strip() or "empty alerts",
+                "overlay_metrics": {"decoded": False, "overlay_hit": False, "reason": "skipped_no_alert"},
+            }
         raise RuntimeError("dispatch response has no valid alert bbox data")
 
     stream_url = base_url.rstrip("/") + "/report/stream?" + parse.urlencode({"id": str(report_id)})
@@ -280,6 +333,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--source", default="test://frame")
     parser.add_argument("--plugin-id", default="yolov8n")
     parser.add_argument("--timeout-sec", type=float, default=30.0)
+    parser.add_argument("--require-alert", action="store_true")
     parser.add_argument("--output-dir", default="")
     return parser.parse_args(argv)
 
@@ -311,6 +365,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             source=args.source,
             plugin_id=args.plugin_id,
             timeout_sec=args.timeout_sec,
+            require_alert=bool(args.require_alert),
         )
         summary_path = write_summary(out_dir, summary)
         print(json.dumps({"status": "passed", "summary_path": str(summary_path), "summary": summary}, ensure_ascii=True))
