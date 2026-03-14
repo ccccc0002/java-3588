@@ -28,6 +28,29 @@ class EdgeProfile:
     workdir: str
 
 
+def safe_stream_write(stream, text: str) -> None:
+    content = str(text or '')
+    if not content:
+        return
+    try:
+        stream.write(content)
+        stream.flush()
+        return
+    except UnicodeEncodeError:
+        pass
+
+    # Fallback for Windows consoles using non-UTF code pages.
+    if hasattr(stream, 'buffer'):
+        encoded = content.encode('utf-8', errors='replace')
+        stream.buffer.write(encoded)
+        stream.flush()
+        return
+
+    sanitized = content.encode('ascii', errors='replace').decode('ascii')
+    stream.write(sanitized)
+    stream.flush()
+
+
 def parse_transfer_spec(spec: str) -> Tuple[str, str]:
     value = str(spec or '').strip()
     if ':' not in value:
@@ -241,10 +264,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if not args.json_only:
         if result['stdout']:
-            sys.stdout.write(str(result['stdout']))
+            safe_stream_write(sys.stdout, str(result['stdout']))
         if result['stderr']:
-            sys.stderr.write(str(result['stderr']))
-    sys.stdout.write(json.dumps(result, ensure_ascii=True) + '\n')
+            safe_stream_write(sys.stderr, str(result['stderr']))
+    safe_stream_write(sys.stdout, json.dumps(result, ensure_ascii=True) + '\n')
     return int(result['exit_code'])
 
 
