@@ -19,7 +19,7 @@ DEFAULT_OUTPUT_DIR = "scripts/testing/out/phase10-acceptance"
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run Phase10 acceptance gates with runtime stack smoke enabled.")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8080")
+    parser.add_argument("--base-url", default="http://127.0.0.1:18082")
     parser.add_argument("--runtime-api-url", default="http://127.0.0.1:18081")
     parser.add_argument("--bridge-url", default="http://127.0.0.1:19080")
     parser.add_argument("--bootstrap-token", default="edge-demo-bootstrap")

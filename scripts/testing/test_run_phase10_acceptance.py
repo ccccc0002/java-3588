@@ -15,6 +15,10 @@ SPEC.loader.exec_module(run_phase10_acceptance)
 
 
 class RunPhase10AcceptanceTests(unittest.TestCase):
+    def test_parse_args_defaults_base_url_to_18082(self):
+        args = run_phase10_acceptance.parse_args([])
+        self.assertEqual(args.base_url, 'http://127.0.0.1:18082')
+
     def test_parse_args_accepts_expected_flags(self):
         args = run_phase10_acceptance.parse_args([
             '--base-url', 'http://127.0.0.1:8080',
