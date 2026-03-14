@@ -306,6 +306,7 @@ layui.use(['jquery', 'loading', 'popup'], function() {
     var frameMap = new Map();
     var staticsStore = new Map();
     var gridRestoreTimer = null;
+    var gridLayoutTimer = null;
     var gridRenderSeq = 0;
     var currentGridSeq = 0;
 
@@ -504,13 +505,34 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         }
     }
 
+    function scheduleGridLayout(delayMs) {
+        var delay = toInt(delayMs, 0);
+        if (delay < 0) delay = 0;
+        if (gridLayoutTimer) {
+            clearTimeout(gridLayoutTimer);
+            gridLayoutTimer = null;
+        }
+        gridLayoutTimer = setTimeout(function() {
+            gridLayoutTimer = null;
+            updateGridGeometry();
+        }, delay);
+    }
+
     function updateGridGeometry() {
         var dim = dimOf(cols);
-        var vh = $('#video-list-wrapper').height();
+        var wrapper = $('#video-list-wrapper');
+        var vh = wrapper.height();
+        if (!vh || vh <= 0) {
+            vh = wrapper[0] && wrapper[0].clientHeight ? wrapper[0].clientHeight : 0;
+        }
+        if (!vh || vh <= 0) {
+            vh = Math.max(180, window.innerHeight - 360);
+        }
         var gap = 8;
         var cellH = parseInt((vh - (dim - 1) * gap) / dim, 10);
         if (isNaN(cellH)) cellH = 48;
-        if (cellH < 48) cellH = 48;
+        var minCellH = dim >= 4 ? 32 : (dim >= 3 ? 38 : 48);
+        if (cellH < minCellH) cellH = minCellH;
         $('#video-list').css('grid-template-columns', 'repeat(' + dim + ', minmax(0, 1fr))');
         $('#video-list').css('grid-auto-rows', cellH + 'px');
     }
@@ -718,16 +740,23 @@ layui.use(['jquery', 'loading', 'popup'], function() {
             $('#video-list').append(html);
         }
 
+        scheduleGridLayout(0);
+        scheduleGridLayout(80);
+        scheduleGridLayout(260);
+
         if (oldPlayingCameraIds.length > 0) {
             gridRestoreTimer = setTimeout(function() {
                 if (seq !== gridRenderSeq) return;
                 restorePlayingByCameraIds(oldPlayingCameraIds, seq);
                 window.refreshDashboard();
                 renderStaticsStore();
+                scheduleGridLayout(0);
+                scheduleGridLayout(120);
             }, 60);
         } else {
             window.refreshDashboard();
             renderStaticsStore();
+            scheduleGridLayout(0);
         }
     };
 
@@ -1086,6 +1115,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
             renderPie(data.pie || []);
             renderRanking(data.ranking || {});
             renderTelemetry(data.telemetry_status || 'ok', data.telemetry_error || '');
+            scheduleGridLayout(0);
+            scheduleGridLayout(80);
         });
     };
 
@@ -1107,6 +1138,8 @@ layui.use(['jquery', 'loading', 'popup'], function() {
         window.refreshDashboard();
 
         setTimeout(function() { window.handleCameraActives(); }, 1200);
+        setTimeout(function() { scheduleGridLayout(0); }, 150);
+        setTimeout(function() { scheduleGridLayout(0); }, 600);
         setInterval(function() { window.refreshDashboard(); }, 30000);
         setInterval(function() { window.frameDelta(); }, 2000);
         setInterval(function() { window.handleVideoPlay(); }, 10000);
