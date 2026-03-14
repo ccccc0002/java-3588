@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T08:09:34+08:00",
-                                  "summary":  "Alert push phone module hardened and synced: /push/channel alias + smsphone UI rewrite + menu route update validated on RK3588 (unit + web smoke).",
+                                  "updated_at":  "2026-03-14T08:15:30+08:00",
+                                  "summary":  "Alert push menu split delivered (HTTP Target + SMS Phone), /push/channel route live, and RK3588 regressions converged: phase2-nextwave-r8 4/4 + phase2-backlog-r9 7/7.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                                                       "edge_test_command":  "tmux_parallel_ctl report --session phase2-nextwave-r8 \u0026\u0026 tmux_parallel_ctl report --session phase2-backlog-r9",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "e84fc55",
-                                                       "updated_at":  "2026-03-14T08:09:34+08:00"
+                                                       "github_sync_ref":  "1121ed6",
+                                                       "updated_at":  "2026-03-14T08:15:30+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1711,6 +1711,16 @@
                         "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "e84fc55"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T08:15:30+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Alert push menu split delivered (HTTP Target + SMS Phone), /push/channel route live, and RK3588 regressions converged: phase2-nextwave-r8 4/4 + phase2-backlog-r9 7/7.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "tmux_parallel_ctl report --session phase2-nextwave-r8 \u0026\u0026 tmux_parallel_ctl report --session phase2-backlog-r9",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "1121ed6"
                     }
                 ]
 }
