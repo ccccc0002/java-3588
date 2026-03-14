@@ -65,7 +65,7 @@
                         <div class="layui-input-block">
                             <div class="algorithm-select-box">
                                 <select id="algorithmSelect" xm-select="algorithmSelect" xm-select-search xm-select-skin="normal"></select>
-                                <div class="tip-info algorithm-select-tip">????????????????????????????</div>
+                                <div class="tip-info algorithm-select-tip">支持多选算法；下方可分别设置每个算法的检测置信度</div>
                             </div>
                             <table id="table" lay-filter="table"></table>
                         </div>
@@ -174,10 +174,10 @@
 
         //
         let cols = [{
-            title: '????',
+            title: '算法名称',
             field: 'name'
         }, {
-            title: '???',
+            title: '置信度',
             field: 'confidence',
             templet: '#confidenceTpl'
         }];
@@ -221,7 +221,7 @@
                 toolbar: false,
                 defaultToolbar: [],
                 text: {
-                    none: '???????????'
+                    none: '请选择至少一个算法'
                 }
             });
         }
@@ -254,7 +254,7 @@
             var algorithms = window.getSelectedAlgorithms();
 
             if(algorithms.length == 0) {
-                popup.failure("?????????");
+                popup.failure("请至少选择一个算法");
                 return false;
             }
 
@@ -284,7 +284,7 @@
             }
 
             if(confidences.length != algorithms.length) {
-                popup.failure("???????????");
+                popup.failure("算法置信度不能为空");
                 return false;
             }
 

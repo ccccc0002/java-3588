@@ -191,7 +191,7 @@
         table.on('toolbar(organization-table)', function(obj) {
             if (obj.event === 'sync2node') {
                 if(!permissions.can_sync_warehouse) {
-                    popup.failure('permission denied');
+                    popup.failure('无权限操作');
                     return;
                 }
                 window.sync2node(obj);
@@ -199,19 +199,19 @@
                 window.refresh();
             } else if (obj.event === 'sync2all') {
                 if(!permissions.can_sync_warehouse) {
-                    popup.failure('permission denied');
+                    popup.failure('无权限操作');
                     return;
                 }
                 window.sync2all(obj);
             } else if (obj.event === 'pull') {
                 if(!permissions.can_sync_warehouse) {
-                    popup.failure('permission denied');
+                    popup.failure('无权限操作');
                     return;
                 }
                 window.pullRtsp(obj);
             } else if (obj.event == 'select2export') {
                 if(!permissions.can_sync_warehouse) {
-                    popup.failure('permission denied');
+                    popup.failure('无权限操作');
                     return;
                 }
                 window.select2export(obj);
@@ -376,3 +376,4 @@
     })
 </script>
 </html>
+

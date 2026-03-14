@@ -1,14 +1,14 @@
 [
   {
     "id": 1,
-    "title": "Application",
+    "title": "应用管理",
     "icon": "layui-icon layui-icon-console",
     "type": 0,
     "href": "",
     "children": [
       {
         "id": 10,
-        "title": "Algorithm",
+        "title": "算法管理",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -16,7 +16,7 @@
       },
       {
         "id": 1011,
-        "title": "Model Test",
+        "title": "模型测试",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -24,7 +24,7 @@
       },
       {
         "id": 11,
-        "title": "Camera",
+        "title": "摄像头管理",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -32,7 +32,7 @@
       },
       {
         "id": 14,
-        "title": "Stream",
+        "title": "视频流管理",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -40,7 +40,7 @@
       },
       {
         "id": 12,
-        "title": "Alert",
+        "title": "告警管理",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -48,7 +48,7 @@
       },
       {
         "id": 15,
-        "title": "Training",
+        "title": "增量训练",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -56,7 +56,7 @@
       },
       {
         "id": 13,
-        "title": "Statistic",
+        "title": "统计查询",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -64,14 +64,14 @@
       },
       {
         "id": 118,
-        "title": "Alert Push",
+        "title": "告警推送",
         "icon": "layui-icon layui-icon-console",
         "type": 0,
         "href": "",
         "children": [
           {
             "id": 1181,
-            "title": "HTTP Target",
+            "title": "HTTP推送目标",
             "icon": "layui-icon layui-icon-console",
             "type": 1,
             "openType": "_iframe",
@@ -79,7 +79,7 @@
           },
           {
             "id": 1182,
-            "title": "SMS Phone",
+            "title": "短信推送",
             "icon": "layui-icon layui-icon-console",
             "type": 1,
             "openType": "_iframe",
@@ -87,7 +87,7 @@
           },
           {
             "id": 1183,
-            "title": "Phone Push",
+            "title": "电话推送",
             "icon": "layui-icon layui-icon-console",
             "type": 1,
             "openType": "_iframe",
@@ -97,7 +97,7 @@
       },
       {
         "id": 18,
-        "title": "System Config",
+        "title": "系统配置",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -105,7 +105,7 @@
       },
       {
         "id": 22,
-        "title": "Account",
+        "title": "账号管理",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
@@ -113,7 +113,7 @@
       },
       {
         "id": 23,
-        "title": "Operation Log",
+        "title": "操作日志",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",

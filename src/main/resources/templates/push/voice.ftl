@@ -95,7 +95,7 @@
 
         form.on('submit(saveVoicePush)', function(data) {
             if (!canManagePushTargets) {
-                popup.failure('permission denied');
+                popup.failure('无权限操作');
                 return false;
             }
             let payload = {
@@ -140,3 +140,4 @@
 </script>
 </body>
 </html>
+

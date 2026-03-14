@@ -38,10 +38,11 @@ public class IndexController {
 
         Long accountId = currentAccountId();
         Account account = accountService.getById(accountId);
-        String accountName = account == null ? "unknown" : account.getName();
+        String accountName = normalizedAccountName(account == null ? null : account.getName());
         String role = roleAccessService.getRoleByAccountId(accountId);
         modelMap.addAttribute("accountName", accountName);
         modelMap.addAttribute("accountRole", role);
+        modelMap.addAttribute("accountRoleLabel", resolveRoleLabel(role));
         modelMap.addAttribute("brandTitle", getConfigOrDefault(TAG_BRAND_TITLE, DEFAULT_BRAND_TITLE));
         modelMap.addAttribute("brandLogoUrl", getConfigOrDefault(TAG_BRAND_LOGO_URL, DEFAULT_BRAND_LOGO_URL));
 
@@ -60,6 +61,33 @@ public class IndexController {
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? defaultValue : normalized;
+    }
+
+    private String normalizedAccountName(String value) {
+        if (value == null) {
+            return "管理员";
+        }
+        String normalized = value.trim();
+        if (normalized.isEmpty() || normalized.matches("\\?+")) {
+            return "管理员";
+        }
+        return normalized;
+    }
+
+    private String resolveRoleLabel(String role) {
+        if (role == null || role.trim().isEmpty()) {
+            return "未知角色";
+        }
+        if (RoleAccessService.ROLE_SUPER_ADMIN.equals(role)) {
+            return "超级管理员";
+        }
+        if (RoleAccessService.ROLE_OPS.equals(role)) {
+            return "运维人员";
+        }
+        if (RoleAccessService.ROLE_READ_ONLY.equals(role)) {
+            return "只读用户";
+        }
+        return role;
     }
 
     Long currentAccountId() {

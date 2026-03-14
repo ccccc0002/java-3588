@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -459,7 +459,7 @@
             height: 'full-190',
             toolbar: '#table-toolbar',
             defaultToolbar: [{
-                title: 'Refresh',
+                title: '刷新',
                 layEvent: 'refresh',
                 icon: 'layui-icon-refresh'
             }]
@@ -511,3 +511,4 @@
 </script>
 </body>
 </html>
+

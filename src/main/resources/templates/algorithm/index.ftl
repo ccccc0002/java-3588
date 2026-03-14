@@ -138,7 +138,7 @@
             }
             $.post('/algorithm/detail', {id: obj.data.id}, function(res) {
                 if (!res || res.code !== 0) {
-                    popup.failure((res && res.msg) || 'Load detail failed');
+                    popup.failure((res && res.msg) || '加载详情失败');
                     return;
                 }
                 let detail = res.data || {};
@@ -147,17 +147,17 @@
                 let aliasesJson = JSON.stringify(labelAliases, null, 2);
 
                 let content = '<div style="padding:16px;">'
-                    + '<div style="margin-bottom:12px;"><label style="display:block;margin-bottom:6px;">Name</label><input id="algo-edit-name" class="layui-input" /></div>'
-                    + '<div style="margin-bottom:12px;"><label style="display:block;margin-bottom:6px;">Description</label><textarea id="algo-edit-description" class="layui-textarea" style="min-height:88px;"></textarea></div>'
-                    + '<div><label style="display:block;margin-bottom:6px;">Label aliases (JSON)</label><textarea id="algo-edit-aliases" class="layui-textarea" style="min-height:180px;"></textarea></div>'
+                    + '<div style="margin-bottom:12px;"><label style="display:block;margin-bottom:6px;">名称</label><input id="algo-edit-name" class="layui-input" /></div>'
+                    + '<div style="margin-bottom:12px;"><label style="display:block;margin-bottom:6px;">描述</label><textarea id="algo-edit-description" class="layui-textarea" style="min-height:88px;"></textarea></div>'
+                    + '<div><label style="display:block;margin-bottom:6px;">标签映射（JSON）</label><textarea id="algo-edit-aliases" class="layui-textarea" style="min-height:180px;"></textarea></div>'
                     + '</div>';
 
                 layer.open({
                     type: 1,
-                    title: 'Edit package metadata',
+                    title: '编辑算法包元信息',
                     area: ['640px', '560px'],
                     content: content,
-                    btn: ['Save', 'Cancel'],
+                    btn: ['保存', '取消'],
                     success: function() {
                         $('#algo-edit-name').val(detail.name || '');
                         $('#algo-edit-description').val(params.description || '');
@@ -177,11 +177,11 @@
                             layer.close(loading);
                             if (updateRes && updateRes.code === 0) {
                                 layer.close(index);
-                                popup.success('Metadata updated');
+                                popup.success('元信息更新成功');
                                 window.refreshTable();
                                 return;
                             }
-                            popup.failure((updateRes && updateRes.msg) || 'Metadata update failed');
+                            popup.failure((updateRes && updateRes.msg) || '元信息更新失败');
                         });
                     }
                 });
@@ -236,15 +236,15 @@
                 success: function(res) {
                     layer.close(loading);
                     if (res && res.code === 0) {
-                        popup.success('Package imported');
+                        popup.success('算法包导入成功');
                         window.refreshTable();
                         return;
                     }
-                    popup.failure((res && res.msg) || 'Package import failed');
+                    popup.failure((res && res.msg) || '算法包导入失败');
                 },
                 error: function() {
                     layer.close(loading);
-                    popup.failure('Package import failed');
+                    popup.failure('算法包导入失败');
                 }
             });
         }
@@ -277,7 +277,7 @@
                             $.post('/algorithm/forceDelete', {'id': obj.data.id}, function(forceRes) {
                                 layer.close(loading2);
                                 if (forceRes && forceRes.code === 0) {
-                                    popup.success('Force delete success');
+                                    popup.success('强制删除成功');
                                     window.refreshTable();
                                     return;
                                 }
@@ -286,7 +286,7 @@
                         });
                         return;
                     }
-                    popup.failure((res && res.msg) || 'Delete failed');
+                    popup.failure((res && res.msg) || '删除失败');
                 });
             });
         }

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Account</title>
+    <title>账号管理</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
     <style>
         .layui-form-label { width: 140px; }
@@ -15,44 +15,44 @@
     <div class="mainBox">
         <div class="main-container">
             <div class="layui-form-item">
-                <label class="layui-form-label">Name</label>
+                <label class="layui-form-label">姓名</label>
                 <div class="layui-input-block">
-                    <input type="text" name="name" lay-verify="required" autocomplete="off" placeholder="Name" class="layui-input" value="${(account.name)!''}">
+                    <input type="text" name="name" lay-verify="required" autocomplete="off" placeholder="请输入姓名" class="layui-input" value="${(account.name)!''}">
                 </div>
             </div>
 
             <div class="layui-form-item">
-                <label class="layui-form-label">Account</label>
+                <label class="layui-form-label">账号</label>
                 <div class="layui-input-block">
-                    <input type="text" name="account" lay-verify="required" autocomplete="off" placeholder="Account" class="layui-input" value="${(account.account)!''}">
+                    <input type="text" name="account" lay-verify="required" autocomplete="off" placeholder="请输入账号" class="layui-input" value="${(account.account)!''}">
                 </div>
             </div>
 
             <#if !(account.id)??>
                 <div class="layui-form-item">
-                    <label class="layui-form-label">Password</label>
+                    <label class="layui-form-label">密码</label>
                     <div class="layui-input-block">
-                        <input type="text" name="password" lay-verify="required" autocomplete="off" placeholder="Initial password" class="layui-input" value="">
+                        <input type="text" name="password" lay-verify="required" autocomplete="off" placeholder="请输入初始密码" class="layui-input" value="">
                     </div>
                 </div>
             </#if>
 
             <div class="layui-form-item">
-                <label class="layui-form-label">Role</label>
+                <label class="layui-form-label">角色</label>
                 <div class="layui-input-block">
                     <select name="role" id="role">
-                        <option value="super_admin">super_admin</option>
-                        <option value="ops">ops</option>
-                        <option value="read_only">read_only</option>
+                        <option value="super_admin">超级管理员</option>
+                        <option value="ops">运维人员</option>
+                        <option value="read_only">只读用户</option>
                     </select>
                 </div>
             </div>
 
             <div class="layui-form-item">
-                <label class="layui-form-label">State</label>
+                <label class="layui-form-label">状态</label>
                 <div class="layui-input-block">
-                    <input type="radio" name="state" value="0" title="Enabled" checked>
-                    <input type="radio" name="state" value="1" title="Disabled">
+                    <input type="radio" name="state" value="0" title="启用" checked>
+                    <input type="radio" name="state" value="1" title="禁用">
                 </div>
             </div>
         </div>
@@ -62,11 +62,11 @@
         <div class="button-container">
             <button type="submit" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="save">
                 <i class="layui-icon layui-icon-ok"></i>
-                Submit
+                提交
             </button>
             <button class="pear-btn pear-btn-sm" id="close-layer">
                 <i class="layui-icon layui-icon-close"></i>
-                Close
+                关闭
             </button>
         </div>
     </div>
@@ -94,7 +94,7 @@
             $.post('/account/save', data.field, function(res) {
                 layer.close(loading);
                 if (res.code === 0) {
-                    layer.msg('Success', {icon: 1, time: 900}, function() {
+                    layer.msg('操作成功', {icon: 1, time: 900}, function() {
                         parent.layer.close(parent.layer.getFrameIndex(window.name));
                         parent.layui.table.reload('table');
                     });
@@ -113,4 +113,3 @@
 </script>
 </body>
 </html>
-

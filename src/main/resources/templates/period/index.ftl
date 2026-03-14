@@ -169,7 +169,7 @@
             if(permissions.can_write_system) {
                 return true;
             }
-            popup.failure('permission denied');
+            popup.failure('无权限操作');
             return false;
         }
 
@@ -195,3 +195,4 @@
     })
 </script>
 </html>
+

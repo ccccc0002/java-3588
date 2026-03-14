@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>Account Management</title>
+    <title>账号管理</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
 </head>
 <body class="pear-container">
@@ -20,20 +20,20 @@
 <script type="text/html" id="table-toolbar">
     <button class="pear-btn pear-btn-primary pear-btn-md" lay-event="add" id="btnAdd">
         <i class="layui-icon layui-icon-add-1"></i>
-        Add Account
+        新增账号
     </button>
 </script>
 
 <script type="text/html" id="table-actions">
-    <a href="#" style="color: #409EFF;" lay-event="edit">Edit</a>
-    <a href="#" style="color: #DD4A68; margin-left: 15px;" lay-event="remove">Delete</a>
+    <a href="#" style="color: #409EFF;" lay-event="edit">编辑</a>
+    <a href="#" style="color: #DD4A68; margin-left: 15px;" lay-event="remove">删除</a>
 </script>
 
 <script type="text/html" id="stateTpl">
     {{# if(d.state == 0){ }}
-    <span style="color:#16b777;">Enabled</span>
+    <span style="color:#16b777;">启用</span>
     {{# } else { }}
-    <span style="color:#ff5722;">Disabled</span>
+    <span style="color:#ff5722;">禁用</span>
     {{# } }}
 </script>
 
@@ -65,18 +65,24 @@
                 method: 'post',
                 page: false,
                 cols: [[
-                    {title: 'Name', field: 'name'},
-                    {title: 'Account', field: 'account'},
-                    {title: 'Role', field: 'roleLabel', width: 130},
-                    {title: 'State', field: 'state', templet: '#stateTpl', width: 110},
-                    {title: 'Created', field: 'createdAt', templet: '<span>{{layui.util.toDateString(d.createdAt, "yyyy-MM-dd HH:mm:ss")}}</span>', width: 180},
-                    {title: 'Actions', toolbar: '#table-actions', align: 'left', width: 140, fixed: 'right'}
+                    {title: '姓名', field: 'name', templet: function(d) {
+                        var name = (d.name || '').trim();
+                        if (!name || /^\?+$/.test(name)) {
+                            return '管理员';
+                        }
+                        return name;
+                    }},
+                    {title: '账号', field: 'account'},
+                    {title: '角色', field: 'roleLabel', width: 130},
+                    {title: '状态', field: 'state', templet: '#stateTpl', width: 110},
+                    {title: '创建时间', field: 'createdAt', templet: '<span>{{layui.util.toDateString(d.createdAt, "yyyy-MM-dd HH:mm:ss")}}</span>', width: 180},
+                    {title: '操作', toolbar: '#table-actions', align: 'left', width: 140, fixed: 'right'}
                 ]],
                 skin: 'line',
                 height: 'full-148',
                 toolbar: '#table-toolbar',
                 defaultToolbar: [{
-                    title: 'Refresh',
+                    title: '刷新',
                     layEvent: 'refresh',
                     icon: 'layui-icon-refresh'
                 }],
@@ -90,7 +96,7 @@
 
         table.on('tool(table)', function(obj) {
             if (!permissions.can_manage_accounts) {
-                popup.failure('permission denied');
+                popup.failure('无权限操作');
                 return;
             }
             if (obj.event === 'remove') {
@@ -103,7 +109,7 @@
         table.on('toolbar(table)', function(obj) {
             if (obj.event === 'add') {
                 if (!permissions.can_manage_accounts) {
-                    popup.failure('permission denied');
+                    popup.failure('无权限操作');
                     return;
                 }
                 window.addForm();
@@ -115,7 +121,7 @@
         window.addForm = function() {
             layer.open({
                 type: 2,
-                title: 'Add Account',
+                title: '新增账号',
                 shade: 0.1,
                 area: ['60%', '80%'],
                 content: '/account/form'
@@ -125,7 +131,7 @@
         window.editForm = function(obj) {
             layer.open({
                 type: 2,
-                title: 'Edit Account',
+                title: '编辑账号',
                 shade: 0.1,
                 area: ['60%', '80%'],
                 content: '/account/form?id=' + obj.data.id
@@ -137,13 +143,13 @@
         };
 
         window.removeData = function(obj) {
-            layer.confirm('Delete selected account?', {icon: 3, title: 'Warning'}, function(index) {
+            layer.confirm('确定删除该账号吗？', {icon: 3, title: '提示'}, function(index) {
                 layer.close(index);
                 let loading = layer.load(2);
                 $.post('/account/delete', {'id': obj.data.id}, function(res) {
                     layer.close(loading);
                     if (res.code === 0) {
-                        layer.msg('Success', {icon: 1, time: 900}, function() {
+                        layer.msg('操作成功', {icon: 1, time: 900}, function() {
                             window.refreshTable();
                         });
                     } else {
@@ -158,4 +164,3 @@
 </script>
 </body>
 </html>
-

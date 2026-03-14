@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Network</title>
+    <title>网络管理</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
     <style>
         .pane-title { font-weight: 600; margin-bottom: 10px; }
@@ -13,7 +13,7 @@
     <div class="layui-col-md5">
         <div class="layui-card">
             <div class="layui-card-body">
-                <div class="pane-title">Detected Interfaces</div>
+                <div class="pane-title">检测到的网卡</div>
                 <table id="ifTable" lay-filter="ifTable"></table>
             </div>
         </div>
@@ -21,22 +21,22 @@
     <div class="layui-col-md7">
         <div class="layui-card">
             <div class="layui-card-body">
-                <div class="pane-title">Saved Configuration</div>
+                <div class="pane-title">已保存配置</div>
                 <form class="layui-form" id="networkForm">
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Interface</label>
+                        <label class="layui-form-label">网卡名</label>
                         <div class="layui-input-block">
                             <input type="text" name="interface_name" id="interface_name" required lay-verify="required" class="layui-input" placeholder="eth0">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">IPv4</label>
+                        <label class="layui-form-label">IPv4地址</label>
                         <div class="layui-input-block">
                             <input type="text" name="ip" id="ip" class="layui-input" placeholder="192.168.1.10">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Gateway</label>
+                        <label class="layui-form-label">网关</label>
                         <div class="layui-input-block">
                             <input type="text" name="gateway" id="gateway" class="layui-input" placeholder="192.168.1.1">
                         </div>
@@ -49,8 +49,8 @@
                     </div>
                     <div class="layui-form-item">
                         <div class="layui-input-block">
-                            <button type="submit" class="pear-btn pear-btn-primary" lay-submit lay-filter="saveNetwork">Save</button>
-                            <button type="button" class="pear-btn" id="btnReload">Reload</button>
+                            <button type="submit" class="pear-btn pear-btn-primary" lay-submit lay-filter="saveNetwork">保存</button>
+                            <button type="button" class="pear-btn" id="btnReload">刷新</button>
                         </div>
                     </div>
                 </form>
@@ -61,8 +61,8 @@
 </div>
 
 <script type="text/html" id="savedActions">
-    <a href="#" style="color: #409EFF;" lay-event="edit">Edit</a>
-    <a href="#" style="color: #DD4A68; margin-left: 10px;" lay-event="delete">Delete</a>
+    <a href="#" style="color: #409EFF;" lay-event="edit">编辑</a>
+    <a href="#" style="color: #DD4A68; margin-left: 10px;" lay-event="delete">删除</a>
 </script>
 
 <script src="/static/component/layui/layui.js"></script>
@@ -77,7 +77,7 @@
         function loadInterfaces() {
             $.post('/config/network/interfaces', function(res) {
                 if (res.code !== 0) {
-                    popup.failure(res.msg || 'Load interfaces failed');
+                    popup.failure(res.msg || '加载网卡信息失败');
                     return;
                 }
                 table.reload('ifTable', {data: res.data || []});
@@ -87,7 +87,7 @@
         function loadSaved() {
             $.post('/config/network/saved', function(res) {
                 if (res.code !== 0) {
-                    popup.failure(res.msg || 'Load saved config failed');
+                    popup.failure(res.msg || '加载已保存配置失败');
                     return;
                 }
                 table.reload('savedTable', {data: res.data || []});
@@ -100,9 +100,9 @@
             data: [],
             page: false,
             cols: [[
-                {title: 'Name', field: 'name', width: 120},
+                {title: '网卡名', field: 'name', width: 120},
                 {title: 'MAC', field: 'mac'},
-                {title: 'IPv4', field: 'ipv4', width: 140}
+                {title: 'IPv4地址', field: 'ipv4', width: 140}
             ]]
         });
 
@@ -112,11 +112,11 @@
             data: [],
             page: false,
             cols: [[
-                {title: 'Interface', field: 'interface_name', width: 120},
-                {title: 'IP', field: 'ip', width: 140},
-                {title: 'Gateway', field: 'gateway', width: 140},
+                {title: '网卡名', field: 'interface_name', width: 120},
+                {title: 'IP地址', field: 'ip', width: 140},
+                {title: '网关', field: 'gateway', width: 140},
                 {title: 'DNS', field: 'dns'},
-                {title: 'Action', toolbar: '#savedActions', width: 90}
+                {title: '操作', toolbar: '#savedActions', width: 90}
             ]]
         });
 
@@ -125,11 +125,11 @@
             $.post('/config/network/save', data.field, function(res) {
                 layer.close(loading);
                 if (res.code === 0) {
-                    layer.msg('Saved', {icon: 1, time: 800}, function() {
+                    layer.msg('保存成功', {icon: 1, time: 800}, function() {
                         loadSaved();
                     });
                 } else {
-                    popup.failure(res.msg || 'Save failed');
+                    popup.failure(res.msg || '保存失败');
                 }
             });
             return false;
@@ -142,15 +142,15 @@
                 $('#gateway').val(obj.data.gateway || '');
                 $('#dns').val(obj.data.dns || '');
             } else if (obj.event === 'delete') {
-                layer.confirm('Delete selected network config?', {icon: 3, title: 'Warning'}, function(index) {
+                layer.confirm('确定删除该网络配置吗？', {icon: 3, title: '提示'}, function(index) {
                     layer.close(index);
                     $.post('/config/network/delete', {interface_name: obj.data.interface_name}, function(res) {
                         if (res.code === 0) {
-                            layer.msg('Deleted', {icon: 1, time: 700}, function() {
+                            layer.msg('删除成功', {icon: 1, time: 700}, function() {
                                 loadSaved();
                             });
                         } else {
-                            popup.failure(res.msg || 'Delete failed');
+                            popup.failure(res.msg || '删除失败');
                         }
                     });
                 });

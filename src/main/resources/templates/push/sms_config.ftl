@@ -95,7 +95,7 @@
 
         form.on('submit(saveSmsPush)', function(data) {
             if (!canManagePushTargets) {
-                popup.failure('permission denied');
+                popup.failure('无权限操作');
                 return false;
             }
             let loading = layer.load(2);
@@ -133,3 +133,4 @@
 </script>
 </body>
 </html>
+

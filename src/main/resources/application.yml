@@ -1,5 +1,19 @@
 spring:
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
   freemarker:
+    charset: UTF-8
     suffix: .ftl
     template-loader-path: classpath:/templates/
     request-context-attribute: request
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true

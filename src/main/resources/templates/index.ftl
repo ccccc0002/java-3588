@@ -30,7 +30,7 @@
 					<li class="layui-nav-item layui-hide-xs" style="display: none;"><a href="http://www.pearadmin.com" class="layui-icon layui-icon-website"></a></li>
 					<li class="layui-nav-item layui-hide-xs message" style="display: none;"></li>
 					<li class="layui-nav-item user">
-						<a class="layui-icon layui-icon-username" href="javascript:">${accountName!''} [${accountRole!''}]</a>
+						<a class="layui-icon layui-icon-username" href="javascript:">${accountName!''} [${accountRoleLabel!accountRole!''}]</a>
 						<dl class="layui-nav-child">
 							<dd><a href="javascript:void(0);" user-menu-title="profile" onclick="showPass();">更新密码</a></dd>
 							<dd><a href="/logout" class="logout">退出系统</a></dd>
@@ -53,11 +53,11 @@
 			</div>
 			<div class="layui-footer layui-text">
 				<span class="left">
-					Released under the MIT license.
+					本系统遵循 MIT 许可证发布。
 				</span>
 				<span class="center"></span>
 				<span class="right">
-					Copyright © 2021-2022 pearadmin.com
+					版权所有 © 2021-2022 pearadmin.com
 				</span>
 			</div>
 			<div class="pear-cover"></div>

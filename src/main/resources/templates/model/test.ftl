@@ -330,7 +330,7 @@
                 dnd: '#drop-zone',
                 resize: false,
                 accept: {
-                    title: 'Images',
+                    title: '图片',
                     extensions: 'jpg,jpeg,bmp,png',
                     mimeTypes: 'image/*'
                 }

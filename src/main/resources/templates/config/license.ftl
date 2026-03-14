@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>License</title>
+    <title>授权管理</title>
     <link href="/static/component/pear/css/pear.css" rel="stylesheet" />
     <style>
         .layui-form-label { width: 160px; }
@@ -18,51 +18,51 @@
             <div class="layui-card-body">
                 <form class="layui-form" id="licenseForm">
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Device ID</label>
+                        <label class="layui-form-label">设备唯一ID</label>
                         <div class="layui-input-block">
                             <input type="text" id="device_id" readonly class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">License Key</label>
+                        <label class="layui-form-label">授权密钥</label>
                         <div class="layui-input-block">
                             <input type="text" name="license_key" id="license_key" required lay-verify="required" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Max Channels</label>
+                        <label class="layui-form-label">授权路数上限</label>
                         <div class="layui-input-block">
                             <input type="number" min="1" name="max_channels" id="max_channels" required lay-verify="required|number" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Expire Date</label>
+                        <label class="layui-form-label">到期日期</label>
                         <div class="layui-input-block">
                             <input type="date" name="expire_at" id="expire_at" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Tenant</label>
+                        <label class="layui-form-label">租户标识</label>
                         <div class="layui-input-block">
                             <input type="text" name="tenant" id="tenant" autocomplete="off" class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Current Cameras</label>
+                        <label class="layui-form-label">当前摄像头数量</label>
                         <div class="layui-input-block">
                             <input type="text" id="current_camera_count" readonly class="layui-input">
                         </div>
                     </div>
                     <div class="layui-form-item">
-                        <label class="layui-form-label">Status</label>
+                        <label class="layui-form-label">授权状态</label>
                         <div class="layui-input-block">
                             <div id="license_status" class="layui-form-mid"></div>
                         </div>
                     </div>
                     <div class="layui-form-item">
                         <div class="layui-input-block">
-                            <button type="submit" class="pear-btn pear-btn-primary" lay-submit lay-filter="saveLicense">Save</button>
-                            <button type="button" class="pear-btn" id="btnReload">Reload</button>
+                            <button type="submit" class="pear-btn pear-btn-primary" lay-submit lay-filter="saveLicense">保存</button>
+                            <button type="button" class="pear-btn" id="btnReload">刷新</button>
                         </div>
                     </div>
                 </form>
@@ -81,7 +81,7 @@
         function loadLicense() {
             $.post('/config/license/info', function(res) {
                 if (res.code !== 0) {
-                    popup.failure(res.msg || 'Load license failed');
+                    popup.failure(res.msg || '加载授权信息失败');
                     return;
                 }
                 let d = res.data || {};
@@ -92,9 +92,9 @@
                 $('#tenant').val(d.tenant || '');
                 $('#current_camera_count').val(d.current_camera_count || 0);
                 if (d.valid) {
-                    $('#license_status').html('<span class="status-ok">VALID</span>');
+                    $('#license_status').html('<span class="status-ok">有效</span>');
                 } else {
-                    $('#license_status').html('<span class="status-bad">INVALID</span>');
+                    $('#license_status').html('<span class="status-bad">无效</span>');
                 }
             });
         }
@@ -104,11 +104,11 @@
             $.post('/config/license/save', data.field, function(res) {
                 layer.close(loading);
                 if (res.code === 0) {
-                    layer.msg('Saved', {icon: 1, time: 900}, function() {
+                    layer.msg('保存成功', {icon: 1, time: 900}, function() {
                         loadLicense();
                     });
                 } else {
-                    popup.failure(res.msg || 'Save failed');
+                    popup.failure(res.msg || '保存失败');
                 }
             });
             return false;
@@ -120,4 +120,3 @@
 </script>
 </body>
 </html>
-

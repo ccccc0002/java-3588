@@ -172,7 +172,7 @@
             height: 'full-148',
             toolbar: '#table-toolbar',
             defaultToolbar: [{
-                title: 'Refresh',
+                title: '刷新',
                 layEvent: 'refresh',
                 icon: 'layui-icon-refresh'
             }]
@@ -222,3 +222,4 @@
     })
 </script>
 </html>
+
