@@ -236,6 +236,7 @@ def build_targets(camera_context: Dict[str, Any], include_capture_endpoints: boo
         SmokeTarget('GET', '/location/form', name='location_form_page'),
         SmokeTarget('GET', '/model', name='model_page'),
         SmokeTarget('GET', '/report', name='report_page'),
+        SmokeTarget('GET', '/report/push-targets', name='report_push_targets_page'),
         SmokeTarget('GET', '/statistic', name='statistic_page'),
         SmokeTarget('GET', '/stream', name='stream_page'),
         SmokeTarget('GET', '/stream/select_play', name='stream_select_play_page'),

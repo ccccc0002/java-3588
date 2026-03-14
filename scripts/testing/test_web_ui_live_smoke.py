@@ -159,6 +159,8 @@ class WebUiLiveSmokeTest(unittest.TestCase):
 
         full_paths = {target.path for target in full_targets}
         light_paths = {target.path for target in light_targets}
+        self.assertIn('/report/push-targets', full_paths)
+        self.assertIn('/report/push-targets', light_paths)
         self.assertIn('/camera/takePhoto', full_paths)
         self.assertIn('/testimage/get', full_paths)
         self.assertNotIn('/camera/takePhoto', light_paths)
