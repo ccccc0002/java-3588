@@ -30,6 +30,11 @@ public class PushController {
     private static final String TAG_VOICE_PUSH_URL = "voice_push_url";
     private static final String TAG_VOICE_PUSH_BEARER = "voice_push_bearer";
     private static final String TAG_VOICE_PUSH_NUMBERS = "voice_push_numbers";
+    private static final String TAG_SMS_ENABLE = "smsEnable";
+    private static final String TAG_SMS_PROVIDER = "sms_provider";
+    private static final String TAG_SMS_API_URL = "sms_api_url";
+    private static final String TAG_SMS_API_KEY = "sms_api_key";
+    private static final String TAG_SMS_TPL_ID = "sms_tpl_id";
 
     @Autowired
     private ConfigService configService;
@@ -79,6 +84,62 @@ public class PushController {
         upsertConfig(TAG_VOICE_PUSH_NUMBERS, "Voice Push Numbers", defaultString(numbers));
 
         operationLogService.record("push:voice:save", "voice", true, "voice push config saved", "enabled=" + Boolean.TRUE.equals(enabled));
+        return JsonResultUtils.success();
+    }
+
+    @GetMapping("/sms-config")
+    public String smsPushPage() {
+        return "push/sms_config";
+    }
+
+    @PostMapping("/sms-config/detail")
+    @ResponseBody
+    public JsonResult smsPushDetail() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("enabled", "true".equalsIgnoreCase(defaultString(configService.getByValTag(TAG_SMS_ENABLE)))
+                || "1".equals(defaultString(configService.getByValTag(TAG_SMS_ENABLE))));
+        data.put("provider", defaultString(configService.getByValTag(TAG_SMS_PROVIDER)));
+        data.put("api_url", defaultString(configService.getByValTag(TAG_SMS_API_URL)));
+        data.put("api_key", defaultString(configService.getByValTag(TAG_SMS_API_KEY)));
+        data.put("tpl_id", defaultString(configService.getByValTag(TAG_SMS_TPL_ID)));
+        return JsonResultUtils.success(data);
+    }
+
+    @PostMapping("/sms-config/save")
+    @ResponseBody
+    public JsonResult saveSmsPushConfig(Boolean enabled,
+                                        String provider,
+                                        String apiUrl,
+                                        String api_url,
+                                        String apiKey,
+                                        String api_key,
+                                        String tplId,
+                                        String tpl_id) {
+        if (!roleAccessService.canManagePushTargets(currentAccountId())) {
+            operationLogService.record("push:sms:save", "sms", false, "permission denied", "");
+            return JsonResultUtils.fail("permission denied");
+        }
+        String finalApiUrl = StrUtil.isBlank(apiUrl) ? api_url : apiUrl;
+        String finalApiKey = StrUtil.isBlank(apiKey) ? api_key : apiKey;
+        String finalTplId = StrUtil.isBlank(tplId) ? tpl_id : tplId;
+        if (StrUtil.isNotBlank(finalApiUrl) && !(finalApiUrl.startsWith("http://") || finalApiUrl.startsWith("https://"))) {
+            return JsonResultUtils.fail("api_url must start with http:// or https://");
+        }
+        if (Boolean.TRUE.equals(enabled)) {
+            if (StrUtil.isBlank(finalApiKey)) {
+                return JsonResultUtils.fail("api_key is required when sms enabled");
+            }
+            if (StrUtil.isBlank(finalTplId)) {
+                return JsonResultUtils.fail("tpl_id is required when sms enabled");
+            }
+        }
+
+        upsertConfig(TAG_SMS_ENABLE, "SMS Enable", Boolean.TRUE.equals(enabled) ? "true" : "false");
+        upsertConfig(TAG_SMS_PROVIDER, "SMS Provider", defaultString(provider));
+        upsertConfig(TAG_SMS_API_URL, "SMS API URL", defaultString(finalApiUrl));
+        upsertConfig(TAG_SMS_API_KEY, "SMS API Key", defaultString(finalApiKey));
+        upsertConfig(TAG_SMS_TPL_ID, "SMS Template ID", defaultString(finalTplId));
+        operationLogService.record("push:sms:save", "sms", true, "sms config saved", "enabled=" + Boolean.TRUE.equals(enabled));
         return JsonResultUtils.success();
     }
 

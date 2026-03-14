@@ -18,10 +18,7 @@ import java.util.Map;
 public class SendSmsUtil {
 
     private static final String ENCODING = "UTF-8";
-    //
-    private static final String apikey = "";
-    //
-    private static final String tplid = "";
+    private static final String DEFAULT_SMS_API_URL = "https://sms.yunpian.com/v2/sms/tpl_batch_send.json";
 
 
     /**
@@ -31,18 +28,31 @@ public class SendSmsUtil {
      * @param algorithmName
      */
     public static void send(String mobiles, String cameraName, String algorithmName) {
+        send(mobiles, cameraName, algorithmName, "", "", "");
+    }
+
+    public static void send(String mobiles,
+                            String cameraName,
+                            String algorithmName,
+                            String apiKey,
+                            String tplId,
+                            String apiUrl) {
         if(StrUtil.isBlank(mobiles)) {
             return ;
+        }
+        if (StrUtil.isBlank(apiKey) || StrUtil.isBlank(tplId)) {
+            return;
         }
 
         //
         try {
             Map<String, Object> params = new HashMap<>();
-            params.put("apikey", apikey);
+            params.put("apikey", apiKey);
             params.put("mobile", mobiles);
-            params.put("tpl_id", tplid);
+            params.put("tpl_id", tplId);
             params.put("tpl_value", URLEncoder.encode("#camera#", ENCODING) + "=" + URLEncoder.encode(cameraName, ENCODING) + "&" + URLEncoder.encode("#algorithm#", ENCODING) + "=" + URLEncoder.encode(algorithmName, ENCODING) + "&" + URLEncoder.encode("#time#", ENCODING) + "=" + DateUtil.format(new Date(), "MM/dd HH:mm"));
-            HttpUtil.post("https://sms.yunpian.com/v2/sms/tpl_batch_send.json", params);
+            String finalApiUrl = StrUtil.isBlank(apiUrl) ? DEFAULT_SMS_API_URL : apiUrl.trim();
+            HttpUtil.post(finalApiUrl, params);
         } catch (Exception e) {
             //
         }

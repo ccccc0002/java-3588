@@ -22,6 +22,10 @@
         <i class="layui-icon layui-icon-add-1"></i>
         新增号码
     </button>
+    <button class="pear-btn pear-btn-warming pear-btn-md" lay-event="smsConfig" style="margin-left: 8px;">
+        <i class="layui-icon layui-icon-set"></i>
+        短信配置
+    </button>
 </script>
 <script type="text/html" id="table-actions">
     <a href="#" style="color: #DD4A68;" lay-event="remove">删除</a>
@@ -75,6 +79,11 @@
                     return;
                 }
                 window.addForm();
+            } else if (obj.event === 'smsConfig') {
+                if (!guardWriteAction()) {
+                    return;
+                }
+                window.openSmsConfig();
             } else if (obj.event === 'refresh') {
                 window.refreshTable();
             }
@@ -92,6 +101,16 @@
 
         window.refreshTable = function() {
             table.reload('table');
+        };
+
+        window.openSmsConfig = function() {
+            layer.open({
+                type: 2,
+                title: '短信推送配置',
+                shade: 0.1,
+                area: ['72%', '82%'],
+                content: '/push/sms-config'
+            });
         };
 
         window.removeData = function(obj) {
@@ -129,7 +148,7 @@
             if (permissions.can_write_system) {
                 return;
             }
-            $('button[lay-event=add]').prop('disabled', true).addClass('layui-btn-disabled');
+            $('button[lay-event=add],button[lay-event=smsConfig]').prop('disabled', true).addClass('layui-btn-disabled');
         }
 
         $.post('/account/permissions', {}, function(res) {

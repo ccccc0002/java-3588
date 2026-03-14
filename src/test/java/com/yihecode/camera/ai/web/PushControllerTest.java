@@ -47,6 +47,11 @@ class PushControllerTest {
     }
 
     @Test
+    void smsPushPageShouldReturnTemplate() {
+        assertEquals("push/sms_config", pushController.smsPushPage());
+    }
+
+    @Test
     void saveVoicePushConfigShouldFailWhenPermissionDenied() {
         when(roleAccessService.canManagePushTargets(any())).thenReturn(false);
 
@@ -77,5 +82,49 @@ class PushControllerTest {
         verify(configService).evictByTag(eq("voice_push_url"));
         verify(configService).evictByTag(eq("voice_push_bearer"));
         verify(configService).evictByTag(eq("voice_push_numbers"));
+    }
+
+    @Test
+    void saveSmsPushConfigShouldFailWhenPermissionDenied() {
+        when(roleAccessService.canManagePushTargets(any())).thenReturn(false);
+
+        JsonResult result = pushController.saveSmsPushConfig(true, "yunpian", "https://sms.example.com/send", null, "key", null, "tpl", null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("permission denied", result.getMsg());
+        verify(configService, never()).saveOrUpdate(any(Config.class));
+    }
+
+    @Test
+    void saveSmsPushConfigShouldValidateUrlPrefix() {
+        JsonResult result = pushController.saveSmsPushConfig(true, "yunpian", "ftp://invalid", null, "key", null, "tpl", null);
+
+        assertEquals(500, result.getCode());
+        assertEquals("api_url must start with http:// or https://", result.getMsg());
+        verify(configService, never()).saveOrUpdate(any(Config.class));
+    }
+
+    @Test
+    void saveSmsPushConfigShouldRequireApiKeyAndTplWhenEnabled() {
+        JsonResult noKey = pushController.saveSmsPushConfig(true, "yunpian", "https://sms.example.com/send", null, "", null, "tpl", null);
+        assertEquals(500, noKey.getCode());
+        assertEquals("api_key is required when sms enabled", noKey.getMsg());
+
+        JsonResult noTpl = pushController.saveSmsPushConfig(true, "yunpian", "https://sms.example.com/send", null, "key", null, "", null);
+        assertEquals(500, noTpl.getCode());
+        assertEquals("tpl_id is required when sms enabled", noTpl.getMsg());
+    }
+
+    @Test
+    void saveSmsPushConfigShouldPersistConfigTags() {
+        JsonResult result = pushController.saveSmsPushConfig(true, "yunpian", "https://sms.example.com/send", null, "key", null, "tpl", null);
+
+        assertEquals(0, result.getCode());
+        verify(configService, times(5)).saveOrUpdate(any(Config.class));
+        verify(configService).evictByTag(eq("smsEnable"));
+        verify(configService).evictByTag(eq("sms_provider"));
+        verify(configService).evictByTag(eq("sms_api_url"));
+        verify(configService).evictByTag(eq("sms_api_key"));
+        verify(configService).evictByTag(eq("sms_tpl_id"));
     }
 }

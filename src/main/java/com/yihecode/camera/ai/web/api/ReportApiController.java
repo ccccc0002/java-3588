@@ -246,10 +246,13 @@ public class ReportApiController {
                 }
 
                 String smsEnable = configService.getByValTag("smsEnable");
-                if(StrUtil.isNotBlank(smsEnable) && "true".equals(smsEnable)) {
+                if(StrUtil.isNotBlank(smsEnable) && ("true".equalsIgnoreCase(smsEnable) || "1".equals(smsEnable))) {
                     String mobiles = smsPhoneService.listPhoneStr("test");
                     if (StrUtil.isNotBlank(mobiles)) {
-                        SendSmsUtil.send(mobiles, camera.getName(), algorithm.getName());
+                        String smsApiKey = configService.getByValTag("sms_api_key");
+                        String smsTplId = configService.getByValTag("sms_tpl_id");
+                        String smsApiUrl = configService.getByValTag("sms_api_url");
+                        SendSmsUtil.send(mobiles, camera.getName(), algorithm.getName(), smsApiKey, smsTplId, smsApiUrl);
                     }
                 }
                 // push to wework robot
