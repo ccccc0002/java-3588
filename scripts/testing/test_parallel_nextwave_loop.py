@@ -38,6 +38,10 @@ class _FakeRunner:
 
 
 class ParallelNextwaveLoopTests(unittest.TestCase):
+    def test_parse_args_can_disable_stop_on_failure(self):
+        args = parallel_nextwave_loop.parse_args(["--continue-on-failure"])
+        self.assertFalse(args.stop_on_failure)
+
     def test_resolve_start_index_uses_latest_existing_session(self):
         index = parallel_nextwave_loop.resolve_start_index(
             session_prefix="phase3-nextwave-r",
@@ -162,6 +166,83 @@ class ParallelNextwaveLoopTests(unittest.TestCase):
             self.assertEqual(1, len(summary["runs"]))
             self.assertEqual("failed", summary["runs"][0]["report_status"])
             self.assertEqual(4, len(runner.calls))
+
+    def test_execute_loop_can_continue_after_failure(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            args = parallel_nextwave_loop.parse_args(
+                [
+                    "--lane-file",
+                    "scripts/rk3588/lanes/phase3-nextwave.json",
+                    "--iterations",
+                    "2",
+                    "--output-dir",
+                    temp_dir,
+                    "--poll-interval-sec",
+                    "0",
+                    "--continue-on-failure",
+                ]
+            )
+
+            runner = _FakeRunner(
+                [
+                    (("list",), {"status": "listed", "sessions": []}),
+                    (
+                        (
+                            "start",
+                            "--session",
+                            "phase3-nextwave-r1",
+                            "--force",
+                            "--lane-file",
+                            "scripts/rk3588/lanes/phase3-nextwave.json",
+                            "--workdir",
+                            ".",
+                        ),
+                        {"status": "started", "session": "phase3-nextwave-r1"},
+                    ),
+                    (
+                        ("report", "--session", "phase3-nextwave-r1", "--tail-lines", "12"),
+                        {"status": "failed", "session": "phase3-nextwave-r1"},
+                    ),
+                    (
+                        ("prune", "--session-prefix", "phase3-nextwave-", "--keep-latest", "4"),
+                        {"status": "pruned", "killed": [], "kept": ["phase3-nextwave-r1"]},
+                    ),
+                    (
+                        (
+                            "start",
+                            "--session",
+                            "phase3-nextwave-r2",
+                            "--force",
+                            "--lane-file",
+                            "scripts/rk3588/lanes/phase3-nextwave.json",
+                            "--workdir",
+                            ".",
+                        ),
+                        {"status": "started", "session": "phase3-nextwave-r2"},
+                    ),
+                    (
+                        ("report", "--session", "phase3-nextwave-r2", "--tail-lines", "12"),
+                        {"status": "passed", "session": "phase3-nextwave-r2"},
+                    ),
+                    (
+                        ("prune", "--session-prefix", "phase3-nextwave-", "--keep-latest", "4"),
+                        {"status": "pruned", "killed": [], "kept": ["phase3-nextwave-r1", "phase3-nextwave-r2"]},
+                    ),
+                ]
+            )
+
+            summary = parallel_nextwave_loop.execute_loop(
+                args,
+                runner=runner,
+                now_fn=lambda: 0.0,
+                sleep_fn=lambda _seconds: None,
+            )
+
+            self.assertEqual("failed", summary["status"])
+            self.assertEqual(2, len(summary["runs"]))
+            self.assertEqual("failed", summary["runs"][0]["report_status"])
+            self.assertEqual("passed", summary["runs"][1]["report_status"])
+            self.assertEqual(7, len(runner.calls))
 
 
 if __name__ == "__main__":

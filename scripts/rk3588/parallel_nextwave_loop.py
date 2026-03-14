@@ -32,7 +32,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--session-timeout-sec", type=float, default=1800.0)
     parser.add_argument("--prune-prefix", default="phase3-nextwave-")
     parser.add_argument("--keep-latest", type=int, default=4)
-    parser.add_argument("--stop-on-failure", action="store_true", default=True)
+    parser.set_defaults(stop_on_failure=True)
+    parser.add_argument("--stop-on-failure", dest="stop_on_failure", action="store_true")
+    parser.add_argument("--continue-on-failure", dest="stop_on_failure", action="store_false")
     parser.add_argument("--output-dir", default="runtime/test-out/parallel/nextwave-loop")
     return parser.parse_args(argv)
 
