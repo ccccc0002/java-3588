@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 10:41:09
+- generated_at: 2026-03-14 10:41:34
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T10:41:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T10:41:33+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T10:41:09+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T10:41:09+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T10:34:48+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T10:34:48+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 - 2026-03-14T10:32:43+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T10:32:42+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
-- 2026-03-14T10:31:24+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
-- 2026-03-14T10:31:24+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
 
 ## Recent Process Log Tail
 
-| 2026-03-14 09:53:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-095333-PHASE2-EXEC.json |
-| 2026-03-14 09:53:34 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 09:53:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Added Phase12 H.265 closeout automation and reproduced RK3588 H.265 infer timeout regression (I5002) with H.264 control pass. |
-| 2026-03-14 10:05:33 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-100533-PHASE2-EXEC.json |
-| 2026-03-14 10:05:33 | PHASE2-EXEC | Phase11 | phase_started | codex-agent | Fixed H.265 decode false forcing bug in yolov8n decode plugin (RTSP source now defaults codec=auto, no forced -c:v, configurable decode timeout). RK3588 validation passed: test_yolov8n_plugin + H.265 quality probe (3/3) + Phase12 H.265 closeout real run passed. |
-| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-100542-PHASE2-EXEC.json |
-| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |
-| 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-100543-PHASE2-EXEC.json |
 | 2026-03-14 10:05:43 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 10:05:43 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: H.265 decode regression root-caused and fixed; RK3588 probe/closeout rerun green with mpp-rga pipeline. |
 | 2026-03-14 10:31:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-103123-PHASE2-EXEC.json |
@@ -61,3 +53,11 @@
 | 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-104108-PHASE2-EXEC.json |
 | 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Alarm preview gate hardened for no-alert scenes: verify_alarm_stream_annotation now returns skipped_no_alert (exit 0) when report status is skipped/empty alerts; RK3588 Phase12 H.265 closeout with --verify-alarm-preview passed at runtime/test-out/phase12-h265-closeout-alarm-r2. |
 | 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-104109-PHASE2-EXEC.json |
+| 2026-03-14 10:41:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Alarm preview gate hardened for no-alert scenes: verify_alarm_stream_annotation now returns skipped_no_alert (exit 0) when report status is skipped/empty alerts; RK3588 Phase12 H.265 closeout with --verify-alarm-preview passed at runtime/test-out/phase12-h265-closeout-alarm-r2. |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-104133-PHASE2-EXEC.json |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960. |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-104133-PHASE2-EXEC.json |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960. |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-104134-PHASE2-EXEC.json |

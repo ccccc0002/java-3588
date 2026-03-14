@@ -1518,3 +1518,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-104109-PHASE2-EXEC.json |
 | 2026-03-14 10:41:09 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 10:41:09 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Alarm preview gate hardened for no-alert scenes: verify_alarm_stream_annotation now returns skipped_no_alert (exit 0) when report status is skipped/empty alerts; RK3588 Phase12 H.265 closeout with --verify-alarm-preview passed at runtime/test-out/phase12-h265-closeout-alarm-r2. |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-104133-PHASE2-EXEC.json |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:41:33 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960. |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-104133-PHASE2-EXEC.json |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960. |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-104134-PHASE2-EXEC.json |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 10:41:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960. |

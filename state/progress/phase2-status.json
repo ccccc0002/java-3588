@@ -150,16 +150,16 @@
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T10:41:08+08:00",
-                                   "summary":  "Alarm preview gate hardened for no-alert scenes: verify_alarm_stream_annotation now returns skipped_no_alert (exit 0) when report status is skipped/empty alerts; RK3588 Phase12 H.265 closeout with --verify-alarm-preview passed at runtime/test-out/phase12-h265-closeout-alarm-r2.",
+                                   "updated_at":  "2026-03-14T10:41:33+08:00",
+                                   "summary":  "Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
                                                         "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py scripts/testing/test_run_phase11_handoff.py \u0026\u0026 bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --verify-alarm-preview --soak-max-iterations 1 --quality-iterations 3",
                                                         "github_sync_required_on_milestone":  true,
-                                                        "github_sync_status":  "pending",
-                                                        "github_sync_ref":  "",
-                                                        "updated_at":  "2026-03-14T10:41:08+08:00"
+                                                        "github_sync_status":  "synced",
+                                                        "github_sync_ref":  "5670960",
+                                                        "updated_at":  "2026-03-14T10:41:33+08:00"
                                                     }
                                }
                },
@@ -1891,6 +1891,16 @@
                         "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py scripts/testing/test_run_phase11_handoff.py \u0026\u0026 bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --verify-alarm-preview --soak-max-iterations 1 --quality-iterations 3",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  ""
+                    },
+                    {
+                        "timestamp":  "2026-03-14T10:41:33+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Alarm preview no-alert tolerance synced: Phase12 H.265 closeout with --verify-alarm-preview passes on RK3588 (runtime/test-out/phase12-h265-closeout-alarm-r2); commit 5670960.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_verify_alarm_stream_annotation.py scripts/testing/test_run_phase11_handoff.py \u0026\u0026 bash scripts/rk3588/Run-Phase12-H265-Closeout.sh --verify-alarm-preview --soak-max-iterations 1 --quality-iterations 3",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "5670960"
                     }
                 ]
 }
