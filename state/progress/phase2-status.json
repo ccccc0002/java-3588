@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T08:07:06+08:00",
-                                  "summary":  "Alert push phone module hardened: added /push/channel alias, fixed smsphone UI encoding/copy, switched menu entry, and validated SmsPhoneControllerTest on RK3588.",
+                                  "updated_at":  "2026-03-14T08:09:34+08:00",
+                                  "summary":  "Alert push phone module hardened and synced: /push/channel alias + smsphone UI rewrite + menu route update validated on RK3588 (unit + web smoke).",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest test",
+                                                       "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                                                        "github_sync_required_on_milestone":  true,
-                                                       "github_sync_status":  "pending",
-                                                       "github_sync_ref":  "",
-                                                       "updated_at":  "2026-03-14T08:07:06+08:00"
+                                                       "github_sync_status":  "synced",
+                                                       "github_sync_ref":  "e84fc55",
+                                                       "updated_at":  "2026-03-14T08:09:34+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1701,6 +1701,16 @@
                         "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest test",
                         "github_sync_status":  "pending",
                         "github_sync_ref":  ""
+                    },
+                    {
+                        "timestamp":  "2026-03-14T08:09:34+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Alert push phone module hardened and synced: /push/channel alias + smsphone UI rewrite + menu route update validated on RK3588 (unit + web smoke).",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=SmsPhoneControllerTest,IndexControllerTest,LoginControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "e84fc55"
                     }
                 ]
 }
