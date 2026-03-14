@@ -266,6 +266,35 @@ public class ReportApiController {
                         WeWorkRobotSendUtils.sendTextAndImage(weworkUrl, camera.getName() + "#" + algorithm.getName() + "#ALERT, " + DateUtil.format(new Date(), "MM/dd HH:mm"), clickUrl, picUrl);
                     }
                 }
+
+                String voicePushEnabled = configService.getByValTag("voice_push_enabled");
+                if (StrUtil.isNotBlank(voicePushEnabled) && ("1".equals(voicePushEnabled) || "true".equalsIgnoreCase(voicePushEnabled))) {
+                    String voicePushUrl = configService.getByValTag("voice_push_url");
+                    if (StrUtil.isNotBlank(voicePushUrl)) {
+                        try {
+                            JSONObject voicePayload = new JSONObject();
+                            voicePayload.put("cmpn_cd", "TLB");
+                            voicePayload.put("camera_id", String.valueOf(cameraId));
+                            voicePayload.put("camera_name", camera.getName());
+                            voicePayload.put("algorithm_id", String.valueOf(algorithmId));
+                            voicePayload.put("algorithm_name", algorithm.getName());
+                            voicePayload.put("alarm_dt", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+                            voicePayload.put("report_id", String.valueOf(report.getId()));
+                            voicePayload.put("provider", configService.getByValTag("voice_push_provider"));
+                            voicePayload.put("numbers", configService.getByValTag("voice_push_numbers"));
+                            voicePayload.put("params", params);
+                            reportPushService.request(
+                                    voicePushUrl,
+                                    voicePayload,
+                                    false,
+                                    fileName,
+                                    trimText(configService.getByValTag("voice_push_bearer"))
+                            );
+                        } catch (Exception e) {
+                            log.warn("voice push failed, reportId={}, ex={}", report.getId(), e.getMessage());
+                        }
+                    }
+                }
             }
             return JsonResultUtils.success();
         } catch (Exception e) {

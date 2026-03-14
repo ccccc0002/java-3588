@@ -29,10 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class ReportApiControllerTest {
@@ -72,6 +74,11 @@ class ReportApiControllerTest {
 
     @InjectMocks
     private ReportApiController reportApiController;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        lenient().when(configService.getByValTag(anyString())).thenReturn("");
+    }
 
     @Test
     void report_shouldDispatchToAllEnabledHttpTargets() {
@@ -136,5 +143,37 @@ class ReportApiControllerTest {
 
         assertEquals(0, result.getCode());
         verify(reportPushService, never()).request(any(), any(), anyBoolean(), any(), any());
+    }
+
+    @Test
+    void report_shouldDispatchVoicePushWhenEnabled() {
+        Camera camera = new Camera();
+        camera.setId(31L);
+        camera.setName("cam-31");
+        when(cameraService.getById(31L)).thenReturn(camera);
+
+        Algorithm algorithm = new Algorithm();
+        algorithm.setId(41L);
+        algorithm.setName("algo-41");
+        when(algorithmService.getById(41L)).thenReturn(algorithm);
+
+        when(reportPeriodService.listData(31L, 41L)).thenReturn(new ArrayList<>());
+        when(reportService.save(any(Report.class))).thenAnswer(invocation -> {
+            Report report = invocation.getArgument(0);
+            report.setId(300L);
+            return true;
+        });
+        when(reportPushTargetService.listEnabledTargets()).thenReturn(new ArrayList<>());
+        when(configService.getByValTag("voice_push_enabled")).thenReturn("1");
+        when(configService.getByValTag("voice_push_url")).thenReturn("http://localhost:9100/voice");
+        when(configService.getByValTag("voice_push_provider")).thenReturn("mock-provider");
+        when(configService.getByValTag("voice_push_numbers")).thenReturn("13800000000");
+        when(configService.getByValTag("voice_push_bearer")).thenReturn("voice-token");
+
+        JsonResult result = reportApiController.report(31L, 41L, "voice.jpg", "[]", null);
+
+        assertEquals(0, result.getCode());
+        verify(reportPushService, times(1))
+                .request(eq("http://localhost:9100/voice"), any(), eq(false), eq("voice.jpg"), eq("voice-token"));
     }
 }
