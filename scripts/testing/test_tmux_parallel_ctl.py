@@ -137,6 +137,54 @@ class TmuxParallelCtlTests(unittest.TestCase):
         self.assertEqual(1, report['running_count'])
         self.assertEqual('phase8', report['lanes'][1]['name'])
 
+    def test_parse_session_sort_key_prefers_retry_suffix(self):
+        base, index, raw = tmux_parallel_ctl.parse_session_sort_key('phase2-nextwave-r14')
+        self.assertEqual('phase2-nextwave', base)
+        self.assertEqual(14, index)
+        self.assertEqual('phase2-nextwave-r14', raw)
+
+    def test_prune_sessions_keeps_latest_by_prefix(self):
+        listed = {
+            'status': 'listed',
+            'sessions': ['phase2-nextwave-r1', 'phase2-nextwave-r2', 'phase2-nextwave-r3', 'other-r9'],
+        }
+
+        def fake_run_tmux(args):
+            if args[:2] == ['kill-session', '-t']:
+                return mock.Mock(returncode=0, stdout='', stderr='')
+            return mock.Mock(returncode=1, stdout='', stderr='unsupported')
+
+        with mock.patch.object(tmux_parallel_ctl, 'tmux_available', return_value=True), \
+             mock.patch.object(tmux_parallel_ctl, 'list_sessions', return_value=listed), \
+             mock.patch.object(tmux_parallel_ctl, 'run_tmux', side_effect=fake_run_tmux):
+            result = tmux_parallel_ctl.prune_sessions('phase2-nextwave-', 1)
+
+        self.assertEqual('pruned', result['status'])
+        self.assertEqual(['phase2-nextwave-r3'], result['kept'])
+        self.assertEqual(['phase2-nextwave-r1', 'phase2-nextwave-r2'], result['killed'])
+
+    def test_prune_sessions_returns_partial_failed_when_kill_fails(self):
+        listed = {
+            'status': 'listed',
+            'sessions': ['phase2-nextwave-r1', 'phase2-nextwave-r2'],
+        }
+
+        def fake_run_tmux(args):
+            if args[:2] == ['kill-session', '-t']:
+                target = args[2]
+                code = 1 if target.endswith('r1') else 0
+                return mock.Mock(returncode=code, stdout='', stderr='failed' if code else '')
+            return mock.Mock(returncode=1, stdout='', stderr='unsupported')
+
+        with mock.patch.object(tmux_parallel_ctl, 'tmux_available', return_value=True), \
+             mock.patch.object(tmux_parallel_ctl, 'list_sessions', return_value=listed), \
+             mock.patch.object(tmux_parallel_ctl, 'run_tmux', side_effect=fake_run_tmux):
+            result = tmux_parallel_ctl.prune_sessions('phase2-nextwave-', 0)
+
+        self.assertEqual('prune_partial_failed', result['status'])
+        self.assertEqual(['phase2-nextwave-r2'], result['killed'])
+        self.assertEqual(['phase2-nextwave-r1'], result['failed'])
+
 
 if __name__ == '__main__':
     unittest.main()

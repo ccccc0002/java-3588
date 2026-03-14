@@ -185,9 +185,20 @@ def load_lanes_from_file(path: Path) -> List[Tuple[str, str]]:
     return lanes
 
 
+def parse_session_sort_key(name: str) -> Tuple[str, int, str]:
+    text = str(name or '').strip()
+    match = re.search(r'-r(\d+)$', text)
+    if not match:
+        return text, -1, text
+    try:
+        return text[: match.start()], int(match.group(1)), text
+    except ValueError:
+        return text, -1, text
+
+
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Control tmux-based parallel lanes')
-    parser.add_argument('command', choices=['start', 'status', 'stop', 'list', 'report'])
+    parser.add_argument('command', choices=['start', 'status', 'stop', 'list', 'report', 'prune'])
     parser.add_argument('--session', default='phase2-parallel')
     parser.add_argument('--workdir', default='.')
     parser.add_argument('--force', action='store_true', default=False)
@@ -195,6 +206,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument('--lane-file', default='')
     parser.add_argument('--with-default-lanes', action='store_true', default=False)
     parser.add_argument('--tail-lines', type=int, default=10)
+    parser.add_argument('--session-prefix', default='phase2-')
+    parser.add_argument('--keep-latest', type=int, default=8)
 
     parser.add_argument('--base-url', default='http://127.0.0.1:18082')
     parser.add_argument('--bridge-url', default='http://127.0.0.1:19080')
@@ -319,6 +332,50 @@ def list_sessions() -> Dict[str, object]:
     return {'status': 'listed', 'sessions': sessions}
 
 
+def prune_sessions(prefix: str, keep_latest: int) -> Dict[str, object]:
+    if not tmux_available():
+        return {'status': 'tmux_missing', 'sessions': []}
+    session_result = list_sessions()
+    all_sessions = [str(item).strip() for item in session_result.get('sessions', []) if str(item).strip()]
+    prefix_text = str(prefix or '').strip()
+    matched = [name for name in all_sessions if name.startswith(prefix_text)] if prefix_text else list(all_sessions)
+    if not matched:
+        return {
+            'status': 'pruned',
+            'prefix': prefix_text,
+            'keep_latest': max(int(keep_latest), 0),
+            'matched_count': 0,
+            'killed': [],
+            'kept': [],
+        }
+
+    ordered = sorted(matched, key=parse_session_sort_key)
+    keep_count = max(int(keep_latest), 0)
+    kept = ordered[-keep_count:] if keep_count > 0 else []
+    keep_set = set(kept)
+    killed: List[str] = []
+    failed: List[str] = []
+    for name in ordered:
+        if name in keep_set:
+            continue
+        result = run_tmux(['kill-session', '-t', name])
+        if result.returncode == 0:
+            killed.append(name)
+        else:
+            failed.append(name)
+
+    status = 'pruned' if not failed else 'prune_partial_failed'
+    return {
+        'status': status,
+        'prefix': prefix_text,
+        'keep_latest': keep_count,
+        'matched_count': len(matched),
+        'killed': killed,
+        'kept': kept,
+        'failed': failed,
+    }
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     if args.command == 'start':
@@ -329,10 +386,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         result = stop_session(args.session)
     elif args.command == 'report':
         result = report_session(args.session, args.tail_lines)
+    elif args.command == 'prune':
+        result = prune_sessions(args.session_prefix, args.keep_latest)
     else:
         result = list_sessions()
     print(json.dumps(result, ensure_ascii=True))
-    return 0 if result.get('status') in {'started', 'already_running', 'running', 'stopped', 'not_running', 'listed', 'passed', 'failed'} else 1
+    return 0 if result.get('status') in {
+        'started',
+        'already_running',
+        'running',
+        'stopped',
+        'not_running',
+        'listed',
+        'passed',
+        'failed',
+        'pruned',
+    } else 1
 
 
 if __name__ == '__main__':
