@@ -160,6 +160,53 @@ class JavaAppControllerTests(unittest.TestCase):
 
             self.assertEqual('stop_pending_exit', result['status'])
             self.assertEqual(200, result['health']['http_status'])
+            self.assertEqual([], result['fallback_killed_pids'])
+
+    def test_stop_app_falls_back_to_port_kill_when_pattern_stop_not_enough(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = pathlib.Path(temp_dir)
+            config = java_app_ctl.AppControllerConfig(
+                repo_root=repo_root,
+                runtime_dir=repo_root / 'runtime',
+                start_script=repo_root / 'scripts' / 'rk3588' / 'Run-Java-App.sh',
+                health_url='http://127.0.0.1:18082/api/inference/health',
+                poll_interval=0.01,
+                stop_wait_seconds=0.5,
+                stop_pattern='java-rk3588-0.0.1-SNAPSHOT.jar.*18082',
+                app_port=18082,
+            )
+            run_side_effect = [
+                mock.Mock(returncode=1, stdout='', stderr=''),
+                mock.Mock(returncode=0, stdout='8593\n8947\n', stderr=''),
+                mock.Mock(returncode=0, stdout='', stderr=''),
+                mock.Mock(returncode=0, stdout='', stderr=''),
+            ]
+            with mock.patch.object(java_app_ctl.subprocess, 'run', side_effect=run_side_effect) as run_mock, mock.patch.object(
+                java_app_ctl,
+                'wait_for_down',
+                side_effect=[
+                    {'http_status': 200, 'payload': {'code': 0}},
+                    {'http_status': 0, 'payload': {'message': 'connection refused'}},
+                ],
+            ):
+                result = java_app_ctl.stop_app(config)
+
+            self.assertEqual('stopped', result['status'])
+            self.assertEqual([8593, 8947], result['fallback_killed_pids'])
+            self.assertNotIn('fallback_force_kill', result)
+            self.assertEqual(
+                [
+                    mock.call(['pkill', '-f', 'java-rk3588-0.0.1-SNAPSHOT.jar.*18082'], capture_output=True, text=True),
+                    mock.call(
+                        ['bash', '-lc', mock.ANY],
+                        capture_output=True,
+                        text=True,
+                    ),
+                    mock.call(['kill', '-TERM', '8593'], capture_output=True, text=True),
+                    mock.call(['kill', '-TERM', '8947'], capture_output=True, text=True),
+                ],
+                run_mock.call_args_list,
+            )
 
     def test_status_app_reports_down_when_health_fails(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -200,6 +247,24 @@ class JavaAppControllerTests(unittest.TestCase):
             self.assertEqual('restart_blocked', result['status'])
             stop_app_mock.assert_called_once_with(config)
             start_app_mock.assert_not_called()
+
+    def test_parse_health_port_uses_url_port_and_default(self):
+        self.assertEqual(19082, java_app_ctl.parse_health_port('http://127.0.0.1:19082/health'))
+        self.assertEqual(18082, java_app_ctl.parse_health_port('http://127.0.0.1/health'))
+        self.assertEqual(18082, java_app_ctl.parse_health_port('', 18082))
+
+    def test_build_config_uses_health_port_when_app_port_not_provided(self):
+        args = java_app_ctl.parse_args(['status', '--health-url', 'http://127.0.0.1:19082/health'])
+        config = java_app_ctl.build_config(args)
+        self.assertEqual(19082, config.app_port)
+
+    def test_find_listening_pids_by_port_parses_and_deduplicates(self):
+        with mock.patch.object(
+            java_app_ctl.subprocess,
+            'run',
+            return_value=mock.Mock(returncode=0, stdout='1234\n5678 1234\n', stderr=''),
+        ):
+            self.assertEqual([1234, 5678], java_app_ctl.find_listening_pids_by_port(18082))
 
 
 if __name__ == '__main__':

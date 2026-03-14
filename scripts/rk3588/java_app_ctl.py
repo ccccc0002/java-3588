@@ -9,8 +9,9 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib import error, request
+from urllib.parse import urlparse
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,7 @@ class AppControllerConfig:
     poll_interval: float = 1.0
     stop_wait_seconds: float = 10.0
     stop_pattern: str = 'java-rk3588-0.0.1-SNAPSHOT.jar.*18082'
+    app_port: int = 18082
 
 
 def default_config() -> AppControllerConfig:
@@ -59,6 +61,57 @@ def fetch_health(health_url: str, timeout: float = 2.0) -> Dict[str, Any]:
         return {'http_status': int(exc.code), 'payload': payload}
     except Exception as exc:
         return {'http_status': 0, 'payload': {'message': str(exc)}}
+
+
+def parse_health_port(health_url: str, default_port: int = 18082) -> int:
+    try:
+        parsed = urlparse(str(health_url or ''))
+        if parsed.port:
+            return int(parsed.port)
+    except Exception:
+        return default_port
+    return default_port
+
+
+def _parse_pids(stdout: str) -> List[int]:
+    pids: List[int] = []
+    for token in str(stdout or '').replace(',', ' ').split():
+        if token.isdigit():
+            value = int(token)
+            if value > 1:
+                pids.append(value)
+    # keep order while de-duplicating
+    seen = set()
+    ordered: List[int] = []
+    for pid in pids:
+        if pid in seen:
+            continue
+        seen.add(pid)
+        ordered.append(pid)
+    return ordered
+
+
+def find_listening_pids_by_port(port: int) -> List[int]:
+    # Try lsof/fuser/ss in one probe to avoid hard dependencies on a single tool.
+    script = (
+        'if command -v lsof >/dev/null 2>&1; then '
+        f'lsof -tiTCP:{port} -sTCP:LISTEN 2>/dev/null; '
+        'elif command -v fuser >/dev/null 2>&1; then '
+        f'fuser -n tcp {port} 2>/dev/null; '
+        'elif command -v ss >/dev/null 2>&1; then '
+        f'ss -ltnp "( sport = :{port} )" 2>/dev/null | sed -n \'s/.*pid=\\([0-9]\\+\\).*/\\1/p\'; '
+        'fi'
+    )
+    completed = subprocess.run(['bash', '-lc', script], capture_output=True, text=True)
+    if completed.returncode not in (0, 1):
+        return []
+    return _parse_pids(completed.stdout)
+
+
+def terminate_pids(pids: List[int], force: bool = False) -> None:
+    signal = '-KILL' if force else '-TERM'
+    for pid in pids:
+        subprocess.run(['kill', signal, str(pid)], capture_output=True, text=True)
 
 
 def wait_for_health(config: AppControllerConfig) -> Dict[str, Any]:
@@ -115,11 +168,36 @@ def stop_app(config: AppControllerConfig) -> Dict[str, Any]:
                 'exit_code': completed.returncode,
                 'health': health,
             }
+        # Fallback path: occasionally older JVMs remain and still hold the listening port.
+        fallback_pids = find_listening_pids_by_port(config.app_port)
+        if fallback_pids:
+            terminate_pids(fallback_pids, force=False)
+            health = wait_for_down(config)
+            if int(health.get('http_status', 0)) != 200:
+                return {
+                    'status': 'stopped',
+                    'pattern': config.stop_pattern,
+                    'exit_code': completed.returncode,
+                    'health': health,
+                    'fallback_killed_pids': fallback_pids,
+                }
+            terminate_pids(fallback_pids, force=True)
+            health = wait_for_down(config)
+            if int(health.get('http_status', 0)) != 200:
+                return {
+                    'status': 'stopped',
+                    'pattern': config.stop_pattern,
+                    'exit_code': completed.returncode,
+                    'health': health,
+                    'fallback_killed_pids': fallback_pids,
+                    'fallback_force_kill': True,
+                }
         return {
             'status': 'stop_pending_exit',
             'pattern': config.stop_pattern,
             'exit_code': completed.returncode,
             'health': health,
+            'fallback_killed_pids': fallback_pids,
         }
     return {'status': 'stop_failed', 'pattern': config.stop_pattern, 'exit_code': completed.returncode, 'stderr': completed.stderr}
 
@@ -151,6 +229,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument('--poll-interval', type=float, default=1.0)
     parser.add_argument('--stop-wait-seconds', type=float, default=10.0)
     parser.add_argument('--stop-pattern', default='java-rk3588-0.0.1-SNAPSHOT.jar.*18082')
+    parser.add_argument('--app-port', type=int, default=0)
     return parser.parse_args(argv)
 
 
@@ -160,6 +239,7 @@ def build_config(args: argparse.Namespace) -> AppControllerConfig:
     runtime_dir = Path(args.runtime_dir).resolve() if args.runtime_dir else config.runtime_dir
     start_script = Path(args.start_script).resolve() if args.start_script else config.start_script
     health_url = args.health_url or config.health_url
+    app_port = int(args.app_port) if int(args.app_port or 0) > 0 else parse_health_port(health_url, config.app_port)
     return AppControllerConfig(
         repo_root=repo_root,
         runtime_dir=runtime_dir,
@@ -169,6 +249,7 @@ def build_config(args: argparse.Namespace) -> AppControllerConfig:
         poll_interval=args.poll_interval,
         stop_wait_seconds=args.stop_wait_seconds,
         stop_pattern=args.stop_pattern,
+        app_port=app_port,
     )
 
 
