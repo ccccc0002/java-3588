@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T08:19:27+08:00",
-                                  "summary":  "Alert push submodule advanced: added dedicated /report/push-targets page (CRUD for HTTP targets), menu now routes HTTP Target directly, and SMS Phone remains /push/channel.",
+                                  "updated_at":  "2026-03-14T08:25:11+08:00",
+                                  "summary":  "Alert push now has three submenu entries: HTTP Target (/report/push-targets), SMS Phone (/push/channel), Phone Push (/push/voice). Phone push config page+controller+RBAC gate shipped.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /report/push-targets (200)",
+                                                       "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/voice (200)",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "0f5fefe",
-                                                       "updated_at":  "2026-03-14T08:19:27+08:00"
+                                                       "github_sync_ref":  "b432542",
+                                                       "updated_at":  "2026-03-14T08:25:11+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1731,6 +1731,16 @@
                         "edge_test_command":  "mvn -Dtest=ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /report/push-targets (200)",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "0f5fefe"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T08:25:11+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Alert push now has three submenu entries: HTTP Target (/report/push-targets), SMS Phone (/push/channel), Phone Push (/push/voice). Phone push config page+controller+RBAC gate shipped.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/voice (200)",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b432542"
                     }
                 ]
 }
