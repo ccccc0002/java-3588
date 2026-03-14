@@ -13,11 +13,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @ExtendWith(MockitoExtension.class)
 class SmsPhoneControllerTest {
@@ -61,5 +63,18 @@ class SmsPhoneControllerTest {
         assertEquals(500, result.getCode());
         assertEquals("permission denied", result.getMsg());
         verify(smsPhoneService, never()).removeById(1L);
+    }
+
+    @Test
+    void requestMappingShouldContainPushChannelAlias() {
+        RequestMapping mapping = SmsPhoneController.class.getAnnotation(RequestMapping.class);
+        assertTrue(mapping != null);
+        assertTrue(java.util.Arrays.asList(mapping.value()).contains("/smsphone"));
+        assertTrue(java.util.Arrays.asList(mapping.value()).contains("/push/channel"));
+    }
+
+    @Test
+    void indexShouldReturnTemplate() {
+        assertEquals("smsphone/index", smsPhoneController.index());
     }
 }

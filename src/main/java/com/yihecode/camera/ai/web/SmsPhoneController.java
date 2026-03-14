@@ -24,7 +24,7 @@ import java.util.List;
 
 @SaCheckLogin
 @Controller
-@RequestMapping({"/smsphone"})
+@RequestMapping({"/smsphone", "/push/channel"})
 public class SmsPhoneController {
 
     @Autowired

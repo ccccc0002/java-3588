@@ -64,11 +64,11 @@
       },
       {
         "id": 118,
-        "title": "Push Channel",
+        "title": "Alert Push Phone",
         "icon": "layui-icon layui-icon-console",
         "type": 1,
         "openType": "_iframe",
-        "href": "/smsphone"
+        "href": "/push/channel"
       },
       {
         "id": 18,
@@ -97,4 +97,3 @@
     ]
   }
 ]
-
