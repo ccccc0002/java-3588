@@ -1,8 +1,8 @@
 {
-    "time":  "2026-03-14 09:26:35",
+    "time":  "2026-03-14 09:29:51",
     "task_id":  "PHASE2-EXEC",
     "stage":  "Phase11",
     "event":  "session_compacted",
     "actor":  "codex-agent",
-    "summary":  "compact after checkpoint: checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208)"
+    "summary":  "compact after checkpoint: checkpoint: smoke payload compaction synced (61bf7a7)"
 }

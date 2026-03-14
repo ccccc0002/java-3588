@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 09:26:35
+- generated_at: 2026-03-14 09:29:51
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T09:29:51+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T09:29:51+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_checkpoint
+- 2026-03-14T09:29:40+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T09:26:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
 - 2026-03-14T09:26:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T09:19:55+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 - 2026-03-14T09:19:44+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
-- 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
-- 2026-03-14T09:12:21+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
-- 2026-03-14T09:03:05+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 
 ## Recent Process Log Tail
 
-| 2026-03-14 08:45:27 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Voice push runtime dispatch wired in report path and validated on RK3588; report controller/api/push regression suite and web smoke all pass. |
-| 2026-03-14 08:45:37 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-084537-PHASE2-EXEC.json |
-| 2026-03-14 08:45:37 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Commit dec0c79 synced: report voice push dispatch + edge regression pass. |
-| 2026-03-14 08:45:38 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-084537-PHASE2-EXEC.json |
-| 2026-03-14 08:45:38 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 08:45:38 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: Commit dec0c79 synced: report voice push dispatch + edge regression pass. |
-| 2026-03-14 08:49:10 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-084909-PHASE2-EXEC.json |
-| 2026-03-14 08:49:10 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Phase7 backlog parallel lane now includes push regression suite (SmsPhone/Push/Report/ReportApi) and converged on RK3588: phase2-backlog-r8 passed 7/7. |
 | 2026-03-14 08:49:20 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-084919-PHASE2-EXEC.json |
 | 2026-03-14 08:49:20 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Commit 7b478f7 synced: phase7 lane upgraded with push regression and RK3588 parallel session phase2-backlog-r8 all-pass. |
 | 2026-03-14 08:49:20 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-084920-PHASE2-EXEC.json |
@@ -61,3 +53,11 @@
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
+| 2026-03-14 09:26:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:26:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-092940-PHASE2-EXEC.json |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | web_ui_live_smoke output compacted: oversized JSON strings are now truncated in report payloads, reducing log/context bloat while preserving pass/fail signal; validated locally and on RK3588. |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092950-PHASE2-EXEC.json |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: smoke payload compaction synced (61bf7a7) |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092951-PHASE2-EXEC.json |

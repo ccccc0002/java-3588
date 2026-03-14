@@ -1456,3 +1456,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
 | 2026-03-14 09:26:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 09:26:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-092940-PHASE2-EXEC.json |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:29:40 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | web_ui_live_smoke output compacted: oversized JSON strings are now truncated in report payloads, reducing log/context bloat while preserving pass/fail signal; validated locally and on RK3588. |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092950-PHASE2-EXEC.json |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: smoke payload compaction synced (61bf7a7) |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092951-PHASE2-EXEC.json |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:29:51 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: checkpoint: smoke payload compaction synced (61bf7a7) |
