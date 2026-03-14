@@ -95,6 +95,11 @@ class ReportControllerTest {
     }
 
     @Test
+    void pushTargetsPageShouldReturnTemplate() {
+        assertEquals("report/push_targets", reportController.pushTargetsPage());
+    }
+
+    @Test
     void getImageAsByteArray_shouldResolveRelativeReportImageFromUploadDir() throws Exception {
         Path imagePath = tempDir.resolve("relative-preview.jpg");
         Files.write(imagePath, "preview-image".getBytes(StandardCharsets.UTF_8));

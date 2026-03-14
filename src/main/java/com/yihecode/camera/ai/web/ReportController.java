@@ -109,6 +109,11 @@ public class ReportController {
         return "report/index";
     }
 
+    @GetMapping("/push-targets")
+    public String pushTargetsPage() {
+        return "report/push_targets";
+    }
+
     /**
      *
      * @param modelMap
@@ -924,5 +929,4 @@ public class ReportController {
         return PageResultUtils.success(pageResult.getTotal(), dataList);
     }
 }
-
 
