@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T08:45:27+08:00",
-                                  "summary":  "Voice push runtime dispatch wired in report path and validated on RK3588; report controller/api/push regression suite and web smoke all pass.",
+                                  "updated_at":  "2026-03-14T08:49:09+08:00",
+                                  "summary":  "Phase7 backlog parallel lane now includes push regression suite (SmsPhone/Push/Report/ReportApi) and converged on RK3588: phase2-backlog-r8 passed 7/7.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=ReportApiControllerTest,PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
+                                                       "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-backlog-r8 --force --lane-file scripts/rk3588/lanes/phase2-backlog.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r8",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "dec0c79",
-                                                       "updated_at":  "2026-03-14T08:45:27+08:00"
+                                                       "github_sync_ref":  "7b478f7",
+                                                       "updated_at":  "2026-03-14T08:49:09+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1761,6 +1761,16 @@
                         "edge_test_command":  "mvn -Dtest=ReportApiControllerTest,PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "dec0c79"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T08:49:09+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "Phase7 backlog parallel lane now includes push regression suite (SmsPhone/Push/Report/ReportApi) and converged on RK3588: phase2-backlog-r8 passed 7/7.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 scripts/rk3588/tmux_parallel_ctl.py start --session phase2-backlog-r8 --force --lane-file scripts/rk3588/lanes/phase2-backlog.json --source rtsp://admin:Admin123@192.168.1.245:554/h264/ch1/main/av_stream --quality-iterations 8 --timeout-sec 45 \u0026\u0026 python3 scripts/rk3588/tmux_parallel_ctl.py report --session phase2-backlog-r8",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "7b478f7"
                     }
                 ]
 }
