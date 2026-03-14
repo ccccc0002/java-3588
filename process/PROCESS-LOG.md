@@ -1448,3 +1448,11 @@ Hint: run as administrator, or use Start-AutosaveLoop.ps1 fallback. |
 | 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
 | 2026-03-14 09:19:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
 | 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
+| 2026-03-14 09:26:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-092623-PHASE2-EXEC.json |
+| 2026-03-14 09:26:24 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:26:24 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 dry-run acceptance defaults fixed: phase10/phase11 runners now default to 18082, eliminating false failures from 8080 fallback; RK3588 phase2-acceptance-r5 converged 2/2. |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
+| 2026-03-14 09:26:35 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:26:35 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | compact after checkpoint: checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |

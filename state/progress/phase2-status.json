@@ -150,16 +150,16 @@
                                },
                    "Phase11":  {
                                    "status":  "completed",
-                                   "updated_at":  "2026-03-14T07:56:28+08:00",
-                                   "summary":  "Phase11 reliability hardening finalized: RK3588 lane-file-only sessions all-pass and milestone synced to GitHub.",
+                                   "updated_at":  "2026-03-14T09:26:23+08:00",
+                                   "summary":  "Phase11 dry-run acceptance defaults fixed: phase10/phase11 runners now default to 18082, eliminating false failures from 8080 fallback; RK3588 phase2-acceptance-r5 converged 2/2.",
                                    "quality_gate":  {
                                                         "edge_test_required":  true,
                                                         "edge_test_status":  "passed",
-                                                        "edge_test_command":  "tmux_parallel_ctl report --session phase2-nextwave-r6 \u0026\u0026 tmux_parallel_ctl report --session phase2-backlog-r7",
+                                                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_phase11_handoff.py \u0026\u0026 bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun-r2 \u0026\u0026 tmux_parallel_ctl report --session phase2-acceptance-r5",
                                                         "github_sync_required_on_milestone":  true,
                                                         "github_sync_status":  "synced",
-                                                        "github_sync_ref":  "aa62f20",
-                                                        "updated_at":  "2026-03-14T07:56:28+08:00"
+                                                        "github_sync_ref":  "69eb208",
+                                                        "updated_at":  "2026-03-14T09:26:23+08:00"
                                                     }
                                }
                },
@@ -1801,6 +1801,16 @@
                         "edge_test_command":  "python -m unittest scripts/testing/test_java_app_ctl.py \u0026\u0026 python3 -m unittest scripts/testing/test_java_app_ctl.py (RK3588) \u0026\u0026 python3 scripts/rk3588/java_app_ctl.py restart --wait-seconds 25 --stop-wait-seconds 12 \u0026\u0026 python3 scripts/testing/web_ui_live_smoke.py --base-url http://127.0.0.1:18082 --username admin --password admin123 --timeout-sec 35 --retry-attempts 2 --retry-on-any-failure --skip-capture-endpoints",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "0fd9240"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T09:26:23+08:00",
+                        "phase_id":  "Phase11",
+                        "status":  "completed",
+                        "summary":  "Phase11 dry-run acceptance defaults fixed: phase10/phase11 runners now default to 18082, eliminating false failures from 8080 fallback; RK3588 phase2-acceptance-r5 converged 2/2.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "python3 -m unittest scripts/testing/test_run_phase10_acceptance.py scripts/testing/test_run_phase11_handoff.py \u0026\u0026 bash scripts/rk3588/Run-Phase11-Handoff.sh --dry-run --output-dir runtime/test-out/phase11-handoff-nextwave-dryrun-r2 \u0026\u0026 tmux_parallel_ctl report --session phase2-acceptance-r5",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "69eb208"
                     }
                 ]
 }

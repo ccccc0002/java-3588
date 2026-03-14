@@ -1,6 +1,6 @@
 ﻿# Compact Context Snapshot
 
-- generated_at: 2026-03-14 09:19:55
+- generated_at: 2026-03-14 09:26:35
 - task_scope: PHASE2-EXEC
 - intent: keep short, factual state to reduce context drift
 
@@ -10,25 +10,17 @@
 
 ## Recent Checkpoints
 
+- 2026-03-14T09:26:34+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=session_compacted
+- 2026-03-14T09:26:23+08:00 | task=PHASE2-EXEC | stage=Phase11 | event=phase_completed
 - 2026-03-14T09:19:55+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 - 2026-03-14T09:19:44+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
 - 2026-03-14T09:12:32+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
 - 2026-03-14T09:12:21+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 - 2026-03-14T09:03:05+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=session_compacted
-- 2026-03-14T09:03:05+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_checkpoint
-- 2026-03-14T09:02:53+08:00 | task=PHASE2-EXEC | stage=Phase7 | event=phase_started
 
 ## Recent Process Log Tail
 
-| 2026-03-14 08:39:09 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-083909-PHASE2-EXEC.json |
-| 2026-03-14 08:39:09 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | SMS push upgraded to configurable mode: added /push/sms-config page+save/detail APIs, wired ReportApiController sms send to config tags (sms_api_url/sms_api_key/sms_tpl_id), and added sms config entry from SMS Phone page. |
-| 2026-03-14 08:39:22 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-083921-PHASE2-EXEC.json |
-| 2026-03-14 08:39:22 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | sms push config page + runtime wiring delivered and edge-tested |
-| 2026-03-14 08:39:22 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-083922-PHASE2-EXEC.json |
-| 2026-03-14 08:39:22 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
-| 2026-03-14 08:39:22 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: sms push config page + runtime wiring delivered and edge-tested |
-| 2026-03-14 08:45:27 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | checkpoint saved: checkpoint-20260314-084527-PHASE2-EXEC.json |
 | 2026-03-14 08:45:27 | PHASE2-EXEC | Phase7 | phase_started | codex-agent | Voice push runtime dispatch wired in report path and validated on RK3588; report controller/api/push regression suite and web smoke all pass. |
 | 2026-03-14 08:45:37 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-084537-PHASE2-EXEC.json |
 | 2026-03-14 08:45:37 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | Commit dec0c79 synced: report voice push dispatch + edge regression pass. |
@@ -61,3 +53,11 @@
 | 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
 | 2026-03-14 09:19:54 | PHASE2-EXEC | Phase7 | phase_checkpoint | codex-agent | checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
 | 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-091954-PHASE2-EXEC.json |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:19:55 | PHASE2-EXEC | Phase7 | session_compacted | codex-agent | compact after checkpoint: checkpoint: java_app_ctl port-fallback stop hardening synced (0fd9240) |
+| 2026-03-14 09:26:23 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | checkpoint saved: checkpoint-20260314-092623-PHASE2-EXEC.json |
+| 2026-03-14 09:26:24 | PHASE2-EXEC | compact | context_compacted | codex-agent | compact snapshot updated |
+| 2026-03-14 09:26:24 | PHASE2-EXEC | Phase11 | phase_completed | codex-agent | Phase11 dry-run acceptance defaults fixed: phase10/phase11 runners now default to 18082, eliminating false failures from 8080 fallback; RK3588 phase2-acceptance-r5 converged 2/2. |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | phase_checkpoint | codex-agent | checkpoint: phase11 default-base-url fix + acceptance-r5 all-pass (69eb208) |
+| 2026-03-14 09:26:34 | PHASE2-EXEC | Phase11 | session_compacted | codex-agent | checkpoint saved: checkpoint-20260314-092634-PHASE2-EXEC.json |
