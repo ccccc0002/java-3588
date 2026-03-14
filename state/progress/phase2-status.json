@@ -94,16 +94,16 @@
                               },
                    "Phase7":  {
                                   "status":  "in_progress",
-                                  "updated_at":  "2026-03-14T08:25:11+08:00",
-                                  "summary":  "Alert push now has three submenu entries: HTTP Target (/report/push-targets), SMS Phone (/push/channel), Phone Push (/push/voice). Phone push config page+controller+RBAC gate shipped.",
+                                  "updated_at":  "2026-03-14T08:39:09+08:00",
+                                  "summary":  "SMS push upgraded to configurable mode: added /push/sms-config page+save/detail APIs, wired ReportApiController sms send to config tags (sms_api_url/sms_api_key/sms_tpl_id), and added sms config entry from SMS Phone page.",
                                   "quality_gate":  {
                                                        "edge_test_required":  true,
                                                        "edge_test_status":  "passed",
-                                                       "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/voice (200)",
+                                                       "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportApiControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/sms-config (200) \u0026\u0026 web_ui_live_smoke 33/33",
                                                        "github_sync_required_on_milestone":  true,
                                                        "github_sync_status":  "synced",
-                                                       "github_sync_ref":  "b432542",
-                                                       "updated_at":  "2026-03-14T08:25:11+08:00"
+                                                       "github_sync_ref":  "b2e1276",
+                                                       "updated_at":  "2026-03-14T08:39:09+08:00"
                                                    }
                               },
                    "Phase8":  {
@@ -1741,6 +1741,16 @@
                         "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/voice (200)",
                         "github_sync_status":  "synced",
                         "github_sync_ref":  "b432542"
+                    },
+                    {
+                        "timestamp":  "2026-03-14T08:39:09+08:00",
+                        "phase_id":  "Phase7",
+                        "status":  "in_progress",
+                        "summary":  "SMS push upgraded to configurable mode: added /push/sms-config page+save/detail APIs, wired ReportApiController sms send to config tags (sms_api_url/sms_api_key/sms_tpl_id), and added sms config entry from SMS Phone page.",
+                        "edge_test_status":  "passed",
+                        "edge_test_command":  "mvn -Dtest=PushControllerTest,ReportApiControllerTest,ReportControllerTest,LoginControllerTest,IndexControllerTest test \u0026\u0026 curl -I /push/sms-config (200) \u0026\u0026 web_ui_live_smoke 33/33",
+                        "github_sync_status":  "synced",
+                        "github_sync_ref":  "b2e1276"
                     }
                 ]
 }
