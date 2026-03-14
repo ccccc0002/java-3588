@@ -1,7 +1,7 @@
 [
   {
     "name": "phase7",
-    "command": "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest test"
+    "command": "mvn -Dtest=ConfigControllerTest,CameraControllerTest,WareHouseControllerTest,SmsPhoneControllerTest,PushControllerTest,ReportControllerTest,ReportApiControllerTest test"
   },
   {
     "name": "phase8",
