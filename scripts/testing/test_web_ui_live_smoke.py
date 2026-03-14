@@ -90,6 +90,23 @@ class WebUiLiveSmokeTest(unittest.TestCase):
         self.assertIn('error', result)
         self.assertIn('Invalid JSON', result['error'])
 
+    def test_run_target_compacts_large_string_payload_fields(self):
+        huge_text = 'x' * 1200
+        payload = {'code': 0, 'msg': huge_text}
+        session = FakeSession([
+            (200, json.dumps(payload).encode('utf-8'), {'Content-Type': 'application/json'})
+        ])
+        target = smoke.SmokeTarget('POST', '/huge', expect_json=True)
+
+        result = smoke.run_target(session, target)
+
+        self.assertTrue(result['ok'])
+        self.assertIn('payload', result)
+        compacted = result['payload']['msg']
+        self.assertIsInstance(compacted, str)
+        self.assertIn('[truncated', compacted)
+        self.assertLess(len(compacted), len(huge_text))
+
     def test_run_target_with_retries_recovers_after_transport_failure(self):
         session = FakeSession([
             (

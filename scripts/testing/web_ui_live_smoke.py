@@ -75,6 +75,40 @@ def parse_json(body: bytes) -> Any:
     return json.loads(decode_body(body))
 
 
+def compact_json_value(
+    value: Any,
+    *,
+    max_string_len: int = 800,
+    max_list_items: int = 30,
+    max_dict_items: int = 80,
+) -> Any:
+    if isinstance(value, str):
+        text = value
+        if len(text) <= max_string_len:
+            return text
+        truncated = len(text) - max_string_len
+        return text[:max_string_len] + f"...[truncated {truncated} chars]"
+    if isinstance(value, list):
+        items = [compact_json_value(item, max_string_len=max_string_len, max_list_items=max_list_items, max_dict_items=max_dict_items) for item in value[:max_list_items]]
+        if len(value) > max_list_items:
+            items.append({'_truncated_items': len(value) - max_list_items})
+        return items
+    if isinstance(value, dict):
+        compacted: Dict[str, Any] = {}
+        for index, key in enumerate(value.keys()):
+            if index >= max_dict_items:
+                compacted['_truncated_keys'] = len(value) - max_dict_items
+                break
+            compacted[str(key)] = compact_json_value(
+                value[key],
+                max_string_len=max_string_len,
+                max_list_items=max_list_items,
+                max_dict_items=max_dict_items,
+            )
+        return compacted
+    return value
+
+
 def smoke_login(session: HttpSession, username: str, password: str) -> Dict[str, Any]:
     status, body, _ = session.open('POST', '/login', {'account': username, 'password': password})
     require(status == 200, f'login failed with http {status}')
@@ -133,7 +167,7 @@ def run_target(session: HttpSession, target: SmokeTarget, base_url: str = '') ->
             result['snippet'] = text[:240]
             return result
 
-        result['payload'] = payload
+        result['payload'] = compact_json_value(payload)
         if isinstance(payload, dict):
             result['ok'] = status == 200 and payload.get('code', 0) in {0, 200}
             if not result['ok']:
