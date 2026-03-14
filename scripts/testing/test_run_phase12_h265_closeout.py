@@ -26,6 +26,8 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
         self.assertEqual(args.expect_plan_telemetry_status, "ok")
         self.assertEqual(args.expect_bridge_decode_runtime_status, "ok")
         self.assertEqual(args.expect_bridge_decode_mode, "mpp-rga")
+        self.assertEqual(args.stage_retry_attempts, 0)
+        self.assertEqual(args.runtime_stack_retry_attempts, 1)
         self.assertEqual(args.soak_duration_sec, 900)
         self.assertEqual(args.soak_max_iterations, 0)
         self.assertEqual(args.soak_max_failed_steps, 1)
@@ -41,6 +43,10 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
                 "0",
                 "--soak-max-failed-steps",
                 "2",
+                "--stage-retry-attempts",
+                "2",
+                "--runtime-stack-retry-attempts",
+                "3",
                 "--quality-iterations",
                 "18",
                 "--quality-interval-ms",
@@ -64,6 +70,10 @@ class RunPhase12H265CloseoutTests(unittest.TestCase):
         self.assertIn("1", argv)
         self.assertIn("--soak-max-failed-steps", argv)
         self.assertIn("2", argv)
+        self.assertIn("--stage-retry-attempts", argv)
+        self.assertIn("2", argv)
+        self.assertIn("--runtime-stack-retry-attempts", argv)
+        self.assertIn("3", argv)
         self.assertIn("--max-memory-used-delta-mb", argv)
         self.assertIn("256.0", argv)
         self.assertIn("--max-loadavg-1m", argv)

@@ -41,6 +41,7 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
             '--max-plan-suggested-min-dispatch-ms', '5000',
             '--min-snapshot-ready-stream-count', '1',
             '--min-plan-ready-stream-count', '1',
+            '--stage-retry-attempts', '3',
             '--runtime-stack-retry-attempts', '2',
             '--cookie', 'satoken=demo',
             '--auth-header-name', 'access-token',
@@ -78,6 +79,7 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
         self.assertEqual(args.max_plan_suggested_min_dispatch_ms, 5000)
         self.assertEqual(args.min_snapshot_ready_stream_count, 1)
         self.assertEqual(args.min_plan_ready_stream_count, 1)
+        self.assertEqual(args.stage_retry_attempts, 3)
         self.assertEqual(args.runtime_stack_retry_attempts, 2)
         self.assertEqual(args.cookie, 'satoken=demo')
         self.assertEqual(args.auth_header_name, 'access-token')
@@ -118,6 +120,8 @@ class RunPhase10AcceptanceTests(unittest.TestCase):
         self.assertIn('1.7', argv)
         self.assertIn('--max-plan-suggested-min-dispatch-ms', argv)
         self.assertIn('4800', argv)
+        self.assertIn('--stage-retry-attempts', argv)
+        self.assertIn('0', argv)
         self.assertIn('--runtime-stack-retry-attempts', argv)
         self.assertIn('1', argv)
         self.assertIn('--expect-bridge-decode-runtime-status', argv)

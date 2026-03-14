@@ -36,6 +36,10 @@ class RunPhase11HandoffTests(unittest.TestCase):
                 "3",
                 "--algorithm-id",
                 "4",
+                "--stage-retry-attempts",
+                "2",
+                "--runtime-stack-retry-attempts",
+                "3",
                 "--soak-duration-sec",
                 "120",
                 "--soak-interval-sec",
@@ -69,6 +73,8 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertEqual(args.camera_id, 2)
         self.assertEqual(args.model_id, 3)
         self.assertEqual(args.algorithm_id, 4)
+        self.assertEqual(args.stage_retry_attempts, 2)
+        self.assertEqual(args.runtime_stack_retry_attempts, 3)
         self.assertEqual(args.soak_duration_sec, 120)
         self.assertEqual(args.soak_interval_sec, 6)
         self.assertEqual(args.soak_max_iterations, 2)
@@ -119,6 +125,10 @@ class RunPhase11HandoffTests(unittest.TestCase):
         self.assertIn("ffmpeg", argv)
         self.assertIn("--max-plan-concurrency-pressure", argv)
         self.assertIn("1.0", argv)
+        self.assertIn("--stage-retry-attempts", argv)
+        self.assertIn("0", argv)
+        self.assertIn("--runtime-stack-retry-attempts", argv)
+        self.assertIn("1", argv)
         self.assertIn("--output-dir", argv)
         self.assertIn("tmp/out/phase10-acceptance", argv)
 
